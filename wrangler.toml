@@ -1,0 +1,23 @@
+name = "my-memos"
+compatibility_date = "2026-05-05"
+compatibility_flags = ["nodejs_compat"]
+upload_source_maps = true
+
+[[d1_databases]]
+binding = "DB"
+database_name = "my-memos"
+database_id = "02a94452-aeeb-4c5e-8846-6750347f6cad"
+
+[[kv_namespaces]]
+binding = "MEMOS_CACHE"
+id = "5f04d490f46b4459b32d8e735f95dfd5"
+
+[[r2_buckets]]
+binding = "MEMOS_BUCKET"
+bucket_name = "cherry-studio"
+remote = true
+
+[observability]
+[observability.logs]
+enabled = true
+invocation_logs = true

@@ -1,0 +1,31 @@
+:root {
+  /* Light — warm earth neutrals */
+  --palette-light-paper: #faf7eb; /* 纸白 page background  */
+  --palette-light-cloud: #f5f2ec; /* 米白 muted surface    */
+  --palette-light-oat: #e8e0d0; /* 燕麦 border           */
+  --palette-light-sand: #d4c5a9; /* 沙色 strong border    */
+  --palette-light-fog: #726e69; /* 温灰 secondary text   */
+  --palette-light-stone: #666666; /* 深灰 body text alt    */
+  --palette-light-charcoal: #333333; /* 炭黑 body text        */
+  --palette-light-ink: #1a1a1a; /* 墨黑 headings         */
+
+  /* Dark — warm charcoal ramp (R > B throughout) */
+  --palette-dark-0: #1a1917;
+  --palette-dark-1: #242220;
+  --palette-dark-2: #332f2c;
+  --palette-dark-3: #46413d;
+  --palette-dark-text: #e6e3dc;
+  --palette-dark-text-dim: #9a948d;
+
+  /* Brand accent — 煤竹色 susutake-iro (smoked-bamboo, aged over kitchen fires) */
+  --palette-brand-light: #6d5626;
+  --palette-brand-dark: #b89a64;
+
+  /* Semantic states — 苔 sage / 朽葉 kuchiba / 緋 hiiro */
+  --palette-success-light: #4d5e38;
+  --palette-success-dark: #a8b890;
+  --palette-warning-light: #7a5520;
+  --palette-warning-dark: #d4b88e;
+  --palette-error-light: #a03030;
+  --palette-error-dark: #d06464;
+}
