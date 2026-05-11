@@ -1,4 +1,4 @@
-import { createMemo, ensureMemoSchema } from "$lib/server/memos";
+import { createMemo } from "$lib/server/memos";
 import { json } from "@sveltejs/kit";
 import type { RequestHandler } from "./$types";
 import type { MemoVisibility } from "$lib/types/memos";
@@ -33,7 +33,6 @@ export const POST: RequestHandler = async ({ request, platform }) => {
     return json({ error: "Memo visibility is invalid." }, { status: 400 });
   }
 
-  await ensureMemoSchema(platform.env.DB);
   const memo = await createMemo(
     platform.env.DB,
     platform.env.MEMOS_BUCKET,

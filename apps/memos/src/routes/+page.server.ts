@@ -1,4 +1,4 @@
-import { ensureMemoSchema, listMemos, listTagCounts } from "$lib/server/memos";
+import { listMemos, listTagCounts } from "$lib/server/memos";
 import type { PageServerLoad } from "./$types";
 
 export const load: PageServerLoad = async ({ platform, url }) => {
@@ -17,8 +17,6 @@ export const load: PageServerLoad = async ({ platform, url }) => {
   const search = url.searchParams.get("search")?.trim() ?? "";
   const date = url.searchParams.get("date")?.trim() ?? "";
   const tag = url.searchParams.get("tag")?.trim().toLowerCase() ?? "";
-
-  await ensureMemoSchema(platform.env.DB);
 
   const [memos, tags] = await Promise.all([
     listMemos(platform.env.DB, platform.env.MEMOS_CACHE, {
