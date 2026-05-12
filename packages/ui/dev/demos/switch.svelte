@@ -75,7 +75,10 @@
     >
       {#each settingsItems as { label, on }, i (label)}
         <label
-          style="display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; cursor: pointer;{i < 2 ? ' border-bottom: 1px solid var(--color-border);' : ''}"
+          style="display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; cursor: pointer;{i <
+          2
+            ? ' border-bottom: 1px solid var(--color-border);'
+            : ''}"
         >
           <span style="font-size: 13px; color: var(--color-foreground);">{label}</span>
           <Switch defaultChecked={on} />

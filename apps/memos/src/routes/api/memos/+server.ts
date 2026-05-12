@@ -1,7 +1,7 @@
 import { createMemo } from "$lib/server/memos";
 import { json } from "@sveltejs/kit";
 import type { RequestHandler } from "./$types";
-import type { MemoVisibility } from "$lib/types/memos";
+import type { MemoVisibility } from "$lib/types";
 
 const VISIBILITIES = new Set<MemoVisibility>(["public", "private"]);
 

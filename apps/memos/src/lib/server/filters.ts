@@ -4,7 +4,7 @@ export interface PageFilters {
   tags: string[];
 }
 
-export function parsePageFilters(url: URL, options: { includeSearch?: boolean } = {}): PageFilters {
+export function parsePageFilters(url: URL): PageFilters {
   const date = url.searchParams.get("date")?.trim() ?? "";
   const tagsParam = url.searchParams.get("tags")?.trim() ?? "";
   const tags = tagsParam
@@ -13,6 +13,6 @@ export function parsePageFilters(url: URL, options: { includeSearch?: boolean } 
         .map((t) => t.trim().toLowerCase())
         .filter(Boolean)
     : [];
-  const search = options.includeSearch ? (url.searchParams.get("search")?.trim() ?? "") : "";
+  const search = url.searchParams.get("search")?.trim() ?? "";
   return { search, date, tags };
 }

@@ -7,5 +7,6 @@ export default defineConfig({
   fmt: {
     indent: "tab",
     ignorePatterns: ["dist/**"],
+    svelte: true,
   },
 });

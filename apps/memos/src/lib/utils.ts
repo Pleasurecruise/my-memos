@@ -18,7 +18,10 @@ export function updateQuery(params: Record<string, QueryValue>): void {
 
 export function stripHashtags(text: string): string {
   return text
-    .replace(/(^|\s)#[\p{Letter}\p{Number}_\-/]+/gu, "$1")
+    .replace(
+      /(^|\s)#(?=[\p{Letter}\p{Number}_\-/]+(?:\s|$))(?!#)([\p{Letter}\p{Number}_\-/]+)/gu,
+      "$1",
+    )
     .replace(/[ \t]{2,}/g, " ")
     .trim();
 }

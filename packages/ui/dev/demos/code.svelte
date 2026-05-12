@@ -22,19 +22,21 @@
     <p
       style="font-family: var(--font-sans); font-size: 14px; color: var(--color-foreground); line-height: 1.7;"
     >
-      Run <Code>pnpm install</Code> to install dependencies, then <Code>pnpm dev</Code> to start
-      the development server.
+      Run <Code>pnpm install</Code> to install dependencies, then <Code>pnpm dev</Code> to start the development
+      server.
     </p>
   </section>
 
   <section style="display: flex; flex-direction: column; gap: 12px;">
     <SectionLabel>Block</SectionLabel>
     <Pre>
-      <code>{`import { Button } from "@my-memos/ui";
+      <code
+        >{`import { Button } from "@my-memos/ui";
 
 export default function App() {
   return <Button variant="default">Save</Button>;
-}`}</code>
+}`}</code
+      >
     </Pre>
   </section>
 </DemoPage>

@@ -6,7 +6,7 @@ function getHashContext(text: string, pos: number) {
 }
 
 export function createTagAutocomplete(getTagNames: () => string[]) {
-  let el = $state<HTMLTextAreaElement | null>(null);
+  let currentValue = $state("");
   let query = $state("");
   let open = $state(false);
   let activeIndex = $state(0);
@@ -19,10 +19,9 @@ export function createTagAutocomplete(getTagNames: () => string[]) {
       : names.filter((t) => t.toLowerCase().startsWith(query.toLowerCase())).slice(0, 8);
   });
 
-  function onInput(e: Event): string {
-    const target = e.target as HTMLTextAreaElement;
-    el = target;
-    const ctx = getHashContext(target.value, target.selectionStart ?? target.value.length);
+  function onValueChange(value: string): void {
+    currentValue = value;
+    const ctx = getHashContext(value, value.length);
     if (ctx && getTagNames().length > 0) {
       query = ctx.query;
       open = true;
@@ -30,7 +29,6 @@ export function createTagAutocomplete(getTagNames: () => string[]) {
     } else {
       open = false;
     }
-    return target.value;
   }
 
   function onKeydown(e: KeyboardEvent): string | null {
@@ -51,18 +49,11 @@ export function createTagAutocomplete(getTagNames: () => string[]) {
   }
 
   function select(tag: string): string | null {
-    if (!el) return null;
-    const ctx = getHashContext(el.value, el.selectionStart ?? el.value.length);
+    const ctx = getHashContext(currentValue, currentValue.length);
     if (!ctx) return null;
     const inserted = `#${tag} `;
-    const newContent = el.value.slice(0, ctx.start) + inserted + el.value.slice(ctx.end);
-    const newPos = ctx.start + inserted.length;
     open = false;
-    requestAnimationFrame(() => {
-      el!.setSelectionRange(newPos, newPos);
-      el!.focus();
-    });
-    return newContent;
+    return currentValue.slice(0, ctx.start) + inserted + currentValue.slice(ctx.end);
   }
 
   function close() {
@@ -79,7 +70,7 @@ export function createTagAutocomplete(getTagNames: () => string[]) {
     get suggestions() {
       return suggestions;
     },
-    onInput,
+    onValueChange,
     onKeydown,
     select,
     close,

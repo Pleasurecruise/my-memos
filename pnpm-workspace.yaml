@@ -6,3 +6,6 @@ allowBuilds:
   esbuild: true
   sharp: true
   workerd: true
+
+overrides:
+  oxfmt: "0.49.0"

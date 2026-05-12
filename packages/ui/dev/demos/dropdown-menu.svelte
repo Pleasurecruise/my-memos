@@ -5,8 +5,12 @@
 <script lang="ts">
   import { ChevronDown, Ellipsis, FilePlus, FolderOpen, Save, Trash2 } from "lucide-svelte";
   import {
-    DropdownMenu, DropdownMenuTrigger, DropdownMenuContent,
-    DropdownMenuItem, DropdownMenuSeparator, DropdownMenuLabel,
+    DropdownMenu,
+    DropdownMenuTrigger,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuLabel,
     Button,
   } from "../../src";
   import DemoPage from "../DemoPage.svelte";
@@ -74,7 +78,9 @@
           <DropdownMenuItem onclick={() => (lastAction = "Settings")}>Settings</DropdownMenuItem>
           <DropdownMenuItem onclick={() => (lastAction = "Billing")}>Billing</DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem destructive onclick={() => (lastAction = "Sign out")}>Sign out</DropdownMenuItem>
+          <DropdownMenuItem destructive onclick={() => (lastAction = "Sign out")}
+            >Sign out</DropdownMenuItem
+          >
         </DropdownMenuContent>
       </DropdownMenu>
 
@@ -89,13 +95,17 @@
           <DropdownMenuItem onclick={() => (lastAction = "Duplicate")}>Duplicate</DropdownMenuItem>
           <DropdownMenuItem onclick={() => (lastAction = "Archive")}>Archive</DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem destructive onclick={() => (lastAction = "Delete")}>Delete</DropdownMenuItem>
+          <DropdownMenuItem destructive onclick={() => (lastAction = "Delete")}
+            >Delete</DropdownMenuItem
+          >
         </DropdownMenuContent>
       </DropdownMenu>
     </div>
 
     {#if lastAction}
-      <p style="font-size: 12px; color: var(--color-muted-foreground); font-family: var(--font-mono);">
+      <p
+        style="font-size: 12px; color: var(--color-muted-foreground); font-family: var(--font-mono);"
+      >
         Last action: <span style="color: var(--color-accent);">{lastAction}</span>
       </p>
     {/if}

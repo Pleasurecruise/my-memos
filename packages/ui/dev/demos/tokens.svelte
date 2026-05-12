@@ -55,9 +55,7 @@
   </section>
 
   <section class="flex flex-col gap-4">
-    <p class="font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
-      Typography
-    </p>
+    <p class="font-mono text-[11px] uppercase tracking-widest text-muted-foreground">Typography</p>
     <div class="flex flex-col gap-3">
       {#each fontSamples as { label, cls, text } (label)}
         <div class="flex items-baseline gap-4">

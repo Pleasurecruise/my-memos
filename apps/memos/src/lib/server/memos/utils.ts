@@ -14,7 +14,10 @@ export function buildMemoR2Key(id: string, createdAt: Date): string {
 }
 
 export function normalizeTags(content: string): string[] {
-  const matches = content.match(/(^|\s)#([\p{Letter}\p{Number}_/-]+)/gu) ?? [];
+  const matches =
+    content.match(
+      /(^|\s)#(?=[\p{Letter}\p{Number}_/-]+(?:\s|$))(?!#)([\p{Letter}\p{Number}_/-]+)/gu,
+    ) ?? [];
   const tags = matches.map((m) => m.trim().slice(1).toLowerCase());
   return [...new Set(tags)].slice(0, 24);
 }

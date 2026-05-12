@@ -4,8 +4,13 @@
 
 <script lang="ts">
   import {
-    Popover, PopoverTrigger, PopoverContent,
-    Button, Input, Label, Separator,
+    Popover,
+    PopoverTrigger,
+    PopoverContent,
+    Button,
+    Input,
+    Label,
+    Separator,
   } from "../../src";
   import DemoPage from "../DemoPage.svelte";
   import SectionLabel from "../SectionLabel.svelte";
@@ -90,7 +95,9 @@
           <Button variant="secondary">Start</Button>
         </PopoverTrigger>
         <PopoverContent align="start">
-          <p style="font-size: 13px; margin: 0; color: var(--color-foreground);">Aligned to start</p>
+          <p style="font-size: 13px; margin: 0; color: var(--color-foreground);">
+            Aligned to start
+          </p>
         </PopoverContent>
       </Popover>
 
@@ -99,7 +106,9 @@
           <Button variant="secondary">Center</Button>
         </PopoverTrigger>
         <PopoverContent align="center">
-          <p style="font-size: 13px; margin: 0; color: var(--color-foreground);">Aligned to center</p>
+          <p style="font-size: 13px; margin: 0; color: var(--color-foreground);">
+            Aligned to center
+          </p>
         </PopoverContent>
       </Popover>
 

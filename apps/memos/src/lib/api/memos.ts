@@ -1,4 +1,4 @@
-import type { MemoVisibility } from "$lib/types/memos";
+import type { MemoVisibility } from "$lib/types";
 
 export interface MemoUpdateInput {
   content?: string;

@@ -1,49 +1,49 @@
 <script module lang="ts">
-	import type { HTMLButtonAttributes } from "svelte/elements";
-	import type { Snippet } from "svelte";
+  import type { HTMLButtonAttributes } from "svelte/elements";
+  import type { Snippet } from "svelte";
 
-	export interface DropdownMenuItemProps extends HTMLButtonAttributes {
-		destructive?: boolean;
-		children?: Snippet;
-	}
+  export interface DropdownMenuItemProps extends HTMLButtonAttributes {
+    destructive?: boolean;
+    children?: Snippet;
+  }
 </script>
 
 <script lang="ts">
-	import { getContext } from "svelte";
-	import { cn } from "../../lib/utils";
-	import type { DropdownMenuContext } from "./DropdownMenu.svelte";
+  import { getContext } from "svelte";
+  import { cn } from "../../lib/utils";
+  import type { DropdownMenuContext } from "./DropdownMenu.svelte";
 
-	let {
-		destructive = false,
-		children,
-		class: extraClass = "",
-		onclick,
-		...rest
-	}: DropdownMenuItemProps = $props();
+  let {
+    destructive = false,
+    children,
+    class: extraClass = "",
+    onclick,
+    ...rest
+  }: DropdownMenuItemProps = $props();
 
-	const ctx = getContext<DropdownMenuContext>("dropdown-menu");
+  const ctx = getContext<DropdownMenuContext>("dropdown-menu");
 
-	function handleClick(e: MouseEvent & { currentTarget: HTMLButtonElement }) {
-		onclick?.(e);
-		ctx.close();
-	}
+  function handleClick(e: MouseEvent & { currentTarget: HTMLButtonElement }) {
+    onclick?.(e);
+    ctx.close();
+  }
 </script>
 
 <button
-	type="button"
-	role="menuitem"
-	tabindex={-1}
-	class={cn(
-		"flex w-full items-center gap-2 rounded-md px-2 py-1.5",
-		"font-sans text-sm cursor-pointer select-none outline-none",
-		"transition-colors duration-75",
-		"focus:bg-muted",
-		"disabled:pointer-events-none disabled:opacity-50",
-		destructive ? "text-error focus:bg-error/10" : "text-foreground",
-		extraClass,
-	)}
-	onclick={handleClick}
-	{...rest}
+  type="button"
+  role="menuitem"
+  tabindex={-1}
+  class={cn(
+    "flex w-full items-center gap-2 rounded-md px-2 py-1.5",
+    "font-sans text-sm cursor-pointer select-none outline-none",
+    "transition-colors duration-75",
+    "focus:bg-muted",
+    "disabled:pointer-events-none disabled:opacity-50",
+    destructive ? "text-error focus:bg-error/10" : "text-foreground",
+    extraClass,
+  )}
+  onclick={handleClick}
+  {...rest}
 >
-	{@render children?.()}
+  {@render children?.()}
 </button>

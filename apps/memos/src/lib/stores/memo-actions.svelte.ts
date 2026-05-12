@@ -1,7 +1,7 @@
 import { invalidateAll } from "$app/navigation";
 import { apiUpdateMemo, apiDeleteMemo } from "$lib/api/memos";
 import { showToast } from "$lib/stores/toast.svelte";
-import type { Memo } from "$lib/types/memos";
+import type { Memo } from "$lib/types";
 
 export function createDeleteActions() {
   let pendingDeleteId = $state<string | null>(null);

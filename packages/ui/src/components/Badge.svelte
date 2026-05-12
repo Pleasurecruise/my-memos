@@ -1,38 +1,38 @@
 <script module lang="ts">
-	import type { HTMLAttributes } from "svelte/elements";
-	import type { Snippet } from "svelte";
+  import type { HTMLAttributes } from "svelte/elements";
+  import type { Snippet } from "svelte";
 
-	export type BadgeVariant =
-		| "default"
-		| "secondary"
-		| "success"
-		| "warning"
-		| "destructive"
-		| "outline";
+  export type BadgeVariant =
+    | "default"
+    | "secondary"
+    | "success"
+    | "warning"
+    | "destructive"
+    | "outline";
 
-	export interface BadgeProps extends HTMLAttributes<HTMLSpanElement> {
-		variant?: BadgeVariant;
-		children?: Snippet;
-	}
+  export interface BadgeProps extends HTMLAttributes<HTMLSpanElement> {
+    variant?: BadgeVariant;
+    children?: Snippet;
+  }
 </script>
 
 <script lang="ts">
-	import { cn } from "../lib/utils";
+  import { cn } from "../lib/utils";
 
-	const base = "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium font-sans";
+  const base = "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium font-sans";
 
-	const variants: Record<BadgeVariant, string> = {
-		default: "bg-accent text-accent-foreground",
-		secondary: "bg-border text-foreground",
-		success: "bg-success/15 text-success",
-		warning: "bg-warning/15 text-warning",
-		destructive: "bg-error/15 text-error",
-		outline: "border border-border text-foreground",
-	};
+  const variants: Record<BadgeVariant, string> = {
+    default: "bg-accent text-accent-foreground",
+    secondary: "bg-border text-foreground",
+    success: "bg-success/15 text-success",
+    warning: "bg-warning/15 text-warning",
+    destructive: "bg-error/15 text-error",
+    outline: "border border-border text-foreground",
+  };
 
-	let { variant = "default", class: extraClass = "", children, ...rest }: BadgeProps = $props();
+  let { variant = "default", class: extraClass = "", children, ...rest }: BadgeProps = $props();
 </script>
 
 <span class={cn(base, variants[variant], extraClass)} {...rest}>
-	{@render children?.()}
+  {@render children?.()}
 </span>

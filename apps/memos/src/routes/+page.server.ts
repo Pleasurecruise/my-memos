@@ -11,7 +11,7 @@ export const load: PageServerLoad = async ({ platform, url }) => {
     };
   }
 
-  const filters = parsePageFilters(url, { includeSearch: true });
+  const filters = parsePageFilters(url);
 
   const [memos, tagCounts] = await Promise.all([
     listMemos(platform.env.DB, platform.env.MEMOS_CACHE, {

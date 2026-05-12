@@ -9,7 +9,6 @@
     "build": "pnpm --filter @my-memos/app build",
     "d1:migrate:local": "wrangler d1 migrations apply DB --local --persist-to .wrangler --config wrangler.toml",
     "d1:migrate:remote": "wrangler d1 migrations apply DB --remote --config wrangler.toml",
-    "d1:tables:local": "wrangler d1 execute DB --local --persist-to .wrangler --config wrangler.toml --command \"SELECT name FROM sqlite_master WHERE type='table' ORDER BY name\"",
     "check": "vp check && svelte-check --workspace packages/ui --tsconfig tsconfig.json && svelte-check --workspace apps/memos --tsconfig tsconfig.check.json && tsgo --noEmit",
     "lint": "vp lint",
     "format": "vp fmt"
@@ -27,5 +26,5 @@
     "vite-plus": "0.1.20",
     "wrangler": "4.90.0"
   },
-  "packageManager": "pnpm@11.0.8"
+  "packageManager": "pnpm@11.1.1"
 }

@@ -1,4 +1,4 @@
-export type { Memo, MemoVisibility, TagCount } from "$lib/types/memos";
+export type { Memo, MemoVisibility, TagCount } from "$lib/types";
 
 export interface MemoListFilters {
   search?: string;
@@ -9,13 +9,13 @@ export interface MemoListFilters {
 
 export interface CreateMemoInput {
   content: string;
-  visibility: import("$lib/types/memos").MemoVisibility;
+  visibility: import("$lib/types").MemoVisibility;
   tags: string[];
 }
 
 export interface UpdateMemoInput {
   content?: string;
-  visibility?: import("$lib/types/memos").MemoVisibility;
+  visibility?: import("$lib/types").MemoVisibility;
   tags?: string[];
   pinned?: boolean;
   archived?: boolean;

@@ -61,17 +61,23 @@
       </TabsList>
       <TabsContent>
         {#if active === "overview"}
-          <p style="font-family: var(--font-sans); font-size: 14px; color: var(--color-muted-foreground);">
+          <p
+            style="font-family: var(--font-sans); font-size: 14px; color: var(--color-muted-foreground);"
+          >
             Overview content
           </p>
         {/if}
         {#if active === "analytics"}
-          <p style="font-family: var(--font-sans); font-size: 14px; color: var(--color-muted-foreground);">
+          <p
+            style="font-family: var(--font-sans); font-size: 14px; color: var(--color-muted-foreground);"
+          >
             Analytics content
           </p>
         {/if}
         {#if active === "settings"}
-          <p style="font-family: var(--font-sans); font-size: 14px; color: var(--color-muted-foreground);">
+          <p
+            style="font-family: var(--font-sans); font-size: 14px; color: var(--color-muted-foreground);"
+          >
             Settings content
           </p>
         {/if}
@@ -87,14 +93,18 @@
           <TabsTrigger
             active={active2 === id}
             {disabled}
-            onclick={() => { if (!disabled) active2 = id; }}
+            onclick={() => {
+              if (!disabled) active2 = id;
+            }}
           >
             {label}
           </TabsTrigger>
         {/each}
       </TabsList>
       <TabsContent>
-        <p style="font-family: var(--font-sans); font-size: 14px; color: var(--color-muted-foreground);">
+        <p
+          style="font-family: var(--font-sans); font-size: 14px; color: var(--color-muted-foreground);"
+        >
           {active2.charAt(0).toUpperCase() + active2.slice(1)} content
         </p>
       </TabsContent>

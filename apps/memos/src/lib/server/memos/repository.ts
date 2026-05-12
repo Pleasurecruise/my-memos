@@ -1,7 +1,7 @@
 import type { D1Database, KVNamespace, R2Bucket } from "@cloudflare/workers-types";
 import { buildMemoR2Key, createMemoId, normalizeTags } from "./utils";
 import type { CreateMemoInput, UpdateMemoInput, MemoListFilters } from "./types";
-import type { Memo, TagCount } from "$lib/types/memos";
+import type { Memo, TagCount } from "$lib/types";
 
 interface MemoRow {
   id: string;
@@ -18,7 +18,6 @@ interface MemoRow {
 function rowToMemo(row: MemoRow): Memo {
   return {
     id: row.id,
-    r2Key: row.r2_key,
     content: row.excerpt,
     tags: JSON.parse(row.tags_json),
     createdAt: row.created_at,
@@ -115,7 +114,10 @@ export async function listTagCounts(db: D1Database, cache: KVNamespace): Promise
     )
     .all<{ name: string; count: number }>();
 
-  const tags = (results ?? []).map((row) => ({ name: row.name, count: Number(row.count) }));
+  const tags = (results ?? []).map((row) => ({
+    name: row.name,
+    count: Number(row.count),
+  }));
   await cache.put("memo:tags", JSON.stringify(tags));
   return tags;
 }
@@ -152,7 +154,6 @@ export async function createMemo(
 
   return {
     id,
-    r2Key,
     content,
     tags,
     createdAt: nowIso,

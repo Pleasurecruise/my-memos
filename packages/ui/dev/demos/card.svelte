@@ -42,8 +42,8 @@
         </CardHeader>
         <CardContent>
           <p style="font-size: 13px; color: var(--color-muted-foreground); line-height: 1.6;">
-            Cards group related information into a distinct visual container with consistent
-            spacing and a subtle border.
+            Cards group related information into a distinct visual container with consistent spacing
+            and a subtle border.
           </p>
         </CardContent>
       </Card>

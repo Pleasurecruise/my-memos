@@ -1,18 +1,18 @@
 <script module lang="ts">
-	import type { HTMLAttributes } from "svelte/elements";
-	import type { Snippet } from "svelte";
+  import type { HTMLAttributes } from "svelte/elements";
+  import type { Snippet } from "svelte";
 
-	export interface TableBodyProps extends HTMLAttributes<HTMLTableSectionElement> {
-		children?: Snippet;
-	}
+  export interface TableBodyProps extends HTMLAttributes<HTMLTableSectionElement> {
+    children?: Snippet;
+  }
 </script>
 
 <script lang="ts">
-	import { cn } from "../../lib/utils";
+  import { cn } from "../../lib/utils";
 
-	let { class: extraClass = "", children, ...rest }: TableBodyProps = $props();
+  let { class: extraClass = "", children, ...rest }: TableBodyProps = $props();
 </script>
 
 <tbody class={cn("[&_tr:last-child]:border-0", extraClass)} {...rest}>
-	{@render children?.()}
+  {@render children?.()}
 </tbody>

@@ -1,1 +1,3 @@
 @import "@my-memos/ui/styles";
+@import "./styles/prose.css";
+@import "./styles/editor.css";
