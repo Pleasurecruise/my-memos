@@ -7,6 +7,7 @@
 </script>
 
 <script lang="ts">
+	import { ChevronLeft, ChevronRight } from "lucide-svelte";
 	import { untrack } from "svelte";
 	import { cn } from "../lib/utils";
 
@@ -84,17 +85,13 @@
 <div class={cn("select-none font-sans", extraClass)}>
 	<div class="flex items-center justify-between mb-3">
 		<button onclick={prevMonth} class={navBtn} aria-label="Previous month">
-			<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-				<polyline points="15 18 9 12 15 6" />
-			</svg>
+			<ChevronLeft size={14} />
 		</button>
 		<span class="text-sm font-medium text-foreground">
 			{MONTHS[view.month]} {view.year}
 		</span>
 		<button onclick={nextMonth} class={navBtn} aria-label="Next month">
-			<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-				<polyline points="9 18 15 12 9 6" />
-			</svg>
+			<ChevronRight size={14} />
 		</button>
 	</div>
 

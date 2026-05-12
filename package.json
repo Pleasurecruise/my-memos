@@ -5,9 +5,11 @@
   "type": "module",
   "scripts": {
     "dev": "pnpm --filter @my-memos/app dev",
-    "dev:wrangler": "wrangler dev --remote",
     "dev:storybook": "pnpm --filter @my-memos/ui dev",
     "build": "pnpm --filter @my-memos/app build",
+    "d1:migrate:local": "wrangler d1 migrations apply DB --local --persist-to .wrangler --config wrangler.toml",
+    "d1:migrate:remote": "wrangler d1 migrations apply DB --remote --config wrangler.toml",
+    "d1:tables:local": "wrangler d1 execute DB --local --persist-to .wrangler --config wrangler.toml --command \"SELECT name FROM sqlite_master WHERE type='table' ORDER BY name\"",
     "check": "vp check && svelte-check --workspace packages/ui --tsconfig tsconfig.json && svelte-check --workspace apps/memos --tsconfig tsconfig.check.json && tsgo --noEmit",
     "lint": "vp lint",
     "format": "vp fmt"

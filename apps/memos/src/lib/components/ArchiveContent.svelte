@@ -1,0 +1,114 @@
+<script lang="ts">
+	import { isSameDay } from "date-fns";
+	import { updateQuery, stripHashtags } from "$lib/utils";
+	import { Badge, Button } from "@my-memos/ui";
+	import { RotateCcw, Trash2 } from "lucide-svelte";
+	import type { Memo } from "$lib/types/memos";
+	import { createDeleteActions, createRestoreActions } from "$lib/stores/memo-actions.svelte";
+	import MemoCard from "$lib/components/MemoCard.svelte";
+	import FilterBar from "$lib/components/FilterBar.svelte";
+	import DeleteDialog from "$lib/components/DeleteDialog.svelte";
+
+	interface ArchiveContentProps {
+		memos: Memo[];
+		initialTags: string[];
+		selectedDate: Date | undefined;
+	}
+
+	let { memos, initialTags, selectedDate }: ArchiveContentProps = $props();
+
+	const del = createDeleteActions();
+	const res = createRestoreActions();
+
+	const filtered = $derived(
+		memos.filter((m) => {
+			const updatedAt = new Date(m.updatedAt);
+			if (selectedDate && !isSameDay(updatedAt, selectedDate)) return false;
+			if (initialTags.length > 0 && !initialTags.some((t) => m.tags.includes(t))) return false;
+			return true;
+		}),
+	);
+
+	function toggleCardTag(tag: string) {
+		const next = initialTags.includes(tag)
+			? initialTags.filter((t) => t !== tag)
+			: [...initialTags, tag];
+		updateQuery({ tags: next });
+	}
+</script>
+
+<div class="max-w-2xl mx-auto px-4 py-8 space-y-5">
+	<div class="px-1">
+		<p class="text-sm font-medium text-foreground">Archive</p>
+		<p class="text-xs text-muted-foreground mt-0.5">Archived memos — restore or permanently delete.</p>
+	</div>
+
+	<FilterBar
+		{selectedDate}
+		activeTags={initialTags}
+		onRemoveTag={(tag) => updateQuery({ tags: initialTags.filter((t) => t !== tag) })}
+	/>
+
+	<div class="space-y-3">
+		{#each filtered as memo (memo.id)}
+			<MemoCard {memo} {selectedDate}>
+				{#snippet content()}
+					<p class="text-sm text-foreground leading-relaxed whitespace-pre-wrap wrap-break-word">
+						{stripHashtags(memo.content)}
+					</p>
+					{#if memo.tags.length > 0}
+						<div class="flex flex-wrap gap-1.5 mt-3">
+							{#each memo.tags as tag (tag)}
+								<button type="button" onclick={() => toggleCardTag(tag)}>
+									<Badge
+										variant="outline"
+										class={initialTags.includes(tag)
+											? "border-accent/50 bg-accent/10 text-accent cursor-pointer"
+											: "border-accent/25 text-accent cursor-pointer hover:bg-accent/8"}
+									>
+										#{tag}
+									</Badge>
+								</button>
+							{/each}
+						</div>
+					{/if}
+				{/snippet}
+
+				{#snippet actions()}
+					<Button
+						variant="outline"
+						size="sm"
+						class="gap-1.5 font-normal text-muted-foreground"
+						disabled={res.restoringId === memo.id}
+						onclick={() => res.restore(memo.id)}
+					>
+						<RotateCcw size={12} />
+						{res.restoringId === memo.id ? "Restoring…" : "Restore"}
+					</Button>
+					<span class="flex-1"></span>
+					<Button
+						variant="destructive"
+						size="sm"
+						class="gap-1.5 font-normal"
+						onclick={() => del.request(memo.id)}
+					>
+						<Trash2 size={12} />
+						Delete
+					</Button>
+				{/snippet}
+			</MemoCard>
+		{/each}
+
+		{#if filtered.length === 0}
+			<p class="text-center py-16 text-muted-foreground text-sm">No archived memos.</p>
+		{/if}
+	</div>
+</div>
+
+<DeleteDialog
+	bind:open={del.showDeleteDialog}
+	isDeleting={del.isDeleting}
+	title="Permanently delete this memo?"
+	onConfirm={del.confirm}
+	onCancel={del.cancel}
+/>

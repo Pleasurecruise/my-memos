@@ -9,6 +9,7 @@
 </script>
 
 <script lang="ts">
+	import { ChevronDown } from "lucide-svelte";
 	import { cn } from "../lib/utils";
 
 	const base = cn(
@@ -33,19 +34,6 @@
 		{@render children?.()}
 	</select>
 	<span class="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground">
-		<svg
-			xmlns="http://www.w3.org/2000/svg"
-			width="14"
-			height="14"
-			viewBox="0 0 24 24"
-			fill="none"
-			stroke="currentColor"
-			stroke-width="2"
-			stroke-linecap="round"
-			stroke-linejoin="round"
-			aria-hidden="true"
-		>
-			<path d="m6 9 6 6 6-6" />
-		</svg>
+		<ChevronDown size={14} aria-hidden="true" />
 	</span>
 </div>

@@ -1,4 +1,5 @@
 import { listMemos, listTagCounts } from "$lib/server/memos";
+import { parsePageFilters } from "$lib/server/filters";
 import type { PageServerLoad } from "./$types";
 
 export const load: PageServerLoad = async ({ platform, url }) => {
@@ -6,34 +7,24 @@ export const load: PageServerLoad = async ({ platform, url }) => {
     return {
       memos: [],
       tags: [],
-      filters: {
-        search: "",
-        date: "",
-        tag: "",
-      },
+      filters: { search: "", date: "", tags: [] as string[] },
     };
   }
 
-  const search = url.searchParams.get("search")?.trim() ?? "";
-  const date = url.searchParams.get("date")?.trim() ?? "";
-  const tag = url.searchParams.get("tag")?.trim().toLowerCase() ?? "";
+  const filters = parsePageFilters(url, { includeSearch: true });
 
-  const [memos, tags] = await Promise.all([
+  const [memos, tagCounts] = await Promise.all([
     listMemos(platform.env.DB, platform.env.MEMOS_CACHE, {
-      search: search || undefined,
-      date: date || undefined,
-      tag: tag || undefined,
+      search: filters.search || undefined,
+      date: filters.date || undefined,
+      tags: filters.tags.length > 0 ? filters.tags : undefined,
     }),
     listTagCounts(platform.env.DB, platform.env.MEMOS_CACHE),
   ]);
 
   return {
     memos,
-    tags,
-    filters: {
-      search,
-      date,
-      tag,
-    },
+    tags: tagCounts,
+    filters,
   };
 };

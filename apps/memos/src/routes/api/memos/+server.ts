@@ -3,7 +3,7 @@ import { json } from "@sveltejs/kit";
 import type { RequestHandler } from "./$types";
 import type { MemoVisibility } from "$lib/types/memos";
 
-const VISIBILITIES = new Set<MemoVisibility>(["public", "protected", "private"]);
+const VISIBILITIES = new Set<MemoVisibility>(["public", "private"]);
 
 export const POST: RequestHandler = async ({ request, platform }) => {
   if (!platform) {

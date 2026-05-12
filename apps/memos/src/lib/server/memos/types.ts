@@ -3,8 +3,8 @@ export type { Memo, MemoVisibility, TagCount } from "$lib/types/memos";
 export interface MemoListFilters {
   search?: string;
   date?: string;
-  includeArchived?: boolean;
-  tag?: string;
+  archivedOnly?: boolean;
+  tags?: string[];
 }
 
 export interface CreateMemoInput {

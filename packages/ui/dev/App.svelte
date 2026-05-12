@@ -1,7 +1,8 @@
 <script lang="ts">
+	import type { Component } from "svelte";
 	import { applyTheme } from "../src";
 
-	type DemoModule = { title?: string; default: any };
+	type DemoModule = { title?: string; default: Component };
 
 	const modules = import.meta.glob<DemoModule>("./demos/*.svelte", { eager: true });
 

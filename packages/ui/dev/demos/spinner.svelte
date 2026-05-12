@@ -16,8 +16,8 @@
     },
     {
       name: "...props",
-      type: 'ComponentProps<"svg">',
-      description: "All native svg attributes.",
+      type: 'ComponentProps<"span">',
+      description: "All native span attributes.",
     },
   ];
 

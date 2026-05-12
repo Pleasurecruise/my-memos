@@ -1,29 +1,38 @@
 <script lang="ts">
-	import { Button, DatePicker, Separator, cn } from "@my-memos/ui";
+	import { goto } from "$app/navigation";
+	import { page } from "$app/stores";
+	import { Button, DatePicker, Separator, Tooltip, cn } from "@my-memos/ui";
+	import { format } from "date-fns";
 	import { updateQuery } from "$lib/utils";
-	import { Home, Compass, Archive, Sun, Moon, CalendarDays, X } from "lucide-svelte";
+	import { Home, Archive, Sun, Moon, CalendarDays, X, PenLine } from "lucide-svelte";
 	import type { TagCount } from "$lib/types/memos";
 
-	type NavKey = "home" | "explore" | "archive";
-
-	const NAV_ITEMS: { key: NavKey; label: string; icon: typeof Home }[] = [
-		{ key: "home", label: "Home", icon: Home },
-		{ key: "explore", label: "Explore", icon: Compass },
-		{ key: "archive", label: "Archive", icon: Archive },
-	];
+	const NAV_ITEMS = [
+		{ href: "/", label: "Home", icon: Home },
+		{ href: "/archive", label: "Archive", icon: Archive },
+	] as const;
 
 	interface SidebarProps {
 		tags: TagCount[];
-		activeTag: string;
+		activeTags: string[];
 		isDark: boolean;
+		open: boolean;
 		onToggleTheme: () => void;
+		onClose: () => void;
 		selectedDate: Date | undefined;
 		onDateChange: (date: Date | undefined) => void;
 	}
 
-	let { tags, activeTag, isDark, onToggleTheme, selectedDate, onDateChange }: SidebarProps = $props();
-
-	let activeNav = $state<NavKey>("home");
+	let {
+		tags,
+		activeTags,
+		isDark,
+		open,
+		onToggleTheme,
+		onClose,
+		selectedDate,
+		onDateChange,
+	}: SidebarProps = $props();
 
 	function handleDateChange(date: Date) {
 		if (
@@ -33,52 +42,59 @@
 			date.getDate() === selectedDate.getDate()
 		) {
 			onDateChange(undefined);
-			updateQuery({ date: undefined });
+			updateQuery({ date: null });
 		} else {
 			onDateChange(date);
-			updateQuery({ date: formatDateParam(date) });
+			updateQuery({ date: format(date, "yyyy-MM-dd") });
 		}
 	}
 
-	function formatDateParam(date: Date): string {
-		const year = date.getFullYear();
-		const month = String(date.getMonth() + 1).padStart(2, "0");
-		const day = String(date.getDate()).padStart(2, "0");
-		return `${year}-${month}-${day}`;
-	}
-
 	function toggleTag(tag: string) {
-		updateQuery({ tag: activeTag === tag ? undefined : tag });
+		const next = activeTags.length === 1 && activeTags[0] === tag ? [] : [tag];
+		updateQuery({ tags: next });
 	}
 
 	function clearDate() {
 		onDateChange(undefined);
-		updateQuery({ date: undefined });
+		updateQuery({ date: null });
 	}
 </script>
 
-<aside class="flex flex-col w-60 shrink-0 h-screen border-r border-border bg-background overflow-y-auto">
-	<div class="px-5 pt-5 pb-4 shrink-0">
+<aside
+	class={cn(
+		"fixed inset-y-0 left-0 z-40 md:relative md:z-auto",
+		"flex flex-col w-60 shrink-0 h-screen border-r border-border bg-background overflow-y-auto",
+		"transition-transform duration-200 ease-in-out",
+		!open && "-translate-x-full md:translate-x-0",
+	)}
+>
+	<div class="px-5 pt-5 pb-4 shrink-0 flex items-center justify-between">
 		<span class="flex items-center gap-2 text-accent font-serif font-semibold text-lg tracking-tight select-none">
-			<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-				<path d="M12 20h9" />
-				<path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
-			</svg>
+			<PenLine size={17} strokeWidth={1.8} />
 			my memos
 		</span>
+		<Tooltip content="Close sidebar" side="right">
+			<Button
+				variant="ghost"
+				size="icon"
+				onclick={onClose}
+				class="h-7 w-7 text-muted-foreground md:hidden"
+			>
+				<X size={15} />
+			</Button>
+		</Tooltip>
 	</div>
 
 	<nav class="px-3 space-y-0.5 shrink-0">
-		{#each NAV_ITEMS as { key, label, icon: Icon } (key)}
+		{#each NAV_ITEMS as { href, label, icon: Icon } (href)}
+			{@const active = $page.url.pathname === href}
 			<Button
 				variant="ghost"
 				size="sm"
-				onclick={() => (activeNav = key)}
+				onclick={() => goto(href)}
 				class={cn(
 					"w-full justify-start gap-2.5 font-normal",
-					activeNav === key
-						? "bg-accent/10 text-accent hover:bg-accent/10"
-						: "text-muted-foreground",
+					active ? "bg-accent/10 text-accent hover:bg-accent/10" : "text-muted-foreground",
 				)}
 			>
 				<Icon size={15} />
@@ -96,14 +112,16 @@
 				Filter by date
 			</span>
 			{#if selectedDate}
-				<Button
-					variant="ghost"
-					size="icon"
-					onclick={clearDate}
-					class="h-5 w-5 text-muted-foreground"
-				>
-					<X size={11} />
-				</Button>
+				<Tooltip content="Clear date filter" side="right">
+					<Button
+						variant="ghost"
+						size="icon"
+						onclick={clearDate}
+						class="h-5 w-5 text-muted-foreground"
+					>
+						<X size={11} />
+					</Button>
+				</Tooltip>
 			{/if}
 		</div>
 		<DatePicker value={selectedDate} onChange={handleDateChange} />
@@ -123,7 +141,7 @@
 					onclick={() => toggleTag(name)}
 					class={cn(
 						"w-full justify-between font-normal",
-						activeTag === name
+						activeTags.includes(name)
 							? "bg-accent/10 text-accent hover:bg-accent/10"
 							: "text-muted-foreground",
 					)}
@@ -139,19 +157,21 @@
 	</div>
 
 	<div class="px-3 py-4 shrink-0 border-t border-border">
-		<Button
-			variant="ghost"
-			size="sm"
-			onclick={onToggleTheme}
-			class="w-full justify-start gap-2.5 font-normal text-muted-foreground"
-		>
-			{#if isDark}
-				<Sun size={14} />
-				Light mode
-			{:else}
-				<Moon size={14} />
-				Dark mode
-			{/if}
-		</Button>
+		<Tooltip content={isDark ? "Switch to light mode" : "Switch to dark mode"} side="top">
+			<Button
+				variant="ghost"
+				size="sm"
+				onclick={onToggleTheme}
+				class="w-full justify-start gap-2.5 font-normal text-muted-foreground"
+			>
+				{#if isDark}
+					<Sun size={14} />
+					Light mode
+				{:else}
+					<Moon size={14} />
+					Dark mode
+				{/if}
+			</Button>
+		</Tooltip>
 	</div>
 </aside>

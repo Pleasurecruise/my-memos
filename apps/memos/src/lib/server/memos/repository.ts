@@ -39,10 +39,11 @@ function buildListQuery(filters: MemoListFilters) {
   const conditions: string[] = [];
   const bindings: unknown[] = [];
 
-  if (!filters.includeArchived) conditions.push("archived = 0");
+  if (filters.archivedOnly) conditions.push("archived = 1");
+  else conditions.push("archived = 0");
 
   if (filters.date) {
-    conditions.push("date(created_at) = ?");
+    conditions.push("substr(updated_at, 1, 10) = ?");
     bindings.push(filters.date);
   }
 
@@ -51,11 +52,12 @@ function buildListQuery(filters: MemoListFilters) {
     bindings.push(`%${filters.search}%`);
   }
 
-  if (filters.tag) {
-    conditions.push(
-      "EXISTS (SELECT 1 FROM json_each(memos.tags_json) WHERE lower(json_each.value) = ?)",
+  if (filters.tags && filters.tags.length > 0) {
+    const tagClauses = filters.tags.map(
+      () => "EXISTS (SELECT 1 FROM json_each(memos.tags_json) WHERE lower(json_each.value) = ?)",
     );
-    bindings.push(filters.tag.toLowerCase());
+    conditions.push(`(${tagClauses.join(" OR ")})`);
+    for (const t of filters.tags) bindings.push(t.toLowerCase());
   }
 
   const where = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
@@ -75,7 +77,8 @@ export async function listMemos(
   cache: KVNamespace,
   filters: MemoListFilters = {},
 ): Promise<Memo[]> {
-  const shouldCache = !filters.search && !filters.date && !filters.tag && !filters.includeArchived;
+  const shouldCache =
+    !filters.search && !filters.date && !filters.tags?.length && !filters.archivedOnly;
 
   if (shouldCache) {
     const cached = await cache.get("memo:list");

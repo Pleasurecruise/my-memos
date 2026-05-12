@@ -1,4 +1,4 @@
-export type MemoVisibility = "public" | "protected" | "private";
+export type MemoVisibility = "public" | "private";
 
 export interface Memo {
   id: string;

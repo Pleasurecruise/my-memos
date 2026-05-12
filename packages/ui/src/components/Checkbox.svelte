@@ -7,6 +7,7 @@
 </script>
 
 <script lang="ts">
+	import { Check } from "lucide-svelte";
 	import { cn } from "../lib/utils";
 
 	let { error, class: extraClass = "", ...rest }: CheckboxProps = $props();
@@ -25,16 +26,6 @@
 			error ? "border-error bg-background" : "border-border bg-background",
 		)}
 	>
-		<svg
-			class="h-2.5 w-2.5"
-			viewBox="0 0 10 8"
-			fill="none"
-			stroke="currentColor"
-			stroke-width="1.5"
-			stroke-linecap="round"
-			stroke-linejoin="round"
-		>
-			<path d="M1 4l3 3 5-6" />
-		</svg>
+		<Check size={10} strokeWidth={2.5} />
 	</span>
 </span>
