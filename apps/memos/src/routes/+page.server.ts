@@ -12,20 +12,20 @@ export const load: PageServerLoad = async ({ platform, url, locals }) => {
   }
 
   const filters = parsePageFilters(url);
+  const publicOnly = !locals.user;
 
   const [memos, tagCounts] = await Promise.all([
     listMemos(platform.env.DB, platform.env.MEMOS_CACHE, {
       search: filters.search || undefined,
       date: filters.date || undefined,
       tags: filters.tags.length > 0 ? filters.tags : undefined,
+      publicOnly,
     }),
-    listTagCounts(platform.env.DB, platform.env.MEMOS_CACHE),
+    listTagCounts(platform.env.DB, platform.env.MEMOS_CACHE, publicOnly),
   ]);
 
-  const visibleMemos = locals.user ? memos : memos.filter((m) => m.visibility !== "private");
-
   return {
-    memos: visibleMemos,
+    memos,
     tags: tagCounts,
     filters,
   };

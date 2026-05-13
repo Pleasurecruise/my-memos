@@ -41,6 +41,8 @@ function buildListQuery(filters: MemoListFilters) {
   if (filters.archivedOnly) conditions.push("archived = 1");
   else conditions.push("archived = 0");
 
+  if (filters.publicOnly) conditions.push("visibility != 'private'");
+
   if (filters.date) {
     conditions.push("substr(updated_at, 1, 10) = ?");
     bindings.push(filters.date);
@@ -98,16 +100,22 @@ export async function listMemos(
   return memos;
 }
 
-export async function listTagCounts(db: D1Database, cache: KVNamespace): Promise<TagCount[]> {
-  const cached = await cache.get("memo:tags", "json");
+export async function listTagCounts(
+  db: D1Database,
+  cache: KVNamespace,
+  publicOnly = false,
+): Promise<TagCount[]> {
+  const cacheKey = publicOnly ? "memo:tags:public" : "memo:tags";
+  const cached = await cache.get(cacheKey, "json");
   if (cached) return cached as TagCount[];
 
+  const visibilityClause = publicOnly ? "AND visibility != 'private'" : "";
   const { results } = await db
     .prepare(
       `
 			SELECT lower(json_each.value) AS name, COUNT(*) AS count
 			FROM memos, json_each(memos.tags_json)
-			WHERE archived = 0
+			WHERE archived = 0 ${visibilityClause}
 			GROUP BY lower(json_each.value)
 			ORDER BY count DESC, name ASC
 		`,
@@ -118,7 +126,7 @@ export async function listTagCounts(db: D1Database, cache: KVNamespace): Promise
     name: row.name,
     count: Number(row.count),
   }));
-  await cache.put("memo:tags", JSON.stringify(tags));
+  await cache.put(cacheKey, JSON.stringify(tags));
   return tags;
 }
 
@@ -150,7 +158,11 @@ export async function createMemo(
     .bind(id, r2Key, JSON.stringify(tags), excerpt, nowIso, nowIso, input.visibility)
     .run();
 
-  await Promise.all([cache.delete("memo:list"), cache.delete("memo:tags")]);
+  await Promise.all([
+    cache.delete("memo:list"),
+    cache.delete("memo:tags"),
+    cache.delete("memo:tags:public"),
+  ]);
 
   return {
     id,
@@ -222,7 +234,11 @@ export async function updateMemo(
     .bind(...bindings)
     .run();
 
-  await Promise.all([cache.delete("memo:list"), cache.delete("memo:tags")]);
+  await Promise.all([
+    cache.delete("memo:list"),
+    cache.delete("memo:tags"),
+    cache.delete("memo:tags:public"),
+  ]);
 
   const updated = await db.prepare("SELECT * FROM memos WHERE id = ?").bind(id).first<MemoRow>();
 
@@ -243,5 +259,9 @@ export async function deleteMemo(
 
   await db.prepare("DELETE FROM memos WHERE id = ?").bind(id).run();
   await bucket.delete(existing.r2_key);
-  await Promise.all([cache.delete("memo:list"), cache.delete("memo:tags")]);
+  await Promise.all([
+    cache.delete("memo:list"),
+    cache.delete("memo:tags"),
+    cache.delete("memo:tags:public"),
+  ]);
 }

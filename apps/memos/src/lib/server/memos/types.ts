@@ -5,6 +5,7 @@ export interface MemoListFilters {
   date?: string;
   archivedOnly?: boolean;
   tags?: string[];
+  publicOnly?: boolean;
 }
 
 export interface CreateMemoInput {
