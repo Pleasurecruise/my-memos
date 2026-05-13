@@ -1,8 +1,10 @@
 <script lang="ts">
   import { isSameDay } from "date-fns";
   import { invalidateAll } from "$app/navigation";
+  import { page } from "$app/state";
   import { updateQuery } from "$lib/utils";
   import { apiCreateMemo } from "$lib/api/memos";
+  import { showToast } from "$lib/stores/toast.svelte";
   import { Button, Input, Separator, Alert, AlertDescription } from "@my-memos/ui";
   import { Search, Star, Pencil, Archive, Trash2, X, Check, Globe, Lock } from "lucide-svelte";
   import type { Memo, MemoVisibility, TagCount } from "$lib/types";
@@ -31,7 +33,7 @@
 
   let search = $state("");
   let content = $state("");
-  let visibility = $state<MemoVisibility>("public");
+  let visibility = $state<MemoVisibility>("private");
   let isSaving = $state(false);
   let error = $state("");
 
@@ -162,7 +164,13 @@
           size="sm"
           class="text-muted-foreground gap-1.5 font-normal"
           disabled={arc.archivingId === memo.id}
-          onclick={() => arc.archive(memo.id)}
+          onclick={() => {
+            if (!page.data.user) {
+              showToast("error", "Please sign in to archive memos");
+              return;
+            }
+            arc.archive(memo.id);
+          }}
         >
           <Archive size={12} />
           {arc.archivingId === memo.id ? "Archiving…" : "Archive"}

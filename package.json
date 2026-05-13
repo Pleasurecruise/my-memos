@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "pnpm --filter @my-memos/app dev",
+    "dev:wrangler": "pnpm build && wrangler dev --remote",
     "dev:storybook": "pnpm --filter @my-memos/ui dev",
     "build": "pnpm --filter @my-memos/app build",
     "d1:migrate:local": "wrangler d1 migrations apply DB --local --persist-to .wrangler --config wrangler.toml",

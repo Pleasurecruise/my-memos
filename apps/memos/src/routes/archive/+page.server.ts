@@ -1,8 +1,12 @@
+import { redirect } from "@sveltejs/kit";
 import { listMemos, listTagCounts } from "$lib/server/memos";
 import { parsePageFilters } from "$lib/server/filters";
 import type { PageServerLoad } from "./$types";
 
-export const load: PageServerLoad = async ({ platform, url }) => {
+export const load: PageServerLoad = async ({ platform, url, locals }) => {
+  if (!locals.user) {
+    redirect(302, `/login?redirect=${url.pathname}`);
+  }
   if (!platform) {
     return {
       memos: [],

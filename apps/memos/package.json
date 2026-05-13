@@ -17,6 +17,7 @@
     "@tiptap/markdown": "3.23.1",
     "@tiptap/pm": "3.23.1",
     "@tiptap/starter-kit": "3.23.1",
+    "better-auth": "1.6.11",
     "date-fns": "4.1.0",
     "lucide-svelte": "1.0.1",
     "marked": "18.0.3"

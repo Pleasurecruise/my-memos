@@ -5,7 +5,11 @@ import type { MemoVisibility, UpdateMemoInput } from "$lib/server/memos/types";
 
 const VISIBILITIES = new Set<MemoVisibility>(["public", "private"]);
 
-export const PATCH: RequestHandler = async ({ request, params, platform }) => {
+export const PATCH: RequestHandler = async ({ request, params, platform, locals }) => {
+  if (!locals.user) {
+    return json({ error: "Unauthorized." }, { status: 401 });
+  }
+
   if (!platform) {
     return json({ error: "Cloudflare platform bindings are unavailable." }, { status: 500 });
   }
@@ -55,7 +59,11 @@ export const PATCH: RequestHandler = async ({ request, params, platform }) => {
   }
 };
 
-export const DELETE: RequestHandler = async ({ params, platform }) => {
+export const DELETE: RequestHandler = async ({ params, platform, locals }) => {
+  if (!locals.user) {
+    return json({ error: "Unauthorized." }, { status: 401 });
+  }
+
   if (!platform) {
     return json({ error: "Cloudflare platform bindings are unavailable." }, { status: 500 });
   }

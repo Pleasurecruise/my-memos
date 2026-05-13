@@ -4,6 +4,9 @@ compatibility_date = "2026-05-05"
 compatibility_flags = ["nodejs_compat"]
 upload_source_maps = true
 
+[vars]
+BETTER_AUTH_URL = "https://memos.you-find.me"
+
 [assets]
 directory = "apps/memos/.svelte-kit/cloudflare"
 binding = "ASSETS"

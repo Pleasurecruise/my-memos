@@ -2,7 +2,7 @@ import { listMemos, listTagCounts } from "$lib/server/memos";
 import { parsePageFilters } from "$lib/server/filters";
 import type { PageServerLoad } from "./$types";
 
-export const load: PageServerLoad = async ({ platform, url }) => {
+export const load: PageServerLoad = async ({ platform, url, locals }) => {
   if (!platform) {
     return {
       memos: [],
@@ -22,8 +22,10 @@ export const load: PageServerLoad = async ({ platform, url }) => {
     listTagCounts(platform.env.DB, platform.env.MEMOS_CACHE),
   ]);
 
+  const visibleMemos = locals.user ? memos : memos.filter((m) => m.visibility !== "private");
+
   return {
-    memos,
+    memos: visibleMemos,
     tags: tagCounts,
     filters,
   };

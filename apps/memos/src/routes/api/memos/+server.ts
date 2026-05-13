@@ -5,7 +5,11 @@ import type { MemoVisibility } from "$lib/types";
 
 const VISIBILITIES = new Set<MemoVisibility>(["public", "private"]);
 
-export const POST: RequestHandler = async ({ request, platform }) => {
+export const POST: RequestHandler = async ({ request, platform, locals }) => {
+  if (!locals.user) {
+    return json({ error: "Unauthorized." }, { status: 401 });
+  }
+
   if (!platform) {
     return json({ error: "Cloudflare platform bindings are unavailable." }, { status: 500 });
   }
