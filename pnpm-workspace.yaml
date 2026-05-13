@@ -9,3 +9,5 @@ allowBuilds:
 
 overrides:
   oxfmt: "0.49.0"
+
+minimumReleaseAge: 1440

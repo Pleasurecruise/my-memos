@@ -41,7 +41,7 @@ function buildListQuery(filters: MemoListFilters) {
   if (filters.archivedOnly) conditions.push("archived = 1");
   else conditions.push("archived = 0");
 
-  if (filters.publicOnly) conditions.push("visibility != 'private'");
+  if (filters.publicOnly) conditions.push("visibility = 'public'");
 
   if (filters.date) {
     conditions.push("substr(updated_at, 1, 10) = ?");
@@ -80,9 +80,10 @@ export async function listMemos(
 ): Promise<Memo[]> {
   const shouldCache =
     !filters.search && !filters.date && !filters.tags?.length && !filters.archivedOnly;
+  const cacheKey = filters.publicOnly ? "memo:list:public" : "memo:list";
 
   if (shouldCache) {
-    const cached = await cache.get("memo:list");
+    const cached = await cache.get(cacheKey);
     if (cached) return JSON.parse(cached) as Memo[];
   }
 
@@ -94,7 +95,7 @@ export async function listMemos(
   const memos = (results ?? []).map(rowToMemo);
 
   if (shouldCache) {
-    await cache.put("memo:list", JSON.stringify(memos));
+    await cache.put(cacheKey, JSON.stringify(memos));
   }
 
   return memos;
@@ -109,7 +110,7 @@ export async function listTagCounts(
   const cached = await cache.get(cacheKey, "json");
   if (cached) return cached as TagCount[];
 
-  const visibilityClause = publicOnly ? "AND visibility != 'private'" : "";
+  const visibilityClause = publicOnly ? "AND visibility = 'public'" : "";
   const { results } = await db
     .prepare(
       `
@@ -160,6 +161,7 @@ export async function createMemo(
 
   await Promise.all([
     cache.delete("memo:list"),
+    cache.delete("memo:list:public"),
     cache.delete("memo:tags"),
     cache.delete("memo:tags:public"),
   ]);
@@ -236,6 +238,7 @@ export async function updateMemo(
 
   await Promise.all([
     cache.delete("memo:list"),
+    cache.delete("memo:list:public"),
     cache.delete("memo:tags"),
     cache.delete("memo:tags:public"),
   ]);
@@ -261,6 +264,7 @@ export async function deleteMemo(
   await bucket.delete(existing.r2_key);
   await Promise.all([
     cache.delete("memo:list"),
+    cache.delete("memo:list:public"),
     cache.delete("memo:tags"),
     cache.delete("memo:tags:public"),
   ]);
