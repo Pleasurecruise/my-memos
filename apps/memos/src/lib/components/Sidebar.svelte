@@ -17,10 +17,11 @@
   import { signIn, signOut } from "$lib/auth-client";
   import { Home, Archive, Sun, Moon, CalendarDays, X, PenLine, LogIn, LogOut } from "lucide-svelte";
   import type { TagCount } from "$lib/types";
+  import { showToast } from "$lib/stores/toast.svelte";
 
   const NAV_ITEMS = [
-    { href: "/", label: "Home", icon: Home },
-    { href: "/archive", label: "Archive", icon: Archive },
+    { href: "/", label: "Home", icon: Home, requiresAuth: false },
+    { href: "/archive", label: "Archive", icon: Archive, requiresAuth: true },
   ] as const;
 
   interface SidebarProps {
@@ -44,6 +45,14 @@
     selectedDate,
     onDateChange,
   }: SidebarProps = $props();
+
+  function handleNav(href: string, requiresAuth: boolean) {
+    if (requiresAuth && !page.data.user) {
+      showToast("error", "请先登录", "需要登录才能访问该页面");
+      return;
+    }
+    goto(href);
+  }
 
   function handleDateChange(date: Date) {
     if (
@@ -100,12 +109,12 @@
     </div>
 
     <nav class="px-3 space-y-0.5 shrink-0">
-      {#each NAV_ITEMS as { href, label, icon: Icon } (href)}
+      {#each NAV_ITEMS as { href, label, icon: Icon, requiresAuth } (href)}
         {@const active = page.url.pathname === href}
         <Button
           variant="ghost"
           size="sm"
-          onclick={() => goto(href)}
+          onclick={() => handleNav(href, requiresAuth)}
           class={cn(
             "w-full justify-start gap-2.5 font-normal",
             active ? "bg-accent/10 text-accent hover:bg-accent/10" : "text-muted-foreground",
