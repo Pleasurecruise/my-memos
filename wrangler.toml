@@ -29,10 +29,6 @@ binding = "MEMOS_BUCKET"
 bucket_name = "cherry-studio"
 remote = true
 
-[[migrations]]
-tag = "v2"
-deleted_classes = ["ChatAgent"]
-
 [observability]
 [observability.logs]
 enabled = true

@@ -1,7 +1,6 @@
 import { json } from "@sveltejs/kit";
 import type { RequestHandler } from "./$types";
-import { createAiGateway } from "ai-gateway-provider";
-import { createUnified } from "ai-gateway-provider/providers/unified";
+import { createOpenAI } from "@ai-sdk/openai";
 import { streamText, tool, stepCountIs, type ModelMessage } from "ai";
 import { z } from "zod";
 
@@ -23,19 +22,16 @@ export const POST: RequestHandler = async ({ request, platform, locals }) => {
   if (memoryMd) systemParts.push(`\n\n<memory>\n${memoryMd}\n</memory>`);
   const system = systemParts.join("");
 
-  const aigateway = createAiGateway({
-    accountId: platform.env.CF_ACCOUNT_ID,
-    gateway: platform.env.CF_GATEWAY_NAME,
-    apiKey: platform.env.CF_AIG_TOKEN,
-  });
-
-  const unifiedProvider = createUnified({
+  const gatewayBase = `https://gateway.ai.cloudflare.com/v1/${platform.env.CF_ACCOUNT_ID}/${platform.env.CF_GATEWAY_NAME}/compat`;
+  const provider = createOpenAI({
+    baseURL: gatewayBase,
     apiKey: platform.env.OPENAI_API_KEY,
+    headers: { "cf-aig-authorization": `Bearer ${platform.env.CF_AIG_TOKEN}` },
   });
 
   const result = streamText({
-    model: aigateway(
-      unifiedProvider(`custom-${platform.env.AI_GATEWAY_PROVIDER_SLUG}/deepseek-chat`),
+    model: provider.chat(
+      `custom-${platform.env.AI_GATEWAY_PROVIDER_SLUG}/deepseek-ai/DeepSeek-V4-Flash`,
     ),
     system,
     messages,
