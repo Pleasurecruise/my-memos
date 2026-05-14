@@ -1,8 +1,9 @@
 import { getAuth } from "$lib/server/auth";
 import { svelteKitHandler } from "better-auth/svelte-kit";
 import { building } from "$app/environment";
+import type { Handle } from "@sveltejs/kit";
 
-export async function handle({ event, resolve }) {
+export const handle: Handle = async ({ event, resolve }) => {
   if (event.url.pathname === "/favicon.ico") {
     return Response.redirect(new URL("/favicon.png", event.url), 301);
   }
@@ -21,4 +22,4 @@ export async function handle({ event, resolve }) {
   }
 
   return svelteKitHandler({ event, resolve, auth, building });
-}
+};

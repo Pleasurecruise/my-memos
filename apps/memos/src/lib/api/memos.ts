@@ -3,6 +3,7 @@ import type { MemoVisibility } from "$lib/types";
 export interface MemoUpdateInput {
   content?: string;
   visibility?: MemoVisibility;
+  tags?: string[];
   pinned?: boolean;
   archived?: boolean;
 }

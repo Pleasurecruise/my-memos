@@ -1,0 +1,45 @@
+.chat-outer {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+.chat-layout {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  max-width: 720px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 0 1rem;
+  position: relative;
+}
+
+.chat-welcome {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 1.5rem;
+}
+
+.chat-welcome-text {
+  font-size: 1.125rem;
+  color: var(--color-muted-foreground);
+}
+
+.chat-welcome-input {
+  width: 100%;
+}
+
+.chat-thread {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.chat-input-wrap {
+  padding: 1rem 0;
+  flex-shrink: 0;
+}

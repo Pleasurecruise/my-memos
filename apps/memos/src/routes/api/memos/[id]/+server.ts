@@ -19,6 +19,7 @@ export const PATCH: RequestHandler = async ({ request, params, platform, locals 
   const body = (await request.json()) as {
     content?: unknown;
     visibility?: unknown;
+    tags?: unknown;
     pinned?: unknown;
     archived?: unknown;
   };
@@ -39,6 +40,13 @@ export const PATCH: RequestHandler = async ({ request, params, platform, locals 
       return json({ error: "Memo visibility is invalid." }, { status: 400 });
     }
     input.visibility = body.visibility as MemoVisibility;
+  }
+
+  if (body.tags !== undefined) {
+    if (!Array.isArray(body.tags) || body.tags.some((tag) => typeof tag !== "string")) {
+      return json({ error: "Memo tags are invalid." }, { status: 400 });
+    }
+    input.tags = body.tags;
   }
 
   if (body.pinned !== undefined) input.pinned = Boolean(body.pinned);

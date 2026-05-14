@@ -6,12 +6,22 @@
 
   const modules = import.meta.glob<DemoModule>("./demos/*.svelte", { eager: true });
 
-  const demos = Object.entries(modules)
-    .map(([path, mod]) => {
-      const id = path.slice("./demos/".length, -".svelte".length);
-      return { id, title: mod.title ?? id, Component: mod.default };
-    })
+  const BOTTOM_IDS = new Set(["tokens", "chat"]);
+
+  const allDemos = Object.entries(modules).map(([path, mod]) => {
+    const id = path.slice("./demos/".length, -".svelte".length);
+    return { id, title: mod.title ?? id, Component: mod.default };
+  });
+
+  const mainDemos = allDemos
+    .filter((d) => !BOTTOM_IDS.has(d.id))
     .sort((a, b) => a.title.localeCompare(b.title));
+
+  const bottomDemos = allDemos
+    .filter((d) => BOTTOM_IDS.has(d.id))
+    .sort((a, b) => a.title.localeCompare(b.title));
+
+  const demos = [...bottomDemos, ...mainDemos];
 
   let activeId = $state(demos[0]?.id ?? "");
   let dark = $state(false);
@@ -33,7 +43,16 @@
       </button>
     </div>
     <nav class="nav">
-      {#each demos as d (d.id)}
+      {#each bottomDemos as d (d.id)}
+        <button
+          class="nav-btn {d.id === activeId ? 'active' : ''}"
+          onclick={() => (activeId = d.id)}
+        >
+          {d.title}
+        </button>
+      {/each}
+      <div class="nav-divider"></div>
+      {#each mainDemos as d (d.id)}
         <button
           class="nav-btn {d.id === activeId ? 'active' : ''}"
           onclick={() => (activeId = d.id)}

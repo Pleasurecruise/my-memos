@@ -82,6 +82,7 @@
     error = "";
     try {
       await apiCreateMemo(content, visibility);
+      ac.close();
       content = "";
       search = "";
       await invalidateAll();
@@ -129,10 +130,9 @@
           <X size={12} />
           Cancel
         </Button>
-        <span class="flex-1"></span>
         <Button
           size="sm"
-          class="gap-1.5 font-normal"
+          class="gap-1.5 font-normal ml-auto"
           disabled={!edit.editContent.trim() || edit.isUpdating}
           onclick={() => edit.save(memo.id)}
         >
@@ -175,11 +175,10 @@
           <Archive size={12} />
           {arc.archivingId === memo.id ? "Archiving…" : "Archive"}
         </Button>
-        <span class="flex-1"></span>
         <Button
           variant="destructive"
           size="sm"
-          class="gap-1.5 font-normal"
+          class="gap-1.5 font-normal ml-auto"
           onclick={() => del.request(memo.id)}
         >
           <Trash2 size={12} />

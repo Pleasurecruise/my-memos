@@ -27,6 +27,12 @@ body,
   flex-direction: column;
   overflow-y: auto;
   flex-shrink: 0;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.sidebar::-webkit-scrollbar {
+  display: none;
 }
 
 .sidebar-top {
@@ -91,6 +97,12 @@ body,
 .nav-btn.active {
   color: var(--color-foreground);
   background: var(--color-muted);
+}
+
+.nav-divider {
+  height: 1px;
+  background: var(--color-border);
+  margin: 6px 4px;
 }
 
 .canvas {

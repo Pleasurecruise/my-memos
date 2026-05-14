@@ -15,13 +15,24 @@
   import { format } from "date-fns";
   import { updateQuery } from "$lib/utils";
   import { signIn, signOut } from "$lib/auth-client";
-  import { Home, Archive, Sun, Moon, CalendarDays, X, PenLine, LogIn, LogOut } from "lucide-svelte";
+  import {
+    Home,
+    Archive,
+    MessageSquare,
+    Sun,
+    Moon,
+    CalendarDays,
+    X,
+    LogIn,
+    LogOut,
+  } from "lucide-svelte";
   import type { TagCount } from "$lib/types";
   import { showToast } from "$lib/stores/toast.svelte";
 
   const NAV_ITEMS = [
     { href: "/", label: "Home", icon: Home, requiresAuth: false },
     { href: "/archive", label: "Archive", icon: Archive, requiresAuth: true },
+    { href: "/chat", label: "Chat", icon: MessageSquare, requiresAuth: true },
   ] as const;
 
   interface SidebarProps {
@@ -93,7 +104,7 @@
       <span
         class="flex items-center gap-2 text-accent font-serif font-semibold text-lg tracking-tight select-none"
       >
-        <PenLine size={17} strokeWidth={1.8} />
+        <img src="/favicon.png" alt="" class="h-[17px] w-[17px] shrink-0 rounded-sm" />
         my memos
       </span>
       <Tooltip content="Close sidebar" side="right">

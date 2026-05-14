@@ -7,14 +7,20 @@
   import type { TagCount } from "$lib/types";
 
   interface Props {
-    tags: TagCount[];
-    activeTags: string[];
-    selectedDate: Date | undefined;
-    onDateChange: (date: Date | undefined) => void;
+    tags?: TagCount[];
+    activeTags?: string[];
+    selectedDate?: Date;
+    onDateChange?: (date: Date | undefined) => void;
     children: Snippet;
   }
 
-  let { tags, activeTags, selectedDate, onDateChange, children }: Props = $props();
+  let {
+    tags = [],
+    activeTags = [],
+    selectedDate,
+    onDateChange = () => {},
+    children,
+  }: Props = $props();
 
   const STORAGE_KEY = "my-memos:theme";
   let isDark = $state(false);

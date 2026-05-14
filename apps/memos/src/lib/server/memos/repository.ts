@@ -199,14 +199,11 @@ export async function updateMemo(
     });
     setClauses.push("excerpt = ?");
     bindings.push(excerpt);
-  }
-
-  if (input.tags !== undefined) {
-    const tags = input.tags.length
-      ? input.tags
-      : input.content !== undefined
-        ? normalizeTags(input.content.trim())
-        : (JSON.parse(existing.tags_json) as string[]);
+    const tags = input.tags?.length ? input.tags : normalizeTags(content);
+    setClauses.push("tags_json = ?");
+    bindings.push(JSON.stringify(tags));
+  } else if (input.tags !== undefined) {
+    const tags = input.tags.length ? input.tags : (JSON.parse(existing.tags_json) as string[]);
     setClauses.push("tags_json = ?");
     bindings.push(JSON.stringify(tags));
   }

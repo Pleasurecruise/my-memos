@@ -4,7 +4,7 @@
   export type AvatarSize = "sm" | "md" | "lg" | "xl";
 
   export interface AvatarProps extends HTMLAttributes<HTMLDivElement> {
-    src?: string;
+    src?: string | null;
     alt?: string;
     fallback?: string;
     size?: AvatarSize;

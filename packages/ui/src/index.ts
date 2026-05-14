@@ -59,5 +59,7 @@ export * from "./components/popover";
 export * from "./components/table";
 export * from "./components/tabs";
 
+export * from "./components/chat";
+
 export { cn } from "./lib/utils";
 export { applyTheme } from "./lib/theme";
