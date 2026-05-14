@@ -1,7 +1,9 @@
 import { json } from "@sveltejs/kit";
 import type { RequestHandler } from "./$types";
-import { createWorkersAI } from "workers-ai-provider";
-import { streamText, type ModelMessage } from "ai";
+import { createAiGateway } from "ai-gateway-provider";
+import { createUnified } from "ai-gateway-provider/providers/unified";
+import { streamText, tool, stepCountIs, type ModelMessage } from "ai";
+import { z } from "zod";
 
 export const POST: RequestHandler = async ({ request, platform, locals }) => {
   if (!locals.user) return json({ error: "Unauthorized." }, { status: 401 });
@@ -9,12 +11,88 @@ export const POST: RequestHandler = async ({ request, platform, locals }) => {
 
   const { messages } = (await request.json()) as { messages: ModelMessage[] };
 
-  const workersai = createWorkersAI({ binding: platform.env.AI });
+  const [promptObj, memoryObj] = await Promise.all([
+    platform.env.MEMOS_BUCKET.get("agent/PROMPT.md"),
+    platform.env.MEMOS_BUCKET.get("agent/MEMORY.md"),
+  ]);
+
+  const promptMd = promptObj ? await promptObj.text() : "";
+  const memoryMd = memoryObj ? await memoryObj.text() : "";
+
+  const systemParts = [promptMd || "You are a helpful personal assistant."];
+  if (memoryMd) systemParts.push(`\n\n<memory>\n${memoryMd}\n</memory>`);
+  const system = systemParts.join("");
+
+  const aigateway = createAiGateway({
+    accountId: platform.env.CF_ACCOUNT_ID,
+    gateway: platform.env.CF_GATEWAY_NAME,
+    apiKey: platform.env.CF_AIG_TOKEN,
+  });
+
+  const unifiedProvider = createUnified({
+    apiKey: platform.env.OPENAI_API_KEY,
+  });
 
   const result = streamText({
-    model: workersai("@cf/meta/llama-4-scout-17b-16e-instruct"),
-    system: "You are a helpful personal assistant.",
+    model: aigateway(
+      unifiedProvider(`custom-${platform.env.AI_GATEWAY_PROVIDER_SLUG}/deepseek-chat`),
+    ),
+    system,
     messages,
+    stopWhen: stepCountIs(5),
+    tools: {
+      search_memos: tool({
+        description:
+          "Search through personal memos to find relevant information. Use this when the user asks about past notes, events, or anything that might be recorded.",
+        inputSchema: z.object({
+          query: z.string().describe("Keywords to search for in memos"),
+        }),
+        execute: async ({ query }) => {
+          const { results } = await platform.env.DB.prepare(
+            `SELECT id, r2_key, excerpt, tags_json, created_at
+             FROM memos
+             WHERE archived = 0 AND excerpt LIKE ?
+             ORDER BY created_at DESC
+             LIMIT 5`,
+          )
+            .bind(`%${query}%`)
+            .all<{
+              id: string;
+              r2_key: string;
+              excerpt: string;
+              tags_json: string;
+              created_at: string;
+            }>();
+
+          if (!results?.length) return "No memos found.";
+
+          const items = await Promise.all(
+            results.map(async (row) => {
+              const obj = await platform.env.MEMOS_BUCKET.get(row.r2_key);
+              const content = obj ? await obj.text() : row.excerpt;
+              const tags = (JSON.parse(row.tags_json) as string[]).join(", ") || "none";
+              return `[${row.created_at.slice(0, 10)}] tags: ${tags}\n${content}`;
+            }),
+          );
+
+          return items.join("\n\n---\n\n");
+        },
+      }),
+
+      update_memory: tool({
+        description:
+          "Overwrite the long-term memory file with updated information about the user. Call this when you learn something worth remembering across conversations.",
+        inputSchema: z.object({
+          content: z.string().describe("Full new markdown content for the memory file"),
+        }),
+        execute: async ({ content }) => {
+          await platform.env.MEMOS_BUCKET.put("agent/MEMORY.md", content, {
+            httpMetadata: { contentType: "text/markdown; charset=utf-8" },
+          });
+          return "Memory updated.";
+        },
+      }),
+    },
   });
 
   const enc = new TextEncoder();

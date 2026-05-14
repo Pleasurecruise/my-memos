@@ -5,7 +5,7 @@ export default {
   preprocess: vitePreprocess(),
   kit: {
     adapter: adapter({
-      config: "wrangler-adapter.toml",
+      config: "../../wrangler.toml",
       platformProxy: {
         persist: {
           path: "../../.wrangler/v3",

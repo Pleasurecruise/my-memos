@@ -1,11 +1,14 @@
 name = "my-memos"
-main = "apps/memos/worker.ts"
+main = "apps/memos/.svelte-kit/cloudflare/_sveltekit.js"
 compatibility_date = "2026-05-05"
 compatibility_flags = ["nodejs_compat"]
 upload_source_maps = true
 
 [vars]
 BETTER_AUTH_URL = "https://memos.you-find.me"
+CF_ACCOUNT_ID = "fb71c4eceaf623ae1b19b8b37d7a38cf"
+CF_GATEWAY_NAME = "default"
+AI_GATEWAY_PROVIDER_SLUG = "siliconflow"
 
 [assets]
 directory = "apps/memos/.svelte-kit/cloudflare"
@@ -26,17 +29,9 @@ binding = "MEMOS_BUCKET"
 bucket_name = "cherry-studio"
 remote = true
 
-[ai]
-binding = "AI"
-remote = true
-
-[[durable_objects.bindings]]
-name = "ChatAgent"
-class_name = "ChatAgent"
-
 [[migrations]]
-tag = "v1"
-new_sqlite_classes = ["ChatAgent"]
+tag = "v2"
+deleted_classes = ["ChatAgent"]
 
 [observability]
 [observability.logs]
