@@ -58,7 +58,7 @@
         onTagClick={toggleCardTag}
       >
         {#snippet content()}
-          <MarkdownContent content={memo.content} stripTags />
+          <MarkdownContent content={memo.content} stripTags class="max-h-48 overflow-y-auto" />
         {/snippet}
 
         {#snippet actions()}

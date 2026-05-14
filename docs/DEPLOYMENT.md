@@ -98,6 +98,18 @@ The app relies on two migration groups:
 
 Run migrations before the first deployment and whenever schema changes are introduced.
 
+### Adding a New Schema Change
+
+Drizzle Kit and wrangler both operate on `apps/memos/migrations`. The workflow is:
+
+```bash
+pnpm drizzle:generate    # generates SQL diff + updates _meta/ snapshots in apps/memos/migrations/
+pnpm d1:migrate:local    # verify locally
+pnpm d1:migrate:remote   # apply to production
+```
+
+Commit both the generated `.sql` file and the updated `_meta/` folder — Drizzle Kit needs the snapshots to compute future diffs correctly.
+
 ## Post-Deployment Checks
 
 Verify these paths after deployment:
@@ -115,7 +127,6 @@ Verify these paths after deployment:
 
 ## Operational Notes
 
-- Memo bodies are stored in `R2`; D1 only stores the `excerpt`, tags, visibility, and timestamps.
-- KV is cache only. Deleting KV entries should not lose source data.
+- Memo bodies are stored in both `R2` (canonical) and D1's `excerpt` field. KV is cache only. Deleting KV entries should not lose source data.
 - The chat route reads `agent/PROMPT.md` and `agent/MEMORY.md` from `MEMOS_BUCKET`. Missing files degrade gracefully, but chat behavior will change.
 - `wrangler.toml` currently includes concrete IDs and a production URL. Keep that file aligned with actual infrastructure, and avoid mixing environments in one config unless you add explicit `[env.*]` sections.

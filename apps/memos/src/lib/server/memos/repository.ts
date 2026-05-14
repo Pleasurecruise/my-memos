@@ -1,31 +1,32 @@
 import type { D1Database, KVNamespace, R2Bucket } from "@cloudflare/workers-types";
+import { drizzle } from "drizzle-orm/d1";
+import { and, desc, eq, like, or, sql } from "drizzle-orm";
+import { memos } from "../db/schema";
+import type { MemoRow } from "../db/schema";
 import { buildMemoR2Key, createMemoId, normalizeTags } from "./utils";
 import type { CreateMemoInput, UpdateMemoInput, MemoListFilters } from "./types";
 import type { Memo, TagCount } from "$lib/types";
-
-interface MemoRow {
-  id: string;
-  r2_key: string;
-  tags_json: string;
-  excerpt: string;
-  created_at: string;
-  updated_at: string;
-  visibility: Memo["visibility"];
-  pinned: number;
-  archived: number;
-}
 
 function rowToMemo(row: MemoRow): Memo {
   return {
     id: row.id,
     content: row.excerpt,
-    tags: JSON.parse(row.tags_json),
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
+    tags: row.tagsJson,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
     visibility: row.visibility,
-    pinned: Boolean(row.pinned),
-    archived: Boolean(row.archived),
+    pinned: row.pinned,
+    archived: row.archived,
   };
+}
+
+async function invalidateMemoCache(cache: KVNamespace): Promise<void> {
+  await Promise.all([
+    cache.delete("memo:list"),
+    cache.delete("memo:list:public"),
+    cache.delete("memo:tags"),
+    cache.delete("memo:tags:public"),
+  ]);
 }
 
 export async function readMemoContent(bucket: R2Bucket, r2Key: string): Promise<string> {
@@ -34,47 +35,8 @@ export async function readMemoContent(bucket: R2Bucket, r2Key: string): Promise<
   return object.text();
 }
 
-function buildListQuery(filters: MemoListFilters) {
-  const conditions: string[] = [];
-  const bindings: unknown[] = [];
-
-  if (filters.archivedOnly) conditions.push("archived = 1");
-  else conditions.push("archived = 0");
-
-  if (filters.publicOnly) conditions.push("visibility = 'public'");
-
-  if (filters.date) {
-    conditions.push("substr(updated_at, 1, 10) = ?");
-    bindings.push(filters.date);
-  }
-
-  if (filters.search) {
-    conditions.push("excerpt LIKE ?");
-    bindings.push(`%${filters.search}%`);
-  }
-
-  if (filters.tags && filters.tags.length > 0) {
-    const tagClauses = filters.tags.map(
-      () => "EXISTS (SELECT 1 FROM json_each(memos.tags_json) WHERE lower(json_each.value) = ?)",
-    );
-    conditions.push(`(${tagClauses.join(" OR ")})`);
-    for (const t of filters.tags) bindings.push(t.toLowerCase());
-  }
-
-  const where = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
-  return {
-    sql: `
-			SELECT id, r2_key, tags_json, excerpt, created_at, updated_at, visibility, pinned, archived
-			FROM memos
-			${where}
-			ORDER BY pinned DESC, created_at DESC
-		`,
-    bindings,
-  };
-}
-
 export async function listMemos(
-  db: D1Database,
+  d1: D1Database,
   cache: KVNamespace,
   filters: MemoListFilters = {},
 ): Promise<Memo[]> {
@@ -87,22 +49,45 @@ export async function listMemos(
     if (cached) return JSON.parse(cached) as Memo[];
   }
 
-  const { sql, bindings } = buildListQuery(filters);
-  const { results } = await db
-    .prepare(sql)
-    .bind(...bindings)
-    .all<MemoRow>();
-  const memos = (results ?? []).map(rowToMemo);
+  const db = drizzle(d1);
+  const conditions = [filters.archivedOnly ? eq(memos.archived, true) : eq(memos.archived, false)];
 
-  if (shouldCache) {
-    await cache.put(cacheKey, JSON.stringify(memos));
+  if (filters.publicOnly) conditions.push(eq(memos.visibility, "public"));
+
+  if (filters.date) {
+    conditions.push(sql`substr(${memos.updatedAt}, 1, 10) = ${filters.date}`);
   }
 
-  return memos;
+  if (filters.search) {
+    conditions.push(like(memos.excerpt, `%${filters.search}%`));
+  }
+
+  if (filters.tags?.length) {
+    const tagClauses = filters.tags.map(
+      (tag) =>
+        sql`EXISTS (SELECT 1 FROM json_each(memos.tags_json) WHERE lower(json_each.value) = ${tag.toLowerCase()})`,
+    );
+    const tagCondition = or(...tagClauses);
+    if (tagCondition) conditions.push(tagCondition);
+  }
+
+  const rows = await db
+    .select()
+    .from(memos)
+    .where(and(...conditions))
+    .orderBy(desc(memos.pinned), desc(memos.createdAt));
+
+  const result = rows.map(rowToMemo);
+
+  if (shouldCache) {
+    await cache.put(cacheKey, JSON.stringify(result));
+  }
+
+  return result;
 }
 
 export async function listTagCounts(
-  db: D1Database,
+  d1: D1Database,
   cache: KVNamespace,
   publicOnly = false,
 ): Promise<TagCount[]> {
@@ -111,28 +96,23 @@ export async function listTagCounts(
   if (cached) return cached as TagCount[];
 
   const visibilityClause = publicOnly ? "AND visibility = 'public'" : "";
-  const { results } = await db
+  const { results } = await d1
     .prepare(
-      `
-			SELECT lower(json_each.value) AS name, COUNT(*) AS count
-			FROM memos, json_each(memos.tags_json)
-			WHERE archived = 0 ${visibilityClause}
-			GROUP BY lower(json_each.value)
-			ORDER BY count DESC, name ASC
-		`,
+      `SELECT lower(json_each.value) AS name, COUNT(*) AS count
+       FROM memos, json_each(memos.tags_json)
+       WHERE archived = 0 ${visibilityClause}
+       GROUP BY lower(json_each.value)
+       ORDER BY count DESC, name ASC`,
     )
     .all<{ name: string; count: number }>();
 
-  const tags = (results ?? []).map((row) => ({
-    name: row.name,
-    count: Number(row.count),
-  }));
+  const tags = (results ?? []).map((row) => ({ name: row.name, count: Number(row.count) }));
   await cache.put(cacheKey, JSON.stringify(tags));
   return tags;
 }
 
 export async function createMemo(
-  db: D1Database,
+  d1: D1Database,
   bucket: R2Bucket,
   cache: KVNamespace,
   input: CreateMemoInput,
@@ -142,29 +122,26 @@ export async function createMemo(
   const tags = input.tags.length ? input.tags : normalizeTags(input.content);
   const r2Key = buildMemoR2Key(id, now);
   const content = input.content.trim();
-  const excerpt = content.length > 300 ? content.slice(0, 300).trimEnd() : content;
   const nowIso = now.toISOString();
 
   await bucket.put(r2Key, content, {
     httpMetadata: { contentType: "text/markdown; charset=utf-8" },
   });
 
-  await db
-    .prepare(
-      `
-			INSERT INTO memos (id, r2_key, tags_json, excerpt, created_at, updated_at, visibility, pinned, archived)
-			VALUES (?, ?, ?, ?, ?, ?, ?, 0, 0)
-		`,
-    )
-    .bind(id, r2Key, JSON.stringify(tags), excerpt, nowIso, nowIso, input.visibility)
-    .run();
+  const db = drizzle(d1);
+  await db.insert(memos).values({
+    id,
+    r2Key,
+    tagsJson: tags,
+    excerpt: content,
+    createdAt: nowIso,
+    updatedAt: nowIso,
+    visibility: input.visibility,
+    pinned: false,
+    archived: false,
+  });
 
-  await Promise.all([
-    cache.delete("memo:list"),
-    cache.delete("memo:list:public"),
-    cache.delete("memo:tags"),
-    cache.delete("memo:tags:public"),
-  ]);
+  await invalidateMemoCache(cache);
 
   return {
     id,
@@ -179,90 +156,59 @@ export async function createMemo(
 }
 
 export async function updateMemo(
-  db: D1Database,
+  d1: D1Database,
   bucket: R2Bucket,
   cache: KVNamespace,
   id: string,
   input: UpdateMemoInput,
 ): Promise<Memo> {
-  const existing = await db.prepare("SELECT * FROM memos WHERE id = ?").bind(id).first<MemoRow>();
+  const db = drizzle(d1);
+
+  const [existing] = await db.select().from(memos).where(eq(memos.id, id)).limit(1);
   if (!existing) throw new Error(`Memo not found: ${id}`);
 
-  const setClauses: string[] = [];
-  const bindings: unknown[] = [];
+  const setValues: Partial<typeof memos.$inferInsert> = {};
 
   if (input.content !== undefined) {
     const content = input.content.trim();
-    const excerpt = content.length > 300 ? content.slice(0, 300).trimEnd() : content;
-    await bucket.put(existing.r2_key, content, {
+    await bucket.put(existing.r2Key, content, {
       httpMetadata: { contentType: "text/markdown; charset=utf-8" },
     });
-    setClauses.push("excerpt = ?");
-    bindings.push(excerpt);
-    const tags = input.tags?.length ? input.tags : normalizeTags(content);
-    setClauses.push("tags_json = ?");
-    bindings.push(JSON.stringify(tags));
+    setValues.excerpt = content;
+    setValues.tagsJson = input.tags?.length ? input.tags : normalizeTags(content);
   } else if (input.tags !== undefined) {
-    const tags = input.tags.length ? input.tags : (JSON.parse(existing.tags_json) as string[]);
-    setClauses.push("tags_json = ?");
-    bindings.push(JSON.stringify(tags));
+    setValues.tagsJson = input.tags.length ? input.tags : existing.tagsJson;
   }
 
-  if (input.visibility !== undefined) {
-    setClauses.push("visibility = ?");
-    bindings.push(input.visibility);
-  }
+  if (input.visibility !== undefined) setValues.visibility = input.visibility;
+  if (input.pinned !== undefined) setValues.pinned = input.pinned;
+  if (input.archived !== undefined) setValues.archived = input.archived;
 
-  if (input.pinned !== undefined) {
-    setClauses.push("pinned = ?");
-    bindings.push(input.pinned ? 1 : 0);
-  }
+  setValues.updatedAt = new Date().toISOString();
 
-  if (input.archived !== undefined) {
-    setClauses.push("archived = ?");
-    bindings.push(input.archived ? 1 : 0);
-  }
+  await db.update(memos).set(setValues).where(eq(memos.id, id));
+  await invalidateMemoCache(cache);
 
-  const updatedAt = new Date().toISOString();
-  setClauses.push("updated_at = ?");
-  bindings.push(updatedAt);
-  bindings.push(id);
-
-  await db
-    .prepare(`UPDATE memos SET ${setClauses.join(", ")} WHERE id = ?`)
-    .bind(...bindings)
-    .run();
-
-  await Promise.all([
-    cache.delete("memo:list"),
-    cache.delete("memo:list:public"),
-    cache.delete("memo:tags"),
-    cache.delete("memo:tags:public"),
-  ]);
-
-  const updated = await db.prepare("SELECT * FROM memos WHERE id = ?").bind(id).first<MemoRow>();
-
+  const [updated] = await db.select().from(memos).where(eq(memos.id, id)).limit(1);
   return rowToMemo(updated!);
 }
 
 export async function deleteMemo(
-  db: D1Database,
+  d1: D1Database,
   bucket: R2Bucket,
   cache: KVNamespace,
   id: string,
 ): Promise<void> {
-  const existing = await db
-    .prepare("SELECT r2_key FROM memos WHERE id = ?")
-    .bind(id)
-    .first<Pick<MemoRow, "r2_key">>();
+  const db = drizzle(d1);
+
+  const [existing] = await db
+    .select({ r2Key: memos.r2Key })
+    .from(memos)
+    .where(eq(memos.id, id))
+    .limit(1);
   if (!existing) throw new Error(`Memo not found: ${id}`);
 
-  await db.prepare("DELETE FROM memos WHERE id = ?").bind(id).run();
-  await bucket.delete(existing.r2_key);
-  await Promise.all([
-    cache.delete("memo:list"),
-    cache.delete("memo:list:public"),
-    cache.delete("memo:tags"),
-    cache.delete("memo:tags:public"),
-  ]);
+  await db.delete(memos).where(eq(memos.id, id));
+  await bucket.delete(existing.r2Key);
+  await invalidateMemoCache(cache);
 }

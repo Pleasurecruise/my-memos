@@ -11,6 +11,7 @@ coverage/
 
 # Tool caches
 .wrangler/
+apps/memos/drizzle/
 .parcel-cache/
 .cache/
 .eslintcache

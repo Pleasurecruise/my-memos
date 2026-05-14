@@ -22,6 +22,7 @@ declare global {
         AI_GATEWAY_PROVIDER_SLUG: string;
         OPENAI_API_KEY: string;
         CF_AIG_TOKEN: string;
+        TAVILY_API_KEY: string;
       };
     }
   }

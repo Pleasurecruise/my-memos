@@ -36,10 +36,14 @@ Key areas:
   Page routes and API endpoints.
 - [apps/memos/src/lib/server](/Users/pleasure1234/Github/my-memos/apps/memos/src/lib/server)
   Server-only auth, filters, and memo persistence helpers.
+  - [apps/memos/src/lib/server/db/schema.ts](/Users/pleasure1234/Github/my-memos/apps/memos/src/lib/server/db/schema.ts)
+    Drizzle ORM schema for the `memos` table; exports `MemoRow` inferred type.
+  - [apps/memos/src/lib/server/chat/tools.ts](/Users/pleasure1234/Github/my-memos/apps/memos/src/lib/server/chat/tools.ts)
+    Chat agent tool definitions, extracted from the API route.
 - [apps/memos/src/lib/components](/Users/pleasure1234/Github/my-memos/apps/memos/src/lib/components)
   App-specific Svelte UI not exported as reusable package components.
 - [apps/memos/migrations](/Users/pleasure1234/Github/my-memos/apps/memos/migrations)
-  D1 schema migrations.
+  D1 schema migrations applied by wrangler. Drizzle Kit also outputs generated SQL and its `_meta/` snapshots here; both should be committed.
 - [apps/memos/worker.ts](/Users/pleasure1234/Github/my-memos/apps/memos/worker.ts:1)
   Worker entry that exports the built SvelteKit handler.
 
@@ -101,7 +105,7 @@ Memo persistence is split deliberately across D1 and R2.
 
 ### D1
 
-Table defined in [apps/memos/migrations/0001_create_memos.sql](/Users/pleasure1234/Github/my-memos/apps/memos/migrations/0001_create_memos.sql:1):
+Table defined in [apps/memos/migrations/0001_create_memos.sql](/Users/pleasure1234/Github/my-memos/apps/memos/migrations/0001_create_memos.sql:1). The Drizzle schema mirror lives in [apps/memos/src/lib/server/db/schema.ts](/Users/pleasure1234/Github/my-memos/apps/memos/src/lib/server/db/schema.ts:1).
 
 - `id`
 - `r2_key`
@@ -117,7 +121,6 @@ Use D1 for:
 
 - list queries
 - filtering by date, tag, archive state, and visibility
-- storing lightweight metadata
 
 ### R2
 
@@ -125,8 +128,6 @@ R2 stores:
 
 - full memo markdown body
 - chat support files such as `agent/PROMPT.md` and `agent/MEMORY.md`
-
-This keeps D1 queries fast while preserving full content externally.
 
 ### KV
 
@@ -145,16 +146,15 @@ Primary memo data access lives in [apps/memos/src/lib/server/memos/repository.ts
 
 Responsibilities:
 
-- map D1 rows to app `Memo` objects
-- build filtered list queries
+- map D1 rows to app `Memo` objects via Drizzle ORM (`drizzle-orm/d1`)
+- build filtered list queries using Drizzle operators
 - cache unfiltered list results and tag counts in KV
 - write full content to R2 during create and update
 - invalidate cache after mutations
 
-Important implementation detail:
+The Drizzle schema (`apps/memos/src/lib/server/db/schema.ts`) is the authoritative source for the `memos` table shape and exports `MemoRow` via `typeof memos.$inferSelect`, eliminating hand-written row types.
 
-- list/search behavior uses `excerpt` in D1 for fast filtering
-- full content is only fetched from R2 when needed, notably in chat search results
+Chat agent tools are defined in [apps/memos/src/lib/server/chat/tools.ts](/Users/pleasure1234/Github/my-memos/apps/memos/src/lib/server/chat/tools.ts:1) and imported by the `/api/chat` route.
 
 ## API Surface
 
@@ -188,7 +188,7 @@ Behavior:
   - `{ tool_call: string }` — model started a tool call (value is the tool name)
   - `{ error: string }` — stream-level error
   - `[DONE]` — end of stream sentinel
-- exposes tools for tag listing, memo listing, memo search, and memory updates
+- exposes tools: `get_tags`, `list_memos`, `search_memos`, `create_memo`, `update_memo`, `delete_memo`, `web_search`, `update_memory`
 
 ## Type Boundaries
 
@@ -203,7 +203,7 @@ If these drift, the app may still compile but fail at runtime.
 ## Known Inconsistencies To Watch
 
 - The SQL schema allows `visibility IN ('public', 'protected', 'private')`, but API validation only accepts `public` and `private`.
-- Memo search currently queries `excerpt LIKE ?` before optionally loading full content from R2, so deep content not present in the excerpt will not be discovered by search.
 - Root `wrangler.toml` is effectively production-shaped rather than environment-sliced.
+- Drizzle Kit snapshots (`_meta/`) live inside `apps/memos/migrations` alongside wrangler's migration files. Both must be committed so Drizzle can compute future diffs.
 
 These are not blockers for documentation, but they matter if you change behavior later.

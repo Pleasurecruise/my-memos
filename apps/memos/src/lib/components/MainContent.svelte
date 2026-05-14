@@ -115,7 +115,7 @@
       {#if isEditing}
         <MarkdownEditor bind:value={edit.editContent} class="-mx-3 -my-1" />
       {:else}
-        <MarkdownContent content={memo.content} stripTags />
+        <MarkdownContent content={memo.content} stripTags class="max-h-48 overflow-y-auto" />
       {/if}
     {/snippet}
 

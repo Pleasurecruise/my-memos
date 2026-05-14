@@ -48,20 +48,10 @@
     overflow-x: hidden;
     scroll-behavior: smooth;
     padding-block: 16px;
-    scrollbar-width: thin;
-    scrollbar-color: var(--color-border) transparent;
+    scrollbar-width: none;
   }
 
   .thread::-webkit-scrollbar {
-    width: 5px;
-  }
-
-  .thread::-webkit-scrollbar-track {
-    background: transparent;
-  }
-
-  .thread::-webkit-scrollbar-thumb {
-    background: var(--color-border);
-    border-radius: 9999px;
+    display: none;
   }
 </style>

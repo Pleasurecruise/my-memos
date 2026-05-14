@@ -1,0 +1,167 @@
+{
+  "version": "7",
+  "dialect": "sqlite",
+  "id": "9ae98fc5-04fe-417d-b7e0-39c9a4df6fbb",
+  "prevIds": ["00000000-0000-0000-0000-000000000000"],
+  "ddl": [
+    {
+      "name": "memos",
+      "entityType": "tables"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "id",
+      "entityType": "columns",
+      "table": "memos"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "r2_key",
+      "entityType": "columns",
+      "table": "memos"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "'[]'",
+      "generated": null,
+      "name": "tags_json",
+      "entityType": "columns",
+      "table": "memos"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "''",
+      "generated": null,
+      "name": "excerpt",
+      "entityType": "columns",
+      "table": "memos"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "table": "memos"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "updated_at",
+      "entityType": "columns",
+      "table": "memos"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "visibility",
+      "entityType": "columns",
+      "table": "memos"
+    },
+    {
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "false",
+      "generated": null,
+      "name": "pinned",
+      "entityType": "columns",
+      "table": "memos"
+    },
+    {
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "false",
+      "generated": null,
+      "name": "archived",
+      "entityType": "columns",
+      "table": "memos"
+    },
+    {
+      "columns": ["id"],
+      "nameExplicit": false,
+      "name": "memos_pk",
+      "table": "memos",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        {
+          "value": "created_at",
+          "isExpression": false
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "origin": "manual",
+      "name": "memos_created_at_idx",
+      "entityType": "indexes",
+      "table": "memos"
+    },
+    {
+      "columns": [
+        {
+          "value": "archived",
+          "isExpression": false
+        },
+        {
+          "value": "created_at",
+          "isExpression": false
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "origin": "manual",
+      "name": "memos_archived_idx",
+      "entityType": "indexes",
+      "table": "memos"
+    },
+    {
+      "columns": [
+        {
+          "value": "pinned",
+          "isExpression": false
+        },
+        {
+          "value": "created_at",
+          "isExpression": false
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "origin": "manual",
+      "name": "memos_pinned_idx",
+      "entityType": "indexes",
+      "table": "memos"
+    },
+    {
+      "columns": ["r2_key"],
+      "nameExplicit": false,
+      "name": "memos_r2_key_unique",
+      "entityType": "uniques",
+      "table": "memos"
+    }
+  ],
+  "renames": []
+}
