@@ -43,3 +43,9 @@
   padding: 1rem 0;
   flex-shrink: 0;
 }
+
+.tool-status {
+  font-size: 0.875rem;
+  color: var(--color-muted-foreground);
+  margin: 0;
+}

@@ -7,10 +7,18 @@
 
   let { data }: { data: PageData } = $props();
 
+  const TOOL_LABELS: Record<string, string> = {
+    get_tags: "正在获取标签…",
+    list_memos: "正在浏览备忘录…",
+    search_memos: "正在搜索备忘录…",
+    update_memory: "正在更新记忆…",
+  };
+
   interface Message {
     role: "user" | "assistant";
     content: string;
     thinking: boolean;
+    toolStatus?: string;
   }
 
   let messages = $state<Message[]>([]);
@@ -60,15 +68,24 @@
             finished = true;
             break;
           }
-          const parsed = JSON.parse(payload) as { text?: string; error?: string };
+          const parsed = JSON.parse(payload) as {
+            text?: string;
+            error?: string;
+            tool_call?: string;
+          };
           if (typeof parsed.error === "string") {
             messages[assistantIdx].thinking = false;
+            messages[assistantIdx].toolStatus = undefined;
             messages[assistantIdx].content = `Error: ${parsed.error}`;
             finished = true;
             break;
           }
+          if (typeof parsed.tool_call === "string") {
+            messages[assistantIdx].toolStatus = TOOL_LABELS[parsed.tool_call];
+          }
           if (typeof parsed.text === "string") {
             messages[assistantIdx].thinking = false;
+            messages[assistantIdx].toolStatus = undefined;
             messages[assistantIdx].content += parsed.text;
           }
         }
@@ -94,7 +111,9 @@
           {#each messages as msg (msg)}
             {#if msg.role === "assistant"}
               <ChatMessage role="assistant" avatarSrc="/favicon.png" typing={msg.thinking}>
-                {#if !msg.thinking}
+                {#if msg.toolStatus}
+                  <p class="tool-status">{msg.toolStatus}</p>
+                {:else if !msg.thinking}
                   <MarkdownContent content={msg.content} class="bubble-md" />
                 {/if}
               </ChatMessage>
