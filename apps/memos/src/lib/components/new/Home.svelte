@@ -32,7 +32,6 @@
 
   let { memos, tags, initialSearch, initialTags, selectedDate }: Props = $props();
 
-  /* ── Composer ──────────────────────────────────────────────── */
   let content = $state("");
   let visibility = $state<MemoVisibility>("private");
   let isSaving = $state(false);
@@ -65,7 +64,6 @@
   const tagNames = $derived(tags.map((t) => t.name));
   const ac = createTagAutocomplete(() => tagNames);
 
-  /* ── Filtering ─────────────────────────────────────────────── */
   let search = $state("");
   $effect(() => {
     search = initialSearch;
@@ -83,7 +81,6 @@
     }),
   );
 
-  /* ── Day grouping ──────────────────────────────────────────── */
   function groupByDay(items: Memo[]) {
     const map = new Map<string, Memo[]>();
     for (const m of items) {
@@ -122,8 +119,7 @@
     });
   }
 
-  /* ── Build groups for Timeline ─────────────────────────────── */
-  const timelineGroups: TimelineGroup<Memo>[] = $derived.by(() => {
+  const timelineContent: TimelineGroup<Memo>[] = $derived.by(() => {
     const dayGroups = grouped.map(([day, items]) => {
       const lbl = dayLabel(day);
       return {
@@ -141,7 +137,6 @@
     ];
   });
 
-  /* ── Tag navigation ────────────────────────────────────────── */
   function toggleTag(tag: string) {
     const next = initialTags.includes(tag)
       ? initialTags.filter((t) => t !== tag)
@@ -154,7 +149,6 @@
     updateQuery({ search: value.trim() || null });
   }
 
-  /* ── Rail data ─────────────────────────────────────────────── */
   const streak = $derived.by(() => {
     const now = new Date();
     return Array.from({ length: 14 }, (_, i) => {
@@ -173,8 +167,8 @@
   const quote = $derived(QUOTES[new Date().getDate() % QUOTES.length]);
 </script>
 
-<div class="min-h-screen bg-background text-foreground font-sans">
-  <div class="max-w-280 mx-auto px-4 sm:px-8 pb-24 pt-7">
+<div class="min-h-screen bg-background text-foreground font-sans overflow-hidden">
+  <div class="max-w-280 mx-auto px-4 sm:px-8 pb-24 pt-7 overflow-y-auto h-full">
     <Masthead {memos} {tags} />
 
     <!-- TAG STRIP -->
@@ -205,90 +199,88 @@
 
     <!-- JOURNAL + RAIL -->
     <div class="grid gap-10 grid-cols-1 md:grid-cols-[1fr_300px]">
-      <!-- LEFT: timeline feed -->
       <div>
-        <Timeline groups={timelineGroups}>
-          {#snippet composer()}
-            {#if composerOpen}
+        {#if composerOpen}
+          <div
+            class="border border-border rounded-lg bg-background shadow-xs overflow-hidden relative mb-4"
+          >
+            <MarkdownEditor
+              bind:value={content}
+              ontextchange={(v) => ac.onValueChange(v)}
+              onkeydown={(e) => {
+                const next = ac.onKeydown(e);
+                if (next !== null) content = next;
+                if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) saveMemo();
+              }}
+              placeholder="A line for the notebook..."
+              class="min-h-15"
+            />
+            <div class="flex items-center gap-2 px-3 py-2.5 border-t border-border">
+              <Button
+                variant="outline"
+                size="sm"
+                onclick={() => (visibility = visibility === "public" ? "private" : "public")}
+                class="gap-1.5 font-normal text-muted-foreground"
+              >
+                {#if visibility === "public"}<Globe size={11} />{:else}<Lock size={11} />{/if}
+                {visLabel}
+              </Button>
+              <span class="flex-1"></span>
+              <span class="text-xs text-muted-foreground opacity-50 hidden sm:inline"
+                >Cmd+Enter</span
+              >
+              <Button
+                variant="ghost"
+                size="sm"
+                class="text-muted-foreground"
+                onclick={() => {
+                  composerOpen = false;
+                  content = "";
+                }}
+              >
+                <X size={12} />
+              </Button>
+              <Button size="sm" disabled={!content.trim() || isSaving} onclick={saveMemo}>
+                {isSaving ? "Saving..." : "Save"}
+              </Button>
+            </div>
+            {#if ac.open && ac.suggestions.length > 0}
               <div
-                class="border border-border rounded-lg bg-background shadow-xs overflow-hidden relative"
+                class="absolute top-full left-0 right-0 mt-1 bg-background border border-border rounded-lg shadow-md z-50 overflow-hidden"
               >
-                <MarkdownEditor
-                  bind:value={content}
-                  ontextchange={(v) => ac.onValueChange(v)}
-                  onkeydown={(e) => {
-                    const next = ac.onKeydown(e);
-                    if (next !== null) content = next;
-                    if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) saveMemo();
-                  }}
-                  placeholder="A line for the notebook..."
-                  class="min-h-15"
-                />
-                <div class="flex items-center gap-2 px-3 py-2.5 border-t border-border">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onclick={() => (visibility = visibility === "public" ? "private" : "public")}
-                    class="gap-1.5 font-normal text-muted-foreground"
-                  >
-                    {#if visibility === "public"}<Globe size={11} />{:else}<Lock size={11} />{/if}
-                    {visLabel}
-                  </Button>
-                  <span class="flex-1"></span>
-                  <span class="text-xs text-muted-foreground opacity-50 hidden sm:inline"
-                    >Cmd+Enter</span
-                  >
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    class="text-muted-foreground"
-                    onclick={() => {
-                      composerOpen = false;
-                      content = "";
+                {#each ac.suggestions as tag, i (tag)}
+                  <button
+                    type="button"
+                    onmousedown={(e) => {
+                      e.preventDefault();
+                      content = ac.select(tag) ?? content;
                     }}
+                    class="w-full px-3 py-2 text-sm text-left flex items-center gap-2 transition-colors
+                      {i === ac.activeIndex
+                      ? 'bg-accent/10 text-accent'
+                      : 'text-foreground hover:bg-muted'}"
                   >
-                    <X size={12} />
-                  </Button>
-                  <Button size="sm" disabled={!content.trim() || isSaving} onclick={saveMemo}>
-                    {isSaving ? "Saving..." : "Save"}
-                  </Button>
-                </div>
-                {#if ac.open && ac.suggestions.length > 0}
-                  <div
-                    class="absolute top-full left-0 right-0 mt-1 bg-background border border-border rounded-lg shadow-md z-50 overflow-hidden"
-                  >
-                    {#each ac.suggestions as tag, i (tag)}
-                      <button
-                        type="button"
-                        onmousedown={(e) => {
-                          e.preventDefault();
-                          content = ac.select(tag) ?? content;
-                        }}
-                        class="w-full px-3 py-2 text-sm text-left flex items-center gap-2 transition-colors
-                          {i === ac.activeIndex
-                          ? 'bg-accent/10 text-accent'
-                          : 'text-foreground hover:bg-muted'}"
-                      >
-                        <span class="text-xs opacity-50">#</span>{tag}
-                      </button>
-                    {/each}
-                  </div>
-                {/if}
+                    <span class="text-xs opacity-50">#</span>{tag}
+                  </button>
+                {/each}
               </div>
-            {:else}
-              <button
-                type="button"
-                onclick={() => (composerOpen = true)}
-                class="w-full text-left px-4 py-3 rounded border border-dashed border-border
-                  text-muted-foreground font-serif text-sm italic
-                  hover:border-accent/40 hover:bg-muted transition-colors"
-              >
-                <span class="text-accent mr-1.5"><Pencil size={11} class="inline -mt-0.5" /></span>
-                A line for the notebook -- click to write...
-              </button>
             {/if}
-          {/snippet}
+          </div>
+        {:else}
+          <button
+            type="button"
+            onclick={() => (composerOpen = true)}
+            class="w-full text-left px-4 py-3 rounded border border-dashed border-border
+              text-muted-foreground font-serif text-sm italic
+              hover:border-accent/40 hover:bg-muted transition-colors mb-4"
+          >
+            <span class="text-accent mr-1.5"><Pencil size={11} class="inline -mt-0.5" /></span>
+            A line for the notebook -- click to write...
+          </button>
+        {/if}
 
+        <!-- Timeline: now without composer -->
+        <Timeline groups={timelineContent}>
           {#snippet children(memo)}
             {@const isEditing = edit.editingId === memo.id}
             <div>

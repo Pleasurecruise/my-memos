@@ -28,7 +28,6 @@
     }),
   );
 
-  /* ── Group by month ─────────────────────────────────────────── */
   function groupByMonth(items: Memo[]) {
     const map = new Map<string, Memo[]>();
     for (const m of items) {
@@ -94,45 +93,40 @@
           <div class="space-y-2">
             {#each items as memo (memo.id)}
               <div
-                class="group flex items-start gap-4 px-3.5 py-3 rounded-md
+                class="group px-3.5 py-3 rounded-md
                   border border-transparent hover:border-border hover:bg-muted transition-colors"
               >
-                <div class="flex-1 min-w-0">
-                  <!-- Meta row -->
-                  <div class="flex items-center gap-2 mb-1.5">
-                    <span class="font-mono text-[11px] text-muted-foreground">
-                      {dateLabel(memo.createdAt)}
-                    </span>
-                    {#if memo.visibility === "private"}
-                      <Lock size={10} class="text-muted-foreground opacity-50" />
-                    {/if}
-                  </div>
-
-                  <MarkdownContent
-                    content={memo.content}
-                    stripTags
-                    class="text-sm leading-relaxed"
-                  />
-
-                  {#if memo.tags.length > 0}
-                    <div class="flex flex-wrap gap-1.5 mt-2">
-                      {#each memo.tags as tag (tag)}
-                        <button
-                          type="button"
-                          onclick={() => toggleTag(tag)}
-                          class="inline-flex items-center gap-0.5 px-2 py-px rounded-full text-[11px]
-                            border border-accent/25 text-accent hover:bg-accent/8 transition-colors"
-                        >
-                          <span class="opacity-50">#</span>{tag}
-                        </button>
-                      {/each}
-                    </div>
+                <!-- Meta row -->
+                <div class="flex items-center gap-2 mb-1.5">
+                  <span class="font-mono text-[11px] text-muted-foreground">
+                    {dateLabel(memo.createdAt)}
+                  </span>
+                  {#if memo.visibility === "private"}
+                    <Lock size={10} class="text-muted-foreground opacity-50" />
                   {/if}
                 </div>
 
+                <MarkdownContent content={memo.content} stripTags class="text-sm leading-relaxed" />
+
+                {#if memo.tags.length > 0}
+                  <div class="flex flex-wrap gap-1.5 mt-2">
+                    {#each memo.tags as tag (tag)}
+                      <button
+                        type="button"
+                        onclick={() => toggleTag(tag)}
+                        class="inline-flex items-center gap-0.5 px-2 py-px rounded-full text-[11px]
+                          border border-accent/25 text-accent hover:bg-accent/8 transition-colors"
+                      >
+                        <span class="opacity-50">#</span>{tag}
+                      </button>
+                    {/each}
+                  </div>
+                {/if}
+
                 <!-- Hover actions -->
                 <div
-                  class="flex items-center gap-1.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity pt-0.5"
+                  class="flex items-center gap-1.5 mt-2.5 pt-2.5 border-t border-border
+                    opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"
                 >
                   <Button
                     variant="outline"
@@ -147,7 +141,7 @@
                   <Button
                     variant="destructive"
                     size="sm"
-                    class="gap-1.5 font-normal"
+                    class="gap-1.5 font-normal ml-auto"
                     onclick={() => del.request(memo.id)}
                   >
                     <Trash2 size={12} />Delete
