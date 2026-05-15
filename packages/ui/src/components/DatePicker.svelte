@@ -105,9 +105,7 @@
 
   <div class="grid grid-cols-7 mb-1">
     {#each DAY_LABELS as d (d)}
-      <span
-        class="flex items-center justify-center text-[10px] font-medium text-muted-foreground h-7"
-      >
+      <span class="flex items-center justify-center text-2.5 font-medium text-muted-foreground h-7">
         {d}
       </span>
     {/each}

@@ -156,18 +156,9 @@ Easing: prefer `ease-out` for entrances, `ease-in` for exits. Never use linear f
 
 ## Theme Switching
 
-Dark mode is triggered by a `.dark` class on `<html>`. Toggle it via a theme controller.
+Dark mode is triggered by a `.dark` class on `<html>`. Use `applyTheme(dark)` from `@my-memos/ui` to toggle it — it suppresses transitions during the switch to avoid a flash.
 
-```js
-function applyTheme(dark) {
-  const style = document.createElement("style");
-  style.textContent = "*, *::before, *::after { transition: none !important }";
-  document.head.appendChild(style);
-  document.documentElement.classList.toggle("dark", dark);
-  getComputedStyle(document.documentElement).opacity;
-  requestAnimationFrame(() => style.remove());
-}
-```
+`app.html` contains a small inline script that applies the correct theme before first paint, based on `localStorage` preference or system preference. `Masthead` owns the user-facing toggle and persists the choice to `localStorage`.
 
 ---
 

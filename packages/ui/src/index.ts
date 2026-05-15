@@ -63,3 +63,6 @@ export * from "./components/chat";
 
 export { cn } from "./lib/utils";
 export { applyTheme } from "./lib/theme";
+
+export { default as Timeline } from "./components/Timeline.svelte";
+export type { TimelineGroup } from "./components/Timeline.svelte";

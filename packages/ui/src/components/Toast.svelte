@@ -45,7 +45,7 @@
   )}
   {...rest}
 >
-  <span class={cn("mt-[5px] h-1.5 w-1.5 shrink-0 rounded-full", dots[variant])}></span>
+  <span class={cn("mt-1.25 h-1.5 w-1.5 shrink-0 rounded-full", dots[variant])}></span>
   <div class="flex flex-col gap-0.5">
     <p class="font-sans text-sm font-medium text-foreground">{title}</p>
     {#if description}

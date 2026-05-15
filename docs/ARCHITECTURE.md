@@ -42,6 +42,9 @@ Key areas:
     Chat agent tool definitions, extracted from the API route.
 - [apps/memos/src/lib/components](/Users/pleasure1234/Github/my-memos/apps/memos/src/lib/components)
   App-specific Svelte UI not exported as reusable package components.
+  Contains two layout generations:
+  - `new/` — default layout: `Masthead`, `Home`, `Chat`, `Archive`. Timeline-based feed, no sidebar.
+  - `old/` — legacy layout kept for comparison via the in-page toggle button.
 - [apps/memos/migrations](/Users/pleasure1234/Github/my-memos/apps/memos/migrations)
   D1 schema migrations applied by wrangler. Drizzle Kit also outputs generated SQL and its `_meta/` snapshots here; both should be committed.
 - [apps/memos/worker.ts](/Users/pleasure1234/Github/my-memos/apps/memos/worker.ts:1)
@@ -52,6 +55,7 @@ Key areas:
 The shared package `@my-memos/ui` exports:
 
 - reusable UI primitives from [packages/ui/src/components](/Users/pleasure1234/Github/my-memos/packages/ui/src/components)
+  - Includes the `Timeline` component and `TimelineGroup` type used by the new layout feed.
 - theme and utility helpers from [packages/ui/src/lib](/Users/pleasure1234/Github/my-memos/packages/ui/src/lib)
 - CSS entrypoints exposed in [packages/ui/package.json](/Users/pleasure1234/Github/my-memos/packages/ui/package.json:1)
 
@@ -181,13 +185,9 @@ File: [apps/memos/src/routes/api/chat/+server.ts](/Users/pleasure1234/Github/my-
 Behavior:
 
 - requires authentication
-- loads prompt and memory markdown from R2
-- calls Cloudflare AI Gateway through an OpenAI-compatible client
-- streams `text/event-stream` SSE; each `data:` line is a JSON object:
-  - `{ text: string }` — incremental text delta
-  - `{ tool_call: string }` — model started a tool call (value is the tool name)
-  - `{ error: string }` — stream-level error
-  - `[DONE]` — end of stream sentinel
+- loads prompt and memory from R2 to build the system context
+- model: DeepSeek V4 Flash via Cloudflare AI Gateway
+- streams SSE (`text/event-stream`); each event is a JSON object with `text`, `tool_call`, or `error` field, terminated by `[DONE]`
 - exposes tools: `get_tags`, `list_memos`, `search_memos`, `create_memo`, `update_memo`, `delete_memo`, `web_search`, `update_memory`
 
 ## Type Boundaries

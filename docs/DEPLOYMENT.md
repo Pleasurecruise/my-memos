@@ -32,18 +32,19 @@ Current binding names and IDs live in [wrangler.toml](/Users/pleasure1234/Github
 
 `App.Platform.env` is declared in [apps/memos/src/app.d.ts](/Users/pleasure1234/Github/my-memos/apps/memos/src/app.d.ts:1). In practice, this app needs:
 
-| Variable                   | Required              | Purpose                                                          |
-| -------------------------- | --------------------- | ---------------------------------------------------------------- |
-| `BETTER_AUTH_URL`          | yes                   | Public base URL used by Better Auth                              |
-| `BETTER_AUTH_SECRET`       | yes                   | Better Auth signing secret                                       |
-| `GOOGLE_CLIENT_ID`         | yes                   | Google OAuth client ID                                           |
-| `GOOGLE_CLIENT_SECRET`     | yes                   | Google OAuth client secret                                       |
-| `ALLOWED_EMAIL`            | optional but expected | Limits account creation to one allowed email                     |
-| `OPENAI_API_KEY`           | yes for chat          | API key sent to Cloudflare AI Gateway OpenAI-compatible endpoint |
-| `CF_AIG_TOKEN`             | yes for chat          | Cloudflare AI Gateway auth token                                 |
-| `CF_ACCOUNT_ID`            | yes                   | Cloudflare account ID used in AI Gateway base URL                |
-| `CF_GATEWAY_NAME`          | yes                   | Cloudflare AI Gateway name                                       |
-| `AI_GATEWAY_PROVIDER_SLUG` | yes                   | Provider slug prefixed into the model name                       |
+| Variable                   | Required              | Purpose                                      |
+| -------------------------- | --------------------- | -------------------------------------------- |
+| `BETTER_AUTH_URL`          | yes                   | Public base URL used by Better Auth          |
+| `BETTER_AUTH_SECRET`       | yes                   | Better Auth signing secret                   |
+| `GOOGLE_CLIENT_ID`         | yes                   | Google OAuth client ID                       |
+| `GOOGLE_CLIENT_SECRET`     | yes                   | Google OAuth client secret                   |
+| `ALLOWED_EMAIL`            | optional but expected | Limits account creation to one allowed email |
+| `CF_AIG_TOKEN`             | yes for chat          | Cloudflare AI Gateway auth token             |
+| `CF_ACCOUNT_ID`            | yes for chat          | Cloudflare account ID for AI Gateway         |
+| `CF_GATEWAY_NAME`          | yes for chat          | Cloudflare AI Gateway name                   |
+| `TAVILY_API_KEY`           | yes for chat          | Tavily API key for web search                |
+| `OPENAI_API_KEY`           | unused                | Declared but not read at runtime             |
+| `AI_GATEWAY_PROVIDER_SLUG` | unused                | Declared but not read at runtime             |
 
 Local development uses [.dev.vars.example](/Users/pleasure1234/Github/my-memos/.dev.vars.example:1) as the template. Production secrets should be managed with Wrangler secrets and environment vars, not committed files.
 
@@ -75,6 +76,7 @@ Useful commands from repo root:
 pnpm dev
 pnpm dev:wrangler
 pnpm d1:migrate:local
+pnpm lint
 pnpm check
 ```
 
@@ -84,8 +86,12 @@ pnpm check
   Builds first, then runs `wrangler dev --remote`.
 - `pnpm d1:migrate:local`
   Applies D1 migrations to local state under `.wrangler`.
+- `pnpm lint`
+  Runs oxlint across the workspace.
+- `pnpm format`
+  Formats source files with oxfmt.
 - `pnpm check`
-  Runs workspace checks for Svelte and TypeScript.
+  Runs format check, lint, and type checking.
 
 ## Data And Auth Migration Notes
 

@@ -17,9 +17,9 @@
   --palette-dark-text: #e6e3dc;
   --palette-dark-text-dim: #9a948d;
 
-  /* Brand accent — 煤竹色 susutake-iro (smoked-bamboo, aged over kitchen fires) */
-  --palette-brand-light: #6d5626;
-  --palette-brand-dark: #b89a64;
+  /* Brand accent — 蘇芳色 suou-iro (sappanwood rose, Heian-era court dye) */
+  --palette-brand-light: #963c5a;
+  --palette-brand-dark: #d8a0b2;
 
   /* Semantic states — 苔 sage / 朽葉 kuchiba / 緋 hiiro */
   --palette-success-light: #4d5e38;

@@ -108,14 +108,14 @@
   .timestamp {
     font-size: 11px;
     color: var(--color-muted-foreground);
-    font-family: var(--font-mono), serif;
+    font-family: var(--font-mono);
     padding: 0 4px;
   }
 
   .system-label {
     font-size: 11.5px;
     color: var(--color-muted-foreground);
-    font-family: var(--font-sans), serif;
+    font-family: var(--font-sans);
     background: var(--color-muted);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-full);

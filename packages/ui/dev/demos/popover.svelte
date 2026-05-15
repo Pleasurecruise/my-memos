@@ -3,15 +3,7 @@
 </script>
 
 <script lang="ts">
-  import {
-    Popover,
-    PopoverTrigger,
-    PopoverContent,
-    Button,
-    Input,
-    Label,
-    Separator,
-  } from "../../src";
+  import { Popover, PopoverTrigger, PopoverContent, Button, Input, Label } from "../../src";
   import DemoPage from "../DemoPage.svelte";
   import SectionLabel from "../SectionLabel.svelte";
 

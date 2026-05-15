@@ -41,25 +41,25 @@
 
 <div class="flex flex-col gap-10">
   <section class="flex flex-col gap-3">
-    <p class="font-mono text-[11px] uppercase tracking-widest text-muted-foreground">Colors</p>
+    <p class="font-mono text-2.75 uppercase tracking-widest text-muted-foreground">Colors</p>
     <div class="flex flex-wrap gap-3">
       {#each colorSwatches as { name, bg, fg } (name)}
         <div class="flex flex-col items-center gap-1.5">
           <div
-            class="{bg} {fg} w-11 h-11 rounded-md border border-border flex items-center justify-center text-[9px] font-mono"
+            class="{bg} {fg} w-11 h-11 rounded-md border border-border flex items-center justify-center text-2.25 font-mono"
           ></div>
-          <span class="font-mono text-[10px] text-muted-foreground">{name}</span>
+          <span class="font-mono text-2.5 text-muted-foreground">{name}</span>
         </div>
       {/each}
     </div>
   </section>
 
   <section class="flex flex-col gap-4">
-    <p class="font-mono text-[11px] uppercase tracking-widest text-muted-foreground">Typography</p>
+    <p class="font-mono text-2.75 uppercase tracking-widest text-muted-foreground">Typography</p>
     <div class="flex flex-col gap-3">
       {#each fontSamples as { label, cls, text } (label)}
         <div class="flex items-baseline gap-4">
-          <span class="font-mono text-[10px] text-muted-foreground w-32 shrink-0">{label}</span>
+          <span class="font-mono text-2.5 text-muted-foreground w-32 shrink-0">{label}</span>
           <span class={cls}>{text}</span>
         </div>
       {/each}

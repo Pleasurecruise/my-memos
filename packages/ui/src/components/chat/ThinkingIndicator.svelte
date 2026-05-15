@@ -22,7 +22,7 @@
   .thinking {
     font-size: 13px;
     color: var(--color-muted-foreground);
-    font-family: var(--font-sans), serif;
+    font-family: var(--font-sans);
     animation: fade 0.3s ease;
   }
 

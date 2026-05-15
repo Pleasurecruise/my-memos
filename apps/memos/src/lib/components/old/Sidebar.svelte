@@ -104,7 +104,7 @@
       <span
         class="flex items-center gap-2 text-accent font-serif font-semibold text-lg tracking-tight select-none"
       >
-        <img src="/favicon.png" alt="" class="h-[17px] w-[17px] shrink-0 rounded-sm" />
+        <img src="/favicon.png" alt="" class="h-4.25 w-4.25 shrink-0 rounded-sm" />
         my memos
       </span>
       <Tooltip content="Close sidebar" side="right">
@@ -248,7 +248,7 @@
               class="w-full gap-2 text-muted-foreground"
               onclick={async () => {
                 await signOut();
-                await invalidateAll();
+                await goto("/");
               }}
             >
               <LogOut size={13} />
