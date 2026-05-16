@@ -6,7 +6,7 @@
   import { apiCreateMemo } from "$lib/api/memos";
   import { showToast } from "$lib/stores/toast.svelte";
   import { Button, Input, Separator, Alert, AlertDescription } from "@my-memos/ui";
-  import { Search, Star, Pencil, Archive, Trash2, X, Check, Globe, Lock } from "lucide-svelte";
+  import { Search, Star, Pencil, Archive, Trash2, X, Check, Globe, Lock } from "@lucide/svelte";
   import type { Memo, MemoVisibility, TagCount } from "$lib/types";
   import {
     createDeleteActions,

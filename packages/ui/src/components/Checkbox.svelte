@@ -7,7 +7,7 @@
 </script>
 
 <script lang="ts">
-  import { Check } from "lucide-svelte";
+  import { Check } from "@lucide/svelte";
   import { cn } from "../lib/utils";
 
   let { error, class: extraClass = "", ...rest }: CheckboxProps = $props();

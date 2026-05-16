@@ -2,7 +2,7 @@
   import { onMount } from "svelte";
   import type { Snippet } from "svelte";
   import { applyTheme } from "@my-memos/ui";
-  import { Menu } from "lucide-svelte";
+  import { Menu } from "@lucide/svelte";
   import Sidebar from "$lib/components/old/Sidebar.svelte";
   import type { TagCount } from "$lib/types";
 

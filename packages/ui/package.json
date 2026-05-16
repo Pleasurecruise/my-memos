@@ -17,9 +17,11 @@
     "build": "vp build"
   },
   "dependencies": {
+    "@lucide/svelte": "1.16.0",
     "clsx": "2.1.1",
-    "lucide-svelte": "1.0.1",
-    "svelte": "5.55.5",
     "tailwind-merge": "3.6.0"
+  },
+  "devDependencies": {
+    "svelte": "5.55.7"
   }
 }

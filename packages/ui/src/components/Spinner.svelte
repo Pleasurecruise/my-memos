@@ -9,7 +9,7 @@
 </script>
 
 <script lang="ts">
-  import { Loader2 } from "lucide-svelte";
+  import { Loader2 } from "@lucide/svelte";
   import { cn } from "../lib/utils";
 
   const sizes: Record<SpinnerSize, number> = { sm: 16, md: 20, lg: 24 };

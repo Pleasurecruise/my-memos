@@ -7,7 +7,7 @@
 </script>
 
 <script lang="ts">
-  import { ChevronLeft, ChevronRight } from "lucide-svelte";
+  import { ChevronLeft, ChevronRight } from "@lucide/svelte";
   import { untrack } from "svelte";
   import { cn } from "../lib/utils";
 

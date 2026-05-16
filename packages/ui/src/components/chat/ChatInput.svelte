@@ -13,7 +13,7 @@
 <script lang="ts">
   import { cn } from "../../lib/utils";
   import Button from "../Button.svelte";
-  import { ArrowUp } from "lucide-svelte";
+  import { ArrowUp } from "@lucide/svelte";
 
   let {
     value = $bindable(""),

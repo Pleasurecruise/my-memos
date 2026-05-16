@@ -1,11 +1,11 @@
 <script lang="ts">
-  import { isSameDay } from "date-fns";
+  import { isSameDay, format } from "date-fns";
   import { invalidateAll } from "$app/navigation";
   import { page } from "$app/state";
   import { Timeline } from "@my-memos/ui";
   import type { TimelineGroup } from "@my-memos/ui";
   import { Button } from "@my-memos/ui";
-  import { Globe, Lock, Pencil, Trash2, Check, X, Star, Archive, Search } from "lucide-svelte";
+  import { Globe, Lock, Pencil, Trash2, Check, X, Star, Archive, Search } from "@lucide/svelte";
   import type { Memo, MemoVisibility, TagCount } from "$lib/types";
   import {
     createDeleteActions,
@@ -84,7 +84,7 @@
   function groupByDay(items: Memo[]) {
     const map = new Map<string, Memo[]>();
     for (const m of items) {
-      const k = new Date(m.createdAt).toISOString().slice(0, 10);
+      const k = format(new Date(m.createdAt), "yyyy-MM-dd");
       if (!map.has(k)) map.set(k, []);
       map.get(k)!.push(m);
     }
@@ -94,7 +94,7 @@
   const pinnedFiltered = $derived(filtered.filter((m) => m.pinned));
   const unpinnedFiltered = $derived(filtered.filter((m) => !m.pinned));
   const grouped = $derived(groupByDay(unpinnedFiltered));
-  const todayKey = $derived(new Date().toISOString().slice(0, 10));
+  const todayKey = $derived(format(new Date(), "yyyy-MM-dd"));
 
   function dayLabel(iso: string) {
     const d = new Date(iso + "T00:00:00");
@@ -154,8 +154,8 @@
     return Array.from({ length: 14 }, (_, i) => {
       const d = new Date(now);
       d.setDate(now.getDate() - (13 - i));
-      const key = d.toISOString().slice(0, 10);
-      return memos.some((m) => m.createdAt.slice(0, 10) === key);
+      const key = format(d, "yyyy-MM-dd");
+      return memos.some((m) => format(new Date(m.createdAt), "yyyy-MM-dd") === key);
     });
   });
 
@@ -201,48 +201,48 @@
     <div class="grid gap-10 grid-cols-1 md:grid-cols-[1fr_300px]">
       <div>
         {#if composerOpen}
-          <div
-            class="border border-border rounded-lg bg-background shadow-xs overflow-hidden relative mb-4"
-          >
-            <MarkdownEditor
-              bind:value={content}
-              ontextchange={(v) => ac.onValueChange(v)}
-              onkeydown={(e) => {
-                const next = ac.onKeydown(e);
-                if (next !== null) content = next;
-                if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) saveMemo();
-              }}
-              placeholder="A line for the notebook..."
-              class="min-h-15"
-            />
-            <div class="flex items-center gap-2 px-3 py-2.5 border-t border-border">
-              <Button
-                variant="outline"
-                size="sm"
-                onclick={() => (visibility = visibility === "public" ? "private" : "public")}
-                class="gap-1.5 font-normal text-muted-foreground"
-              >
-                {#if visibility === "public"}<Globe size={11} />{:else}<Lock size={11} />{/if}
-                {visLabel}
-              </Button>
-              <span class="flex-1"></span>
-              <span class="text-xs text-muted-foreground opacity-50 hidden sm:inline"
-                >Cmd+Enter</span
-              >
-              <Button
-                variant="ghost"
-                size="sm"
-                class="text-muted-foreground"
-                onclick={() => {
-                  composerOpen = false;
-                  content = "";
+          <div class="relative mb-4">
+            <div class="border border-border rounded-lg bg-background shadow-xs overflow-hidden">
+              <MarkdownEditor
+                bind:value={content}
+                ontextchange={(v) => ac.onValueChange(v)}
+                onkeydown={(e) => {
+                  const next = ac.onKeydown(e);
+                  if (next !== null) content = next;
+                  if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) saveMemo();
                 }}
-              >
-                <X size={12} />
-              </Button>
-              <Button size="sm" disabled={!content.trim() || isSaving} onclick={saveMemo}>
-                {isSaving ? "Saving..." : "Save"}
-              </Button>
+                placeholder="A line for the notebook..."
+                class="min-h-15"
+              />
+              <div class="flex items-center gap-2 px-3 py-2.5 border-t border-border">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onclick={() => (visibility = visibility === "public" ? "private" : "public")}
+                  class="gap-1.5 font-normal text-muted-foreground"
+                >
+                  {#if visibility === "public"}<Globe size={11} />{:else}<Lock size={11} />{/if}
+                  {visLabel}
+                </Button>
+                <span class="flex-1"></span>
+                <span class="text-xs text-muted-foreground opacity-50 hidden sm:inline"
+                  >Cmd+Enter</span
+                >
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  class="text-muted-foreground"
+                  onclick={() => {
+                    composerOpen = false;
+                    content = "";
+                  }}
+                >
+                  <X size={12} />
+                </Button>
+                <Button size="sm" disabled={!content.trim() || isSaving} onclick={saveMemo}>
+                  {isSaving ? "Saving..." : "Save"}
+                </Button>
+              </div>
             </div>
             {#if ac.open && ac.suggestions.length > 0}
               <div

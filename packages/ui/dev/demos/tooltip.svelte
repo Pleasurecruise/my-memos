@@ -3,7 +3,7 @@
 </script>
 
 <script lang="ts">
-  import { Info } from "lucide-svelte";
+  import { Info } from "@lucide/svelte";
   import { Tooltip, Button } from "../../src";
   import DemoPage from "../DemoPage.svelte";
   import SectionLabel from "../SectionLabel.svelte";

@@ -3,7 +3,7 @@
 </script>
 
 <script lang="ts">
-  import { ChevronDown, Ellipsis, FilePlus, FolderOpen, Save, Trash2 } from "lucide-svelte";
+  import { ChevronDown, Ellipsis, FilePlus, FolderOpen, Save, Trash2 } from "@lucide/svelte";
   import {
     DropdownMenu,
     DropdownMenuTrigger,

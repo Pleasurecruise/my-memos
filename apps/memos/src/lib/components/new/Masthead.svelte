@@ -10,7 +10,7 @@
     PopoverContent,
     PopoverTrigger,
   } from "@my-memos/ui";
-  import { Home, Archive, MessageSquare, Sun, Moon, LogIn, LogOut } from "lucide-svelte";
+  import { Home, Archive, MessageSquare, Sun, Moon, LogIn, LogOut } from "@lucide/svelte";
   import { signIn, signOut } from "$lib/auth-client";
   import { showToast } from "$lib/stores/toast.svelte";
   import type { Memo, TagCount } from "$lib/types";

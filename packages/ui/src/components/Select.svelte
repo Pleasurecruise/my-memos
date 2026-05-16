@@ -9,7 +9,7 @@
 </script>
 
 <script lang="ts">
-  import { ChevronDown } from "lucide-svelte";
+  import { ChevronDown } from "@lucide/svelte";
   import { cn } from "../lib/utils";
 
   const base = cn(

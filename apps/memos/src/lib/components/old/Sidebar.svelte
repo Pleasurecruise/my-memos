@@ -25,7 +25,7 @@
     X,
     LogIn,
     LogOut,
-  } from "lucide-svelte";
+  } from "@lucide/svelte";
   import type { TagCount } from "$lib/types";
   import { showToast } from "$lib/stores/toast.svelte";
 

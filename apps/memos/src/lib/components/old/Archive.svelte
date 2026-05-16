@@ -2,7 +2,7 @@
   import { isSameDay } from "date-fns";
   import { updateQuery } from "$lib/utils";
   import { Button } from "@my-memos/ui";
-  import { RotateCcw, Trash2 } from "lucide-svelte";
+  import { RotateCcw, Trash2 } from "@lucide/svelte";
   import type { Memo } from "$lib/types";
   import { createDeleteActions, createRestoreActions } from "$lib/stores/memo-actions.svelte";
   import MemoCard from "$lib/components/MemoCard.svelte";

@@ -45,7 +45,7 @@
         attributes: { class: "tiptap-editor" },
         handleKeyDown(_view, event) {
           onkeydown?.(event);
-          return false;
+          return event.defaultPrevented;
         },
       },
       onUpdate({ editor: ed }) {

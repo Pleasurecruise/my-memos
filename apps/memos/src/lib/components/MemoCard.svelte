@@ -2,7 +2,7 @@
   import { isToday, isYesterday, isSameDay, format, formatDistanceToNow } from "date-fns";
   import { Badge } from "@my-memos/ui";
   import type { Snippet } from "svelte";
-  import { Globe, Lock } from "lucide-svelte";
+  import { Globe, Lock } from "@lucide/svelte";
   import type { Memo } from "$lib/types";
 
   interface MemoCardProps {
