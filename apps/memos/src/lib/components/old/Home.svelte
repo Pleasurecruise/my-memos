@@ -131,6 +131,16 @@
           Cancel
         </Button>
         <Button
+          variant="outline"
+          size="sm"
+          class="gap-1.5 font-normal text-muted-foreground"
+          onclick={() =>
+            (edit.editVisibility = edit.editVisibility === "public" ? "private" : "public")}
+        >
+          {#if edit.editVisibility === "public"}<Globe size={11} />{:else}<Lock size={11} />{/if}
+          {edit.editVisibility === "public" ? "Public" : "Private"}
+        </Button>
+        <Button
           size="sm"
           class="gap-1.5 font-normal ml-auto"
           disabled={!edit.editContent.trim() || edit.isUpdating}

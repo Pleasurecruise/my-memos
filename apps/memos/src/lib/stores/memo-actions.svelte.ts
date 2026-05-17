@@ -1,7 +1,7 @@
 import { invalidateAll } from "$app/navigation";
 import { apiUpdateMemo, apiDeleteMemo } from "$lib/api/memos";
 import { showToast } from "$lib/stores/toast.svelte";
-import type { Memo } from "$lib/types";
+import type { Memo, MemoVisibility } from "$lib/types";
 
 export function createDeleteActions() {
   let pendingDeleteId = $state<string | null>(null);
@@ -57,11 +57,13 @@ export function createDeleteActions() {
 export function createEditActions() {
   let editingId = $state<string | null>(null);
   let editContent = $state("");
+  let editVisibility = $state<MemoVisibility>("private");
   let isUpdating = $state(false);
 
   function start(memo: Memo) {
     editingId = memo.id;
     editContent = memo.content;
+    editVisibility = memo.visibility;
   }
 
   function cancel() {
@@ -73,7 +75,7 @@ export function createEditActions() {
     if (!editContent.trim() || isUpdating) return;
     isUpdating = true;
     try {
-      await apiUpdateMemo(id, { content: editContent });
+      await apiUpdateMemo(id, { content: editContent, visibility: editVisibility });
       editingId = null;
       editContent = "";
       await invalidateAll();
@@ -94,6 +96,12 @@ export function createEditActions() {
     },
     set editContent(v: string) {
       editContent = v;
+    },
+    get editVisibility() {
+      return editVisibility;
+    },
+    set editVisibility(v: MemoVisibility) {
+      editVisibility = v;
     },
     get isUpdating() {
       return isUpdating;
