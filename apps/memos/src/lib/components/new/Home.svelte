@@ -2,7 +2,7 @@
   import { isSameDay, format } from "date-fns";
   import { invalidateAll } from "$app/navigation";
   import { page } from "$app/state";
-  import { Timeline } from "@my-memos/ui";
+  import { Alert, AlertDescription, Timeline } from "@my-memos/ui";
   import type { TimelineGroup } from "@my-memos/ui";
   import { Button } from "@my-memos/ui";
   import { Globe, Lock, Pencil, Trash2, Check, X, Star, Archive, Search } from "@lucide/svelte";
@@ -279,6 +279,18 @@
           </button>
         {/if}
 
+        {#if error}
+          <Alert variant="error" class="flex items-start gap-2 py-2.5 mb-4">
+            <AlertDescription class="flex-1">{error}</AlertDescription>
+            <button
+              onclick={() => (error = "")}
+              class="shrink-0 text-error/60 hover:text-error transition-colors"
+            >
+              <X size={13} />
+            </button>
+          </Alert>
+        {/if}
+
         <!-- Timeline: now without composer -->
         <Timeline groups={timelineContent}>
           {#snippet children(memo)}
@@ -387,7 +399,7 @@
                       disabled={arc.archivingId === memo.id}
                       onclick={() => {
                         if (!page.data.user) {
-                          showToast("error", "请先登录", "需要登录才能访问该页面");
+                          showToast("error", "Please sign in to archive memos");
                           return;
                         }
                         arc.archive(memo.id);
