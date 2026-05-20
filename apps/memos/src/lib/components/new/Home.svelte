@@ -318,7 +318,7 @@
                   <MarkdownContent
                     content={memo.content}
                     stripTags
-                    class="text-sm leading-relaxed"
+                    class="max-h-48 overflow-y-auto text-sm leading-relaxed"
                   />
                 {/if}
 

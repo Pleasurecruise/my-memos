@@ -1,14 +1,14 @@
 import { json } from "@sveltejs/kit";
 import type { RequestHandler } from "./$types";
 import { createOpenAI } from "@ai-sdk/openai";
-import { streamText, stepCountIs, type ModelMessage } from "ai";
+import { convertToModelMessages, streamText, stepCountIs, type UIMessage } from "ai";
 import { createChatTools } from "$lib/server/chat/tools";
 
 export const POST: RequestHandler = async ({ request, platform, locals }) => {
   if (!locals.user) return json({ error: "Unauthorized." }, { status: 401 });
   if (!platform) return json({ error: "Platform bindings unavailable." }, { status: 500 });
 
-  const { messages } = (await request.json()) as { messages: ModelMessage[] };
+  const { messages } = (await request.json()) as { messages: UIMessage[] };
 
   const [promptObj, memoryObj] = await Promise.all([
     platform.env.MEMOS_BUCKET.get("agent/PROMPT.md"),
@@ -45,43 +45,12 @@ export const POST: RequestHandler = async ({ request, platform, locals }) => {
     // ),
     model: provider.chat(`deepseek/deepseek-v4-flash`),
     system,
-    messages,
+    messages: await convertToModelMessages(messages),
     stopWhen: stepCountIs(5),
     tools: createChatTools(platform.env),
   });
 
-  const enc = new TextEncoder();
-  const stream = new ReadableStream({
-    async start(controller) {
-      try {
-        for await (const part of result.fullStream) {
-          if (part.type === "text-delta") {
-            controller.enqueue(enc.encode(`data: ${JSON.stringify({ text: part.text })}\n\n`));
-          } else if (part.type === "tool-call") {
-            controller.enqueue(
-              enc.encode(`data: ${JSON.stringify({ tool_call: part.toolName })}\n\n`),
-            );
-          } else if (part.type === "error") {
-            const msg = part.error instanceof Error ? part.error.message : String(part.error);
-            controller.enqueue(enc.encode(`data: ${JSON.stringify({ error: msg })}\n\n`));
-          }
-        }
-        controller.enqueue(enc.encode("data: [DONE]\n\n"));
-      } catch (err) {
-        const msg = err instanceof Error ? err.message : String(err);
-        controller.enqueue(enc.encode(`data: ${JSON.stringify({ error: msg })}\n\n`));
-        controller.enqueue(enc.encode("data: [DONE]\n\n"));
-      } finally {
-        controller.close();
-      }
-    },
-  });
-
-  return new Response(stream, {
-    headers: {
-      "Content-Type": "text/event-stream",
-      "Cache-Control": "no-cache",
-      Connection: "keep-alive",
-    },
+  return result.toUIMessageStreamResponse({
+    onError: (error) => (error instanceof Error ? error.message : String(error)),
   });
 };

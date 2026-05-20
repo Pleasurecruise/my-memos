@@ -1,102 +1,30 @@
 <script lang="ts">
-  import { ChatThread, ChatMessage, ChatInput } from "@my-memos/ui";
+  import ChevronRight from "@lucide/svelte/icons/chevron-right";
+  import { Chat } from "@ai-sdk/svelte";
+  import { getToolName, isToolUIPart } from "ai";
+  import {
+    ChatThread,
+    ChatMessage,
+    ChatInput,
+    Collapsible,
+    CollapsibleContent,
+    CollapsibleTrigger,
+  } from "@my-memos/ui";
   import MarkdownContent from "$lib/components/MarkdownContent.svelte";
   import Masthead from "./Masthead.svelte";
 
   interface Props {
-    user: { image?: string | null | undefined; name: string } | null;
+    user: { image?: string | null; name: string } | null;
   }
 
   let { user }: Props = $props();
 
-  const TOOL_LABELS: Record<string, string> = {
-    get_tags: "Fetching tags...",
-    list_memos: "Browsing memos...",
-    search_memos: "Searching memos...",
-    update_memory: "Updating memory...",
-  };
-
-  interface Message {
-    role: "user" | "assistant";
-    content: string;
-    thinking: boolean;
-    toolStatus?: string;
-  }
-
-  let messages = $state<Message[]>([]);
-  let isStreaming = $state(false);
+  const chat = new Chat({});
+  const isStreaming = $derived(chat.status === "submitted" || chat.status === "streaming");
 
   async function handleSend(text: string) {
     if (isStreaming) return;
-
-    messages.push({ role: "user", content: text, thinking: false });
-
-    const outgoing = messages.map((m) => ({ role: m.role, content: m.content }));
-
-    isStreaming = true;
-    messages.push({ role: "assistant", content: "", thinking: true });
-    const assistantIdx = messages.length - 1;
-
-    try {
-      const res = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: outgoing }),
-      });
-
-      if (!res.ok || !res.body) {
-        messages[assistantIdx].thinking = false;
-        messages[assistantIdx].content = "Error: failed to connect.";
-        return;
-      }
-
-      const reader = res.body.getReader();
-      const dec = new TextDecoder();
-      let buf = "";
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buf += dec.decode(value, { stream: true });
-
-        const lines = buf.split("\n\n");
-        buf = lines.pop()!;
-
-        let finished = false;
-        for (const line of lines) {
-          if (!line.startsWith("data: ")) continue;
-          const payload = line.slice(6);
-          if (payload === "[DONE]") {
-            finished = true;
-            break;
-          }
-          const parsed = JSON.parse(payload) as {
-            text?: string;
-            error?: string;
-            tool_call?: string;
-          };
-          if (typeof parsed.error === "string") {
-            messages[assistantIdx].thinking = false;
-            messages[assistantIdx].toolStatus = undefined;
-            messages[assistantIdx].content = `Error: ${parsed.error}`;
-            finished = true;
-            break;
-          }
-          if (typeof parsed.tool_call === "string") {
-            messages[assistantIdx].toolStatus = TOOL_LABELS[parsed.tool_call];
-          }
-          if (typeof parsed.text === "string") {
-            messages[assistantIdx].thinking = false;
-            messages[assistantIdx].toolStatus = undefined;
-            messages[assistantIdx].content += parsed.text;
-          }
-        }
-        if (finished) break;
-      }
-    } finally {
-      messages[assistantIdx].thinking = false;
-      isStreaming = false;
-    }
+    await chat.sendMessage({ text });
   }
 </script>
 
@@ -117,31 +45,87 @@
 
     <!-- Content + input: flex-1 so input always sticks to bottom -->
     <div class="flex-1 flex flex-col min-h-0">
-      {#if messages.length === 0}
+      {#if chat.messages.length === 0}
         <div class="flex-1 flex items-center justify-center">
           <p class="font-serif italic text-lg text-muted-foreground">喵？今天过的怎么样</p>
         </div>
       {:else}
         <ChatThread class="flex-1 min-h-0 overflow-y-auto" style="padding-top: 16px">
-          {#each messages as msg (msg)}
+          {#each chat.messages as msg (msg.id)}
             {#if msg.role === "assistant"}
-              <ChatMessage role="assistant" avatarSrc="/favicon.png" typing={msg.thinking}>
-                {#if msg.toolStatus}
-                  <p class="text-sm text-muted-foreground italic">{msg.toolStatus}</p>
-                {:else if !msg.thinking}
-                  <MarkdownContent content={msg.content} class="bubble-md" />
+              <ChatMessage
+                role="assistant"
+                avatarSrc="/favicon.png"
+                typing={isStreaming &&
+                  msg === chat.messages[chat.messages.length - 1] &&
+                  !msg.parts.length}
+              >
+                {#if msg.parts.length}
+                  <div class="flex flex-col gap-2">
+                    {#each msg.parts as part, index (index)}
+                      {#if isToolUIPart(part)}
+                        <Collapsible>
+                          <CollapsibleTrigger
+                            class="tool-trigger w-fit max-w-full rounded px-0.5 py-px font-mono text-xs leading-5 text-muted-foreground hover:bg-muted hover:text-foreground"
+                            aria-label={`Toggle ${getToolName(part)} tool details`}
+                          >
+                            <ChevronRight
+                              size={14}
+                              class="tool-chevron shrink-0 transition-transform duration-150"
+                            />
+                            <code class="text-foreground">{getToolName(part)}</code>
+                            <span class="min-w-0 truncate">{part.state.replaceAll("-", " ")}</span>
+                          </CollapsibleTrigger>
+
+                          <CollapsibleContent class="ml-5 mt-1 border-l border-border pl-3">
+                            <div class="flex flex-col gap-2 pb-1">
+                              {#if part.input && typeof part.input === "object" && !Array.isArray(part.input) && Object.keys(part.input).length}
+                                <div class="tool-detail">
+                                  <span>arguments</span>
+                                  <pre>{JSON.stringify(part.input, null, 2)}</pre>
+                                </div>
+                              {/if}
+                              {#if part.state === "output-available"}
+                                <div class="tool-detail">
+                                  <span>result</span>
+                                  <pre>{typeof part.output === "string"
+                                      ? part.output
+                                      : JSON.stringify(part.output, null, 2)}</pre>
+                                </div>
+                              {:else if part.state === "output-error"}
+                                <div class="tool-detail">
+                                  <span>error</span>
+                                  <pre>{part.errorText}</pre>
+                                </div>
+                              {/if}
+                            </div>
+                          </CollapsibleContent>
+                        </Collapsible>
+                      {:else if part.type === "text" && part.text.trim()}
+                        <MarkdownContent content={part.text} class="bubble-md" />
+                      {/if}
+                    {/each}
+                  </div>
                 {/if}
               </ChatMessage>
             {:else}
-              <ChatMessage
-                role="user"
-                content={msg.content}
-                avatarSrc={user?.image}
-                avatarFallback={user?.name}
-              />
+              <ChatMessage role="user" avatarSrc={user?.image} avatarFallback={user?.name}>
+                {#each msg.parts as part, index (index)}
+                  {#if part.type === "text"}
+                    <span class="whitespace-pre-wrap">{part.text}</span>
+                  {/if}
+                {/each}
+              </ChatMessage>
             {/if}
           {/each}
+          {#if isStreaming && chat.messages[chat.messages.length - 1]?.role !== "assistant"}
+            <ChatMessage role="assistant" avatarSrc="/favicon.png" typing />
+          {/if}
         </ChatThread>
+      {/if}
+
+      {#if chat.error}
+        <p class="mt-3 text-sm text-muted-foreground">Error: {chat.error.message}</p>
       {/if}
 
       <!-- Input: always at the bottom, no jump -->
@@ -153,3 +137,39 @@
     </div>
   </div>
 </div>
+
+<style>
+  .tool-detail {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .tool-detail span {
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    line-height: 1.4;
+    color: var(--color-muted-foreground);
+    text-transform: uppercase;
+  }
+
+  .tool-detail pre {
+    max-width: min(100%, 640px);
+    max-height: 260px;
+    margin: 0;
+    overflow: auto;
+    border-radius: 4px;
+    background: var(--color-muted);
+    padding: 8px 10px;
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    line-height: 1.55;
+    color: var(--color-foreground);
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  :global(.tool-trigger[data-state="open"] .tool-chevron) {
+    transform: rotate(90deg);
+  }
+</style>

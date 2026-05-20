@@ -10,9 +10,10 @@
   },
   "dependencies": {
     "@ai-sdk/openai": "3.0.64",
+    "@ai-sdk/svelte": "4.0.185",
     "@lucide/svelte": "1.16.0",
     "@my-memos/ui": "workspace:*",
-    "ai": "6.0.184",
+    "ai": "6.0.185",
     "better-auth": "1.6.11",
     "date-fns": "4.2.1",
     "dompurify": "3.4.5",
@@ -22,7 +23,6 @@
   },
   "devDependencies": {
     "@sveltejs/adapter-cloudflare": "7.2.8",
-    "@sveltejs/kit": "2.60.1",
-    "svelte": "5.55.7"
+    "@sveltejs/kit": "2.60.1"
   }
 }

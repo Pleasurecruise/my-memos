@@ -106,7 +106,11 @@
                   {/if}
                 </div>
 
-                <MarkdownContent content={memo.content} stripTags class="text-sm leading-relaxed" />
+                <MarkdownContent
+                  content={memo.content}
+                  stripTags
+                  class="max-h-48 overflow-y-auto text-sm leading-relaxed"
+                />
 
                 {#if memo.tags.length > 0}
                   <div class="flex flex-wrap gap-1.5 mt-2">

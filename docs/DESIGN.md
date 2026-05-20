@@ -2,8 +2,6 @@
 
 Warm earth light, warm charcoal dark. One theme, two modes, no brand noise.
 
----
-
 ## Architecture
 
 ```
@@ -18,8 +16,6 @@ Semantic  packages/ui/src/styles/tokens.css
 ```
 
 **Rule:** project code references semantic tokens only. Never write a raw hex or a `--palette-*` var outside of `tokens.css`.
-
----
 
 ## Palette
 
@@ -77,8 +73,6 @@ Low-saturation, drawn from Japanese natural-color names. Light values are dark e
 | `--palette-warning-*` | `#7a5520` | `#d4b88e` | 深朽葉 / 朽葉    | 6.22 : 1 / 9.37 : 1   |
 | `--palette-error-*`   | `#a03030` | `#d06464` | 緋色 hiiro       | 6.61 : 1 / 4.81 : 1   |
 
----
-
 ## Semantic Tokens
 
 | Token                       | Light         | Dark          | Use for                     |
@@ -96,8 +90,6 @@ Low-saturation, drawn from Japanese natural-color names. Light values are dark e
 | `--color-warning`           | warning-light | warning-dark  | caution state               |
 | `--color-error`             | error-light   | error-dark    | errors, destructive         |
 
----
-
 ## Border Radius
 
 Corners are intentionally restrained — Japanese design avoids both sharp edges and the over-rounded look common in Western design systems.
@@ -111,8 +103,6 @@ Corners are intentionally restrained — Japanese design avoids both sharp edges
 | `--radius-xl`   | `10px`   | `rounded-xl`   | dialogs, drawers               |
 | `--radius-full` | `9999px` | `rounded-full` | pill badges                    |
 
----
-
 ## Shadows
 
 Shadows are nearly flat — depth is implied by border and background contrast, not shadow blur.
@@ -123,8 +113,6 @@ Shadows are nearly flat — depth is implied by border and background contrast, 
 | `--shadow-sm` | cards, default surface      |
 | `--shadow-md` | popovers, dropdowns         |
 | `--shadow-lg` | dialogs, modals             |
-
----
 
 ## Typography
 
@@ -140,8 +128,6 @@ Shadows are nearly flat — depth is implied by border and background contrast, 
 - Medium emphasis: 500
 - Headings: 600 maximum — avoid 700+ on CJK (browser synthetic bold degrades stroke quality)
 
----
-
 ## Animation
 
 | Token             | Value   | Use for                      |
@@ -152,15 +138,11 @@ Shadows are nearly flat — depth is implied by border and background contrast, 
 
 Easing: prefer `ease-out` for entrances, `ease-in` for exits. Never use linear for UI motion.
 
----
-
 ## Theme Switching
 
 Dark mode is triggered by a `.dark` class on `<html>`. Use `applyTheme(dark)` from `@my-memos/ui` to toggle it — it suppresses transitions during the switch to avoid a flash.
 
 `app.html` contains a small inline script that applies the correct theme before first paint, based on `localStorage` preference or system preference. `Masthead` owns the user-facing toggle and persists the choice to `localStorage`.
-
----
 
 ## Usage
 
@@ -183,8 +165,6 @@ Dark mode is triggered by a `.dark` class on `<html>`. Use `applyTheme(dark)` fr
   outline-offset: 2px;
 }
 ```
-
----
 
 ## Principles
 

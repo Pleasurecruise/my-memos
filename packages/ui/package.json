@@ -20,8 +20,5 @@
     "@lucide/svelte": "1.16.0",
     "clsx": "2.1.1",
     "tailwind-merge": "3.6.0"
-  },
-  "devDependencies": {
-    "svelte": "5.55.7"
   }
 }
