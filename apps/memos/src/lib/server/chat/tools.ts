@@ -304,19 +304,5 @@ export function createChatTools(env: Env) {
         return parts.join("\n\n---\n\n") || "No results found.";
       },
     }),
-
-    update_memory: tool({
-      description:
-        "Overwrite the long-term memory file with updated information about the user. Call this when you learn something worth remembering across conversations.",
-      inputSchema: z.object({
-        content: z.string().describe("Full new markdown content for the memory file"),
-      }),
-      execute: async ({ content }) => {
-        await MEMOS_BUCKET.put("agent/MEMORY.md", content, {
-          httpMetadata: { contentType: "text/markdown; charset=utf-8" },
-        });
-        return "Memory updated.";
-      },
-    }),
   };
 }

@@ -187,8 +187,9 @@ Behavior:
 - requires authentication
 - loads prompt and memory from R2 to build the system context
 - model: DeepSeek V4 Flash via Cloudflare AI Gateway
-- streams SSE (`text/event-stream`); each event is a JSON object with `text`, `tool_call`, or `error` field, terminated by `[DONE]`
-- exposes tools: `get_tags`, `list_memos`, `search_memos`, `create_memo`, `update_memo`, `delete_memo`, `web_search`, `update_memory`
+- streams AI SDK UI message events for assistant text and tool parts
+- exposes tools: `get_tags`, `list_memos`, `search_memos`, `create_memo`, `update_memo`, `delete_memo`, `web_search`
+- after each completed assistant response, runs auto-dream memory maintenance to decide whether `agent/MEMORY.md` should be updated
 
 ## Type Boundaries
 

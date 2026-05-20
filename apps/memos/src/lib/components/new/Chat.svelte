@@ -2,6 +2,7 @@
   import ChevronRight from "@lucide/svelte/icons/chevron-right";
   import { Chat } from "@ai-sdk/svelte";
   import { getToolName, isToolUIPart } from "ai";
+  import { beforeNavigate } from "$app/navigation";
   import {
     ChatThread,
     ChatMessage,
@@ -21,6 +22,16 @@
 
   const chat = new Chat({});
   const isStreaming = $derived(chat.status === "submitted" || chat.status === "streaming");
+
+  beforeNavigate((nav) => {
+    if (nav.from?.route?.id === "/chat" && chat.messages.length > 0) {
+      fetch("/api/chat/consolidate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messages: chat.messages }),
+      });
+    }
+  });
 
   async function handleSend(text: string) {
     if (isStreaming) return;

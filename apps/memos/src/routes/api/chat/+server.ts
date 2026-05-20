@@ -1,14 +1,14 @@
 import { json } from "@sveltejs/kit";
 import type { RequestHandler } from "./$types";
-import { createOpenAI } from "@ai-sdk/openai";
 import { convertToModelMessages, streamText, stepCountIs, type UIMessage } from "ai";
+import { createProvider } from "$lib/server/chat/provider";
 import { createChatTools } from "$lib/server/chat/tools";
 
 export const POST: RequestHandler = async ({ request, platform, locals }) => {
   if (!locals.user) return json({ error: "Unauthorized." }, { status: 401 });
   if (!platform) return json({ error: "Platform bindings unavailable." }, { status: 500 });
 
-  const { messages } = (await request.json()) as { messages: UIMessage[] };
+  const { messages: requestMessages } = (await request.json()) as { messages: UIMessage[] };
 
   const [promptObj, memoryObj] = await Promise.all([
     platform.env.MEMOS_BUCKET.get("agent/PROMPT.md"),
@@ -22,35 +22,20 @@ export const POST: RequestHandler = async ({ request, platform, locals }) => {
   let system = `Today's date (UTC): ${today}\n\n${promptMd || "You are a helpful personal assistant."}`;
   if (memoryMd) system += `\n\n<memory>\n${memoryMd}\n</memory>`;
 
-  const gatewayBase = `https://gateway.ai.cloudflare.com/v1/${platform.env.CF_ACCOUNT_ID}/${platform.env.CF_GATEWAY_NAME}/compat`;
-  const provider = createOpenAI({
-    baseURL: gatewayBase,
-    apiKey: "",
-    // apiKey: platform.env.OPENAI_API_KEY,
-    headers: { "cf-aig-authorization": `Bearer ${platform.env.CF_AIG_TOKEN}` },
-    fetch: (url, init) => {
-      const headers = new Headers(init?.headers);
-      headers.delete("authorization");
-      const body = JSON.stringify({
-        ...JSON.parse(init?.body as string),
-        thinking: { type: "disabled" },
-      });
-      return globalThis.fetch(url, { ...init, headers, body });
-    },
-  });
+  const provider = createProvider(platform.env);
+  // const slug = platform.env.CF_CUSTOM_PROVIDER_SLUG;
 
   const result = streamText({
-    // model: provider.chat(
-    //   `custom-${platform.env.AI_GATEWAY_PROVIDER_SLUG}/deepseek-ai/DeepSeek-V4-Flash`,
-    // ),
     model: provider.chat(`deepseek/deepseek-v4-flash`),
+    // model: provider.chat(`custom-${slug}/deepseek-v4-flash`),
     system,
-    messages: await convertToModelMessages(messages),
-    stopWhen: stepCountIs(5),
+    messages: await convertToModelMessages(requestMessages),
+    stopWhen: stepCountIs(20),
     tools: createChatTools(platform.env),
   });
 
   return result.toUIMessageStreamResponse({
+    originalMessages: requestMessages,
     onError: (error) => (error instanceof Error ? error.message : String(error)),
   });
 };

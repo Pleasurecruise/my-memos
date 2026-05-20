@@ -1,5 +1,6 @@
 <script lang="ts">
   import { ChatThread, ChatMessage, ChatInput } from "@my-memos/ui";
+  import { beforeNavigate } from "$app/navigation";
   import AppShell from "./AppShell.svelte";
   import MarkdownContent from "$lib/components/MarkdownContent.svelte";
 
@@ -25,6 +26,22 @@
 
   let messages = $state<Message[]>([]);
   let isStreaming = $state(false);
+
+  beforeNavigate((nav) => {
+    if (nav.from?.route?.id === "/chat" && messages.length > 0) {
+      fetch("/api/chat/consolidate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          messages: messages.map((m) => ({
+            id: crypto.randomUUID(),
+            role: m.role,
+            parts: [{ type: "text", text: m.content }],
+          })),
+        }),
+      });
+    }
+  });
 
   async function handleSend(text: string) {
     if (isStreaming) return;

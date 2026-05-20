@@ -135,4 +135,5 @@ Verify these paths after deployment:
 
 - Memo bodies are stored in both `R2` (canonical) and D1's `excerpt` field. KV is cache only. Deleting KV entries should not lose source data.
 - The chat route reads `agent/PROMPT.md` and `agent/MEMORY.md` from `MEMOS_BUCKET`. Missing files degrade gracefully, but chat behavior will change.
+- Auto-dream memory maintenance may update `agent/MEMORY.md` after completed chat responses.
 - `wrangler.toml` currently includes concrete IDs and a production URL. Keep that file aligned with actual infrastructure, and avoid mixing environments in one config unless you add explicit `[env.*]` sections.
