@@ -2,7 +2,7 @@
   import { isSameDay, format } from "date-fns";
   import { invalidateAll } from "$app/navigation";
   import { page } from "$app/state";
-  import { Alert, AlertDescription, Timeline } from "@my-memos/ui";
+  import { Alert, AlertDescription, HeatingRate, Timeline } from "@my-memos/ui";
   import type { TimelineGroup } from "@my-memos/ui";
   import { Button } from "@my-memos/ui";
   import { Globe, Lock, Pencil, Trash2, Check, X, Star, Archive, Search } from "@lucide/svelte";
@@ -24,51 +24,38 @@
 
   interface Props {
     memos: Memo[];
+    activityMemos: Memo[];
     tags: TagCount[];
     initialSearch: string;
     initialTags: string[];
     selectedDate: Date | undefined;
   }
 
-  let { memos, tags, initialSearch, initialTags, selectedDate }: Props = $props();
+  const HEATING_WEEKS = 14;
+  const QUOTES = [
+    { text: "Beauty that accumulates through repetition, not through display.", author: "蘇芳色" },
+    { text: "The surface of things is where meaning hides.", author: "物の哀れ" },
+    { text: "A note kept is a thought that survived the morning.", author: "私のノート" },
+  ];
+
+  let { memos, activityMemos, tags, initialSearch, initialTags, selectedDate }: Props = $props();
 
   let content = $state("");
   let visibility = $state<MemoVisibility>("private");
   let isSaving = $state(false);
   let composerOpen = $state(false);
   let error = $state("");
-  const visLabel = $derived(visibility === "public" ? "Public" : "Private");
+  let search = $state("");
 
   const del = createDeleteActions();
   const edit = createEditActions();
   const pin = createPinActions();
   const arc = createArchiveActions();
 
-  async function saveMemo() {
-    if (!content.trim() || isSaving) return;
-    isSaving = true;
-    error = "";
-    try {
-      await apiCreateMemo(content, visibility);
-      content = "";
-      composerOpen = false;
-      ac.close();
-      await invalidateAll();
-    } catch (err) {
-      error = err instanceof Error ? err.message : "Failed to save memo.";
-    } finally {
-      isSaving = false;
-    }
-  }
-
   const tagNames = $derived(tags.map((t) => t.name));
   const ac = createTagAutocomplete(() => tagNames);
 
-  let search = $state("");
-  $effect(() => {
-    search = initialSearch;
-  });
-
+  const visLabel = $derived(visibility === "public" ? "Public" : "Private");
   const filtered = $derived(
     memos.filter((m) => {
       if (selectedDate && !isSameDay(new Date(m.updatedAt), selectedDate)) return false;
@@ -80,6 +67,64 @@
       );
     }),
   );
+  const pinnedFiltered = $derived(filtered.filter((m) => m.pinned));
+  const unpinnedFiltered = $derived(filtered.filter((m) => !m.pinned));
+  const grouped = $derived(groupByDay(unpinnedFiltered));
+  const timelineContent: TimelineGroup<Memo>[] = $derived.by(() => {
+    const dayGroups = grouped.map(([day, items]) => {
+      const lbl = dayLabel(day);
+      return {
+        key: day,
+        heading: lbl.h,
+        subLabel: lbl.sub,
+        isToday: lbl.isToday,
+        items,
+      };
+    });
+    if (pinnedFiltered.length === 0) return dayGroups;
+    return [
+      { key: "__pinned__", heading: "pinned", subLabel: "", isToday: false, items: pinnedFiltered },
+      ...dayGroups,
+    ];
+  });
+  const heatingDays = $derived.by(() => {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const start = new Date(today);
+    start.setDate(today.getDate() - today.getDay() - (HEATING_WEEKS - 1) * 7);
+
+    const counts = new Map<string, number>();
+    for (const memo of activityMemos) {
+      const key = format(new Date(memo.createdAt), "yyyy-MM-dd");
+      counts.set(key, (counts.get(key) ?? 0) + 1);
+    }
+
+    return Array.from({ length: HEATING_WEEKS * 7 }, (_, i) => {
+      const d = new Date(start);
+      d.setDate(start.getDate() + i);
+      const key = format(d, "yyyy-MM-dd");
+      return {
+        key,
+        label: d.toLocaleDateString("en-US", {
+          weekday: "long",
+          month: "short",
+          day: "numeric",
+        }),
+        value: d <= today ? (counts.get(key) ?? 0) : 0,
+      };
+    });
+  });
+
+  const heatingStats = $derived([
+    { label: "entries", value: activityMemos.length },
+    { label: "tags in use", value: tags.length },
+    { label: "days written", value: groupByDay(activityMemos).length },
+  ]);
+  const quote = $derived(QUOTES[new Date().getDate() % QUOTES.length]);
+
+  $effect(() => {
+    search = initialSearch;
+  });
 
   function groupByDay(items: Memo[]) {
     const map = new Map<string, Memo[]>();
@@ -90,11 +135,6 @@
     }
     return [...map.entries()].sort((a, b) => b[0].localeCompare(a[0]));
   }
-
-  const pinnedFiltered = $derived(filtered.filter((m) => m.pinned));
-  const unpinnedFiltered = $derived(filtered.filter((m) => !m.pinned));
-  const grouped = $derived(groupByDay(unpinnedFiltered));
-  const todayKey = $derived(format(new Date(), "yyyy-MM-dd"));
 
   function dayLabel(iso: string) {
     const d = new Date(iso + "T00:00:00");
@@ -119,24 +159,6 @@
     });
   }
 
-  const timelineContent: TimelineGroup<Memo>[] = $derived.by(() => {
-    const dayGroups = grouped.map(([day, items]) => {
-      const lbl = dayLabel(day);
-      return {
-        key: day,
-        heading: lbl.h,
-        subLabel: lbl.sub,
-        isToday: lbl.isToday,
-        items,
-      };
-    });
-    if (pinnedFiltered.length === 0) return dayGroups;
-    return [
-      { key: "__pinned__", heading: "pinned", subLabel: "", isToday: false, items: pinnedFiltered },
-      ...dayGroups,
-    ];
-  });
-
   function toggleTag(tag: string) {
     const next = initialTags.includes(tag)
       ? initialTags.filter((t) => t !== tag)
@@ -149,22 +171,22 @@
     updateQuery({ search: value.trim() || null });
   }
 
-  const streak = $derived.by(() => {
-    const now = new Date();
-    return Array.from({ length: 14 }, (_, i) => {
-      const d = new Date(now);
-      d.setDate(now.getDate() - (13 - i));
-      const key = format(d, "yyyy-MM-dd");
-      return memos.some((m) => format(new Date(m.createdAt), "yyyy-MM-dd") === key);
-    });
-  });
-
-  const QUOTES = [
-    { text: "Beauty that accumulates through repetition, not through display.", author: "蘇芳色" },
-    { text: "The surface of things is where meaning hides.", author: "物の哀れ" },
-    { text: "A note kept is a thought that survived the morning.", author: "私のノート" },
-  ];
-  const quote = $derived(QUOTES[new Date().getDate() % QUOTES.length]);
+  async function saveMemo() {
+    if (!content.trim() || isSaving) return;
+    isSaving = true;
+    error = "";
+    try {
+      await apiCreateMemo(content, visibility);
+      content = "";
+      composerOpen = false;
+      ac.close();
+      await invalidateAll();
+    } catch (err) {
+      error = err instanceof Error ? err.message : "Failed to save memo.";
+    } finally {
+      isSaving = false;
+    }
+  }
 </script>
 
 <div class="min-h-screen bg-background text-foreground font-sans overflow-hidden">
@@ -172,9 +194,7 @@
     <Masthead {memos} {tags} />
 
     <!-- TAG STRIP -->
-    <div
-      class="flex gap-1.5 overflow-x-auto pb-3.5 mb-4 border-b border-border [scrollbar-width:none]"
-    >
+    <div class="flex gap-1.5 overflow-x-auto pb-3.5 mb-4 border-b border-border scrollbar-none">
       <span
         class="font-mono text-[10px] tracking-[0.12em] uppercase text-muted-foreground px-1 py-1 self-center shrink-0"
       >
@@ -439,25 +459,12 @@
           <span class="block text-xs text-muted-foreground mt-2">{quote.author}</span>
         </div>
 
-        <!-- streak + stats -->
-        <div class="border border-border rounded-lg bg-background p-4">
-          <p class="font-mono text-[10px] tracking-widest uppercase text-muted-foreground mb-2.5">
-            last 14 days
-          </p>
-          <div class="flex gap-1 flex-wrap">
-            {#each streak as active, i (i)}
-              <span class="w-3.5 h-3.5 rounded-sm {active ? 'bg-accent' : 'bg-border'}"></span>
-            {/each}
-          </div>
-          <div class="flex flex-col gap-1.5 mt-3.5">
-            {#each [["entries", memos.length], ["tags in use", tags.length], ["days written", grouped.length]] as [lbl, val]}
-              <div class="flex justify-between text-xs">
-                <span class="text-muted-foreground">{lbl}</span>
-                <span class="font-mono">{val}</span>
-              </div>
-            {/each}
-          </div>
-        </div>
+        <HeatingRate
+          title="last 14 weeks"
+          days={heatingDays}
+          stats={heatingStats}
+          showRate={false}
+        />
 
         <!-- search -->
         <div class="border border-border rounded-lg bg-background p-4">

@@ -137,4 +137,39 @@
   .timeline-entry-body {
     min-width: 0;
   }
+
+  @media (max-width: 640px) {
+    .timeline-rail {
+      left: 4px;
+    }
+
+    .timeline-day {
+      gap: 0.625rem;
+    }
+
+    .timeline-dot {
+      width: 0.625rem;
+      height: 0.625rem;
+      border-width: 1.25px;
+    }
+
+    .timeline-dot.today {
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-accent) 15%, transparent);
+    }
+
+    .timeline-entry {
+      grid-template-columns: 0.625rem minmax(0, 1fr);
+      gap: 0.625rem;
+    }
+
+    .timeline-bullet {
+      width: 0.625rem;
+      height: 0.625rem;
+    }
+
+    .timeline-bullet::after {
+      width: 5px;
+      height: 5px;
+    }
+  }
 </style>

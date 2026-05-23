@@ -27,6 +27,7 @@
       return !(initialTags.length > 0 && !initialTags.some((t) => m.tags.includes(t)));
     }),
   );
+  const grouped = $derived(groupByMonth(filtered));
 
   function groupByMonth(items: Memo[]) {
     const map = new Map<string, Memo[]>();
@@ -37,8 +38,6 @@
     }
     return [...map.entries()].sort((a, b) => b[0].localeCompare(a[0]));
   }
-
-  const grouped = $derived(groupByMonth(filtered));
 
   function monthLabel(iso: string) {
     const [year, month] = iso.split("-").map(Number);

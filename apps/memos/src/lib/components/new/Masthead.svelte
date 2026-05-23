@@ -20,10 +20,19 @@
     tags?: TagCount[];
   }
 
+  const THEME_KEY = "my-memos:theme";
+  const NAV_ITEMS = [
+    { href: "/", label: "Home", Icon: Home, requiresAuth: false },
+    { href: "/archive", label: "Archive", Icon: Archive, requiresAuth: true },
+    { href: "/chat", label: "Chat", Icon: MessageSquare, requiresAuth: true },
+  ] as const;
+
   let { memos = [], tags = [] }: Props = $props();
 
-  const THEME_KEY = "my-memos:theme";
   let isDark = $state(false);
+
+  const todayKey = $derived(new Date().toISOString().slice(0, 10));
+  const todayCount = $derived(memos.filter((m) => m.createdAt.slice(0, 10) === todayKey).length);
 
   onMount(() => {
     const saved = localStorage.getItem(THEME_KEY);
@@ -36,12 +45,6 @@
     localStorage.setItem(THEME_KEY, isDark ? "dark" : "light");
   });
 
-  const NAV_ITEMS = [
-    { href: "/", label: "Home", Icon: Home, requiresAuth: false },
-    { href: "/archive", label: "Archive", Icon: Archive, requiresAuth: true },
-    { href: "/chat", label: "Chat", Icon: MessageSquare, requiresAuth: true },
-  ] as const;
-
   function handleNav(href: string, requiresAuth: boolean) {
     if (requiresAuth && !page.data.user) {
       showToast("error", "请先登录", "需要登录才能访问该页面");
@@ -49,9 +52,6 @@
     }
     goto(href);
   }
-
-  const todayKey = $derived(new Date().toISOString().slice(0, 10));
-  const todayCount = $derived(memos.filter((m) => m.createdAt.slice(0, 10) === todayKey).length);
 </script>
 
 <header class="flex flex-col sm:flex-row sm:items-end gap-5 pb-4 border-b border-border mb-4">

@@ -39,6 +39,13 @@ export type { SwitchProps } from "./components/Switch.svelte";
 export { default as Progress } from "./components/Progress.svelte";
 export type { ProgressProps } from "./components/Progress.svelte";
 
+export { default as HeatingRate } from "./components/HeatingRate.svelte";
+export type {
+  HeatingRateDay,
+  HeatingRateProps,
+  HeatingRateStat,
+} from "./components/HeatingRate.svelte";
+
 export { default as Kbd } from "./components/Kbd.svelte";
 
 export { default as Code } from "./components/Code.svelte";

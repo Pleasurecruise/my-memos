@@ -45,6 +45,7 @@
 {:else}
   <NewHome
     memos={data.memos}
+    activityMemos={data.activityMemos}
     tags={data.tags}
     initialSearch={data.filters.search}
     initialTags={data.filters.tags}

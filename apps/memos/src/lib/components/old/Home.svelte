@@ -37,13 +37,15 @@
   let isSaving = $state(false);
   let error = $state("");
 
-  const visLabel = $derived(visibility === "public" ? "Public" : "Private");
-
   const del = createDeleteActions();
   const edit = createEditActions();
   const pin = createPinActions();
   const arc = createArchiveActions();
 
+  const tagNames = $derived(tags.map((t) => t.name));
+  const ac = createTagAutocomplete(() => tagNames);
+
+  const visLabel = $derived(visibility === "public" ? "Public" : "Private");
   const filtered = $derived(
     memos.filter((m) => {
       const updatedAt = new Date(m.updatedAt);
@@ -59,6 +61,10 @@
 
   const pinned = $derived(filtered.filter((m) => m.pinned));
   const rest = $derived(filtered.filter((m) => !m.pinned));
+
+  $effect(() => {
+    search = initialSearch;
+  });
 
   function toggleCardTag(tag: string) {
     const next = initialTags.includes(tag)
@@ -92,13 +98,6 @@
       isSaving = false;
     }
   }
-
-  const tagNames = $derived(tags.map((t) => t.name));
-  const ac = createTagAutocomplete(() => tagNames);
-
-  $effect(() => {
-    search = initialSearch;
-  });
 </script>
 
 {#snippet renderCard(memo: Memo)}

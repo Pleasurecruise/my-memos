@@ -16,7 +16,7 @@
 
   $effect(() => {
     const source = stripTags ? stripHashtags(content) : content;
-    const raw = marked.parse(source, { async: false }) as string;
+    const raw = marked.parse(source, { async: false, breaks: true }) as string;
     html = DOMPurify.sanitize(raw);
   });
 </script>
