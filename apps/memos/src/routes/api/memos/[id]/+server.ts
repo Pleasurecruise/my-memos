@@ -1,9 +1,16 @@
 import { updateMemo, deleteMemo } from "$lib/server/memos";
 import { json } from "@sveltejs/kit";
+import { z } from "zod";
 import type { RequestHandler } from "./$types";
-import type { MemoVisibility, UpdateMemoInput } from "$lib/server/memos/types";
+import type { UpdateMemoInput } from "$lib/server/memos/types";
 
-const VISIBILITIES = new Set<MemoVisibility>(["public", "private"]);
+const updateMemoSchema = z.object({
+  content: z.string().trim().min(1).optional(),
+  visibility: z.enum(["public", "private"]).optional(),
+  tags: z.array(z.string()).optional(),
+  pinned: z.boolean().optional(),
+  archived: z.boolean().optional(),
+});
 
 export const PATCH: RequestHandler = async ({ request, params, platform, locals }) => {
   if (!locals.user) {
@@ -16,41 +23,27 @@ export const PATCH: RequestHandler = async ({ request, params, platform, locals 
 
   const { id } = params;
 
-  const body = (await request.json()) as {
-    content?: unknown;
-    visibility?: unknown;
-    tags?: unknown;
-    pinned?: unknown;
-    archived?: unknown;
-  };
+  const result = updateMemoSchema.safeParse(await request.json());
 
-  const input: UpdateMemoInput = {};
+  if (!result.success) {
+    const fields = new Set(result.error.issues.map((issue) => issue.path[0]));
 
-  if (body.content !== undefined) {
-    const content = typeof body.content === "string" ? body.content.trim() : null;
-    if (!content) return json({ error: "Memo content cannot be empty." }, { status: 400 });
-    input.content = content;
-  }
+    if (fields.has("content")) {
+      return json({ error: "Memo content cannot be empty." }, { status: 400 });
+    }
 
-  if (body.visibility !== undefined) {
-    if (
-      typeof body.visibility !== "string" ||
-      !VISIBILITIES.has(body.visibility as MemoVisibility)
-    ) {
+    if (fields.has("visibility")) {
       return json({ error: "Memo visibility is invalid." }, { status: 400 });
     }
-    input.visibility = body.visibility as MemoVisibility;
-  }
 
-  if (body.tags !== undefined) {
-    if (!Array.isArray(body.tags) || body.tags.some((tag) => typeof tag !== "string")) {
+    if (fields.has("tags")) {
       return json({ error: "Memo tags are invalid." }, { status: 400 });
     }
-    input.tags = body.tags;
+
+    return json({ error: "Memo update payload is invalid." }, { status: 400 });
   }
 
-  if (body.pinned !== undefined) input.pinned = Boolean(body.pinned);
-  if (body.archived !== undefined) input.archived = Boolean(body.archived);
+  const input: UpdateMemoInput = result.data;
 
   try {
     const memo = await updateMemo(

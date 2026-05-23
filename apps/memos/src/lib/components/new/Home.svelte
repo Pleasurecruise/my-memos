@@ -173,8 +173,7 @@
 
     <!-- TAG STRIP -->
     <div
-      class="flex gap-1.5 overflow-x-auto pb-3.5 mb-4 border-b border-border"
-      style="scrollbar-width:none;"
+      class="flex gap-1.5 overflow-x-auto pb-3.5 mb-4 border-b border-border [scrollbar-width:none]"
     >
       <span
         class="font-mono text-[10px] tracking-[0.12em] uppercase text-muted-foreground px-1 py-1 self-center shrink-0"
@@ -445,12 +444,9 @@
           <p class="font-mono text-[10px] tracking-widest uppercase text-muted-foreground mb-2.5">
             last 14 days
           </p>
-          <div class="flex gap-0.75 flex-wrap">
+          <div class="flex gap-1 flex-wrap">
             {#each streak as active, i (i)}
-              <span
-                class="w-3.5 h-3.5 rounded-0.75"
-                style="background:{active ? 'var(--color-accent)' : 'var(--color-border)'};"
-              ></span>
+              <span class="w-3.5 h-3.5 rounded-sm {active ? 'bg-accent' : 'bg-border'}"></span>
             {/each}
           </div>
           <div class="flex flex-col gap-1.5 mt-3.5">

@@ -61,7 +61,7 @@
           <p class="font-serif italic text-lg text-muted-foreground">喵？今天过的怎么样</p>
         </div>
       {:else}
-        <ChatThread class="flex-1 min-h-0 overflow-y-auto" style="padding-top: 16px">
+        <ChatThread class="flex-1 min-h-0 overflow-y-auto pt-4">
           {#each chat.messages as msg (msg.id)}
             {#if msg.role === "assistant"}
               <ChatMessage

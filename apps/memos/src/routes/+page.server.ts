@@ -1,14 +1,11 @@
 import { listMemos, listTagCounts } from "$lib/server/memos";
 import { parsePageFilters } from "$lib/server/filters";
+import { error } from "@sveltejs/kit";
 import type { PageServerLoad } from "./$types";
 
 export const load: PageServerLoad = async ({ platform, url, locals }) => {
   if (!platform) {
-    return {
-      memos: [],
-      tags: [],
-      filters: { search: "", date: "", tags: [] as string[] },
-    };
+    error(500, "Cloudflare platform bindings are unavailable.");
   }
 
   const filters = parsePageFilters(url);

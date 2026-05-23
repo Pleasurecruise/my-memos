@@ -23,7 +23,7 @@
   {...rest}
 >
   <div
-    class="h-full bg-accent transition-[width] duration-300 ease-out"
-    style="width: {clamped}%"
+    class="h-full w-[var(--progress-width)] bg-accent transition-[width] duration-300 ease-out"
+    style="--progress-width: {clamped}%"
   ></div>
 </div>

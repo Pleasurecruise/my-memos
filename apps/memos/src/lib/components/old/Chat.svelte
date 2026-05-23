@@ -126,7 +126,7 @@
           <ChatInput class="chat-welcome-input" onsend={handleSend} />
         </div>
       {:else}
-        <ChatThread class="chat-thread" style="padding-top: 32px">
+        <ChatThread class="chat-thread pt-8">
           {#each messages as msg (msg)}
             {#if msg.role === "assistant"}
               <ChatMessage role="assistant" avatarSrc="/favicon.png" typing={msg.thinking}>
