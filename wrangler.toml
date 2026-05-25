@@ -3,12 +3,17 @@ main = "apps/memos/.svelte-kit/cloudflare/_sveltekit.js"
 compatibility_date = "2026-05-05"
 compatibility_flags = ["nodejs_compat"]
 upload_source_maps = true
+workers_dev = false
 
 [vars]
 BETTER_AUTH_URL = "https://memos.you-find.me"
 CF_ACCOUNT_ID = "fb71c4eceaf623ae1b19b8b37d7a38cf"
 CF_GATEWAY_NAME = "default"
 AI_GATEWAY_PROVIDER_SLUG = "siliconflow"
+
+[[routes]]
+pattern = "memos.you-find.me"
+custom_domain = true
 
 [assets]
 directory = "apps/memos/.svelte-kit/cloudflare"

@@ -5,8 +5,27 @@
   import { updateQuery } from "$lib/utils";
   import { apiCreateMemo } from "$lib/api/memos";
   import { showToast } from "$lib/stores/toast.svelte";
-  import { Button, Input, Separator, Alert, AlertDescription } from "@my-memos/ui";
-  import { Search, Star, Pencil, Archive, Trash2, X, Check, Globe, Lock } from "@lucide/svelte";
+  import {
+    Button,
+    Input,
+    Alert,
+    AlertDescription,
+    Collapsible,
+    CollapsibleContent,
+    CollapsibleTrigger,
+  } from "@my-memos/ui";
+  import {
+    Search,
+    Star,
+    Pencil,
+    Archive,
+    Trash2,
+    X,
+    Check,
+    Globe,
+    Lock,
+    ChevronRight,
+  } from "@lucide/svelte";
   import type { Memo, MemoVisibility, TagCount } from "$lib/types";
   import {
     createDeleteActions,
@@ -35,6 +54,7 @@
   let content = $state("");
   let visibility = $state<MemoVisibility>("private");
   let isSaving = $state(false);
+  let pinnedOpen = $state(false);
   let error = $state("");
 
   const del = createDeleteActions();
@@ -282,13 +302,31 @@
 
   <div class="space-y-3">
     {#if pinned.length > 0}
-      <p class="text-xs font-medium text-muted-foreground uppercase tracking-wider px-1">Pinned</p>
-      {#each pinned as memo (memo.id)}
-        {@render renderCard(memo)}
-      {/each}
-      {#if rest.length > 0}
-        <Separator />
-      {/if}
+      <Collapsible bind:open={pinnedOpen}>
+        <CollapsibleTrigger
+          class="pinned-trigger w-fit max-w-full rounded px-0.5 py-px font-mono text-xs leading-5 text-muted-foreground hover:bg-muted hover:text-foreground"
+          aria-label={pinnedOpen ? "Collapse pinned memos" : "Expand pinned memos"}
+        >
+          <ChevronRight
+            size={14}
+            class="shrink-0 transition-transform"
+            style={`transform: ${pinnedOpen ? "rotate(90deg)" : "rotate(0deg)"}`}
+          />
+          <code class="text-foreground">pinned</code>
+          <span class="min-w-0 truncate">
+            {pinned.length}
+            {pinned.length === 1 ? "entry" : "entries"}
+          </span>
+        </CollapsibleTrigger>
+
+        <CollapsibleContent class="mt-2">
+          <div class="space-y-3 pb-1">
+            {#each pinned as memo (memo.id)}
+              {@render renderCard(memo)}
+            {/each}
+          </div>
+        </CollapsibleContent>
+      </Collapsible>
     {/if}
 
     {#each rest as memo (memo.id)}

@@ -10,6 +10,8 @@ The deploy target is defined in [wrangler.toml](/Users/pleasure1234/Github/my-me
 - Package manager: `pnpm`
 - Workspace layout: `apps/*` and `packages/*`
 - Worker name: `my-memos`
+- Public domain: `https://memos.you-find.me`
+- Workers.dev route: disabled via `workers_dev = false`
 - Static assets binding: `ASSETS`
 - Database: `D1` via binding `DB`
 - Cache: `KV` via binding `MEMOS_CACHE`

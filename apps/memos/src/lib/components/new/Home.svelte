@@ -2,10 +2,29 @@
   import { isSameDay, format } from "date-fns";
   import { invalidateAll } from "$app/navigation";
   import { page } from "$app/state";
-  import { Alert, AlertDescription, HeatingRate, Timeline } from "@my-memos/ui";
+  import {
+    Alert,
+    AlertDescription,
+    Collapsible,
+    CollapsibleContent,
+    CollapsibleTrigger,
+    HeatingRate,
+    Timeline,
+  } from "@my-memos/ui";
   import type { TimelineGroup } from "@my-memos/ui";
   import { Button } from "@my-memos/ui";
-  import { Globe, Lock, Pencil, Trash2, Check, X, Star, Archive, Search } from "@lucide/svelte";
+  import {
+    Globe,
+    Lock,
+    Pencil,
+    Trash2,
+    Check,
+    X,
+    Star,
+    Archive,
+    Search,
+    ChevronRight,
+  } from "@lucide/svelte";
   import type { Memo, MemoVisibility, TagCount } from "$lib/types";
   import {
     createDeleteActions,
@@ -44,6 +63,7 @@
   let visibility = $state<MemoVisibility>("private");
   let isSaving = $state(false);
   let composerOpen = $state(false);
+  let pinnedOpen = $state(false);
   let error = $state("");
   let search = $state("");
 
@@ -70,8 +90,8 @@
   const pinnedFiltered = $derived(filtered.filter((m) => m.pinned));
   const unpinnedFiltered = $derived(filtered.filter((m) => !m.pinned));
   const grouped = $derived(groupByDay(unpinnedFiltered));
-  const timelineContent: TimelineGroup<Memo>[] = $derived.by(() => {
-    const dayGroups = grouped.map(([day, items]) => {
+  const timelineContent: TimelineGroup<Memo>[] = $derived(
+    grouped.map(([day, items]) => {
       const lbl = dayLabel(day);
       return {
         key: day,
@@ -80,13 +100,8 @@
         isToday: lbl.isToday,
         items,
       };
-    });
-    if (pinnedFiltered.length === 0) return dayGroups;
-    return [
-      { key: "__pinned__", heading: "pinned", subLabel: "", isToday: false, items: pinnedFiltered },
-      ...dayGroups,
-    ];
-  });
+    }),
+  );
   const heatingDays = $derived.by(() => {
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -216,6 +231,21 @@
       {/each}
     </div>
 
+    <div class="relative md:hidden mb-4">
+      <Search
+        size={14}
+        class="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none"
+      />
+      <input
+        placeholder="Search memos..."
+        value={search}
+        oninput={(e) => syncSearch((e.target as HTMLInputElement).value)}
+        class="w-full h-9 pl-9 pr-3 rounded border border-border bg-background text-sm
+          text-foreground placeholder:text-muted-foreground outline-none
+          focus:border-accent transition-colors"
+      />
+    </div>
+
     <!-- JOURNAL + RAIL -->
     <div class="grid gap-10 grid-cols-1 md:grid-cols-[1fr_300px]">
       <div>
@@ -310,140 +340,191 @@
           </Alert>
         {/if}
 
-        <!-- Timeline: now without composer -->
-        <Timeline groups={timelineContent}>
-          {#snippet children(memo)}
-            {@const isEditing = edit.editingId === memo.id}
-            <div>
-              <p class="font-mono text-[11px] text-muted-foreground tracking-wide mb-1">
-                {timeOnly(memo.createdAt)} · {memo.visibility}
-              </p>
+        {#snippet renderMemo(memo: Memo)}
+          {@const isEditing = edit.editingId === memo.id}
+          <div>
+            <p class="font-mono text-[11px] text-muted-foreground tracking-wide mb-1">
+              {timeOnly(memo.createdAt)} · {memo.visibility}
+            </p>
+
+            <div
+              class="group px-3.5 py-3 rounded-md transition-colors hover:bg-muted border border-transparent hover:border-border"
+            >
+              {#if memo.pinned && !isEditing}
+                <span
+                  class="inline-flex items-center gap-1 mb-1.5 font-mono text-[10px] uppercase tracking-widest
+                    text-accent px-1.5 py-px rounded border border-accent/30"
+                >
+                  <Star size={8} fill="currentColor" />pinned
+                </span>
+              {/if}
+
+              {#if isEditing}
+                <MarkdownEditor bind:value={edit.editContent} class="-mx-1 -my-1" />
+              {:else}
+                <MarkdownContent
+                  content={memo.content}
+                  stripTags
+                  class="max-h-48 overflow-y-auto text-sm leading-relaxed"
+                />
+              {/if}
+
+              {#if !isEditing && memo.tags.length > 0}
+                <div class="flex flex-wrap gap-1.5 mt-2">
+                  {#each memo.tags as tag (tag)}
+                    <button
+                      type="button"
+                      onclick={() => toggleTag(tag)}
+                      class="inline-flex items-center gap-0.5 px-2 py-px rounded-full text-xs
+                        border border-accent/25 text-accent hover:bg-accent/8 transition-colors"
+                    >
+                      <span class="opacity-50">#</span>{tag}
+                    </button>
+                  {/each}
+                </div>
+              {/if}
 
               <div
-                class="group px-3.5 py-3 rounded-md transition-colors hover:bg-muted border border-transparent hover:border-border"
+                class="flex items-center gap-1 mt-2.5 pt-2.5 border-t border-border
+                  opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"
               >
-                {#if memo.pinned && !isEditing}
-                  <span
-                    class="inline-flex items-center gap-1 mb-1.5 font-mono text-[10px] uppercase tracking-widest
-                      text-accent px-1.5 py-px rounded border border-accent/30"
-                  >
-                    <Star size={8} fill="currentColor" />pinned
-                  </span>
-                {/if}
-
                 {#if isEditing}
-                  <MarkdownEditor bind:value={edit.editContent} class="-mx-1 -my-1" />
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    class="gap-1.5 font-normal text-muted-foreground"
+                    onclick={edit.cancel}
+                  >
+                    <X size={12} />Cancel
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    class="gap-1.5 font-normal text-muted-foreground"
+                    onclick={() =>
+                      (edit.editVisibility =
+                        edit.editVisibility === "public" ? "private" : "public")}
+                  >
+                    {#if edit.editVisibility === "public"}<Globe size={11} />{:else}<Lock
+                        size={11}
+                      />{/if}
+                    {edit.editVisibility === "public" ? "Public" : "Private"}
+                  </Button>
+                  <Button
+                    size="sm"
+                    class="gap-1.5 font-normal ml-auto"
+                    disabled={!edit.editContent.trim() || edit.isUpdating}
+                    onclick={() => edit.save(memo.id)}
+                  >
+                    <Check size={12} />{edit.isUpdating ? "Saving..." : "Save"}
+                  </Button>
                 {:else}
-                  <MarkdownContent
-                    content={memo.content}
-                    stripTags
-                    class="max-h-48 overflow-y-auto text-sm leading-relaxed"
-                  />
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    class="gap-1.5 font-normal {memo.pinned
+                      ? 'text-accent'
+                      : 'text-muted-foreground'}"
+                    disabled={pin.pinningId === memo.id}
+                    onclick={() => pin.toggle(memo)}
+                  >
+                    <Star size={12} fill={memo.pinned ? "currentColor" : "none"} />
+                    {memo.pinned ? "Unpin" : "Pin"}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    class="gap-1.5 font-normal text-muted-foreground"
+                    onclick={() => edit.start(memo)}
+                  >
+                    <Pencil size={12} />Edit
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    class="gap-1.5 font-normal text-muted-foreground"
+                    disabled={arc.archivingId === memo.id}
+                    onclick={() => {
+                      if (!page.data.user) {
+                        showToast("error", "Please sign in to archive memos");
+                        return;
+                      }
+                      arc.archive(memo.id);
+                    }}
+                  >
+                    <Archive size={12} />{arc.archivingId === memo.id ? "Archiving..." : "Archive"}
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    class="gap-1.5 font-normal ml-auto"
+                    onclick={() => del.request(memo.id)}
+                  >
+                    <Trash2 size={12} />Delete
+                  </Button>
                 {/if}
-
-                {#if !isEditing && memo.tags.length > 0}
-                  <div class="flex flex-wrap gap-1.5 mt-2">
-                    {#each memo.tags as tag (tag)}
-                      <button
-                        type="button"
-                        onclick={() => toggleTag(tag)}
-                        class="inline-flex items-center gap-0.5 px-2 py-px rounded-full text-xs
-                          border border-accent/25 text-accent hover:bg-accent/8 transition-colors"
-                      >
-                        <span class="opacity-50">#</span>{tag}
-                      </button>
-                    {/each}
-                  </div>
-                {/if}
-
-                <div
-                  class="flex items-center gap-1 mt-2.5 pt-2.5 border-t border-border
-                    opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"
-                >
-                  {#if isEditing}
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      class="gap-1.5 font-normal text-muted-foreground"
-                      onclick={edit.cancel}
-                    >
-                      <X size={12} />Cancel
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      class="gap-1.5 font-normal text-muted-foreground"
-                      onclick={() =>
-                        (edit.editVisibility =
-                          edit.editVisibility === "public" ? "private" : "public")}
-                    >
-                      {#if edit.editVisibility === "public"}<Globe size={11} />{:else}<Lock
-                          size={11}
-                        />{/if}
-                      {edit.editVisibility === "public" ? "Public" : "Private"}
-                    </Button>
-                    <Button
-                      size="sm"
-                      class="gap-1.5 font-normal ml-auto"
-                      disabled={!edit.editContent.trim() || edit.isUpdating}
-                      onclick={() => edit.save(memo.id)}
-                    >
-                      <Check size={12} />{edit.isUpdating ? "Saving..." : "Save"}
-                    </Button>
-                  {:else}
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      class="gap-1.5 font-normal {memo.pinned
-                        ? 'text-accent'
-                        : 'text-muted-foreground'}"
-                      disabled={pin.pinningId === memo.id}
-                      onclick={() => pin.toggle(memo)}
-                    >
-                      <Star size={12} fill={memo.pinned ? "currentColor" : "none"} />
-                      {memo.pinned ? "Unpin" : "Pin"}
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      class="gap-1.5 font-normal text-muted-foreground"
-                      onclick={() => edit.start(memo)}
-                    >
-                      <Pencil size={12} />Edit
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      class="gap-1.5 font-normal text-muted-foreground"
-                      disabled={arc.archivingId === memo.id}
-                      onclick={() => {
-                        if (!page.data.user) {
-                          showToast("error", "Please sign in to archive memos");
-                          return;
-                        }
-                        arc.archive(memo.id);
-                      }}
-                    >
-                      <Archive size={12} />{arc.archivingId === memo.id
-                        ? "Archiving..."
-                        : "Archive"}
-                    </Button>
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      class="gap-1.5 font-normal ml-auto"
-                      onclick={() => del.request(memo.id)}
-                    >
-                      <Trash2 size={12} />Delete
-                    </Button>
-                  {/if}
-                </div>
               </div>
             </div>
-          {/snippet}
-        </Timeline>
+          </div>
+        {/snippet}
 
-        {#if grouped.length === 0 && !composerOpen}
+        {#if pinnedFiltered.length > 0}
+          <Collapsible bind:open={pinnedOpen} class="mb-4">
+            <CollapsibleTrigger
+              class="pinned-trigger w-fit max-w-full rounded px-0.5 py-px font-mono text-xs leading-5 text-muted-foreground hover:bg-muted hover:text-foreground"
+              aria-label={pinnedOpen ? "Collapse pinned memos" : "Expand pinned memos"}
+            >
+              <ChevronRight
+                size={14}
+                class="shrink-0 transition-transform"
+                style={`transform: ${pinnedOpen ? "rotate(90deg)" : "rotate(0deg)"}`}
+              />
+              <code class="text-foreground">pinned</code>
+              <span class="min-w-0 truncate">
+                {pinnedFiltered.length}
+                {pinnedFiltered.length === 1 ? "entry" : "entries"}
+              </span>
+            </CollapsibleTrigger>
+
+            <CollapsibleContent class="mt-2">
+              <div class="space-y-1 pb-1">
+                {#each pinnedFiltered as memo (memo.id)}
+                  {@render renderMemo(memo)}
+                {/each}
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
+        {/if}
+
+        <div class="hidden sm:block">
+          <Timeline groups={timelineContent}>
+            {#snippet children(memo)}
+              {@render renderMemo(memo)}
+            {/snippet}
+          </Timeline>
+        </div>
+
+        <div class="space-y-6 sm:hidden">
+          {#each timelineContent as group (group.key)}
+            <section>
+              <div class="flex items-baseline gap-2 px-1 mb-2">
+                <span class="font-serif text-[1.0625rem] font-semibold text-foreground">
+                  {group.heading}
+                </span>
+                <span class="font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
+                  {group.subLabel}
+                </span>
+              </div>
+              <div class="space-y-1">
+                {#each group.items as memo (memo.id)}
+                  {@render renderMemo(memo)}
+                {/each}
+              </div>
+            </section>
+          {/each}
+        </div>
+
+        {#if filtered.length === 0 && !composerOpen}
           <p class="py-20 text-center text-sm text-muted-foreground">No memos found.</p>
         {/if}
       </div>

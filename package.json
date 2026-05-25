@@ -16,7 +16,7 @@
     "format": "vp fmt"
   },
   "devDependencies": {
-    "@cloudflare/vite-plugin": "1.37.3",
+    "@cloudflare/vite-plugin": "1.38.0",
     "@cloudflare/workers-types": "latest",
     "@sveltejs/vite-plugin-svelte": "7.1.2",
     "@tailwindcss/vite": "4.3.0",
@@ -28,7 +28,7 @@
     "tailwindcss": "4.3.0",
     "typescript": "6.0.3",
     "vite-plus": "0.1.22",
-    "wrangler": "4.93.1"
+    "wrangler": "4.94.0"
   },
-  "packageManager": "pnpm@11.2.2"
+  "packageManager": "pnpm@11.3.0"
 }
