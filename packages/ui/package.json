@@ -9,8 +9,7 @@
     "./styles/app.css": "./src/styles/app.css",
     "./styles/tokens.css": "./src/styles/tokens.css",
     "./styles/palette.css": "./src/styles/palette.css",
-    "./styles/theme.css": "./src/styles/theme.css",
-    "./styles/components.css": "./src/styles/components.css"
+    "./styles/theme.css": "./src/styles/theme.css"
   },
   "scripts": {
     "dev": "vp dev",

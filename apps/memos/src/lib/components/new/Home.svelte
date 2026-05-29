@@ -23,6 +23,7 @@
     Star,
     Archive,
     Search,
+    Clock3,
     ChevronRight,
   } from "@lucide/svelte";
   import type { Memo, MemoVisibility, TagCount } from "$lib/types";
@@ -47,6 +48,8 @@
     tags: TagCount[];
     initialSearch: string;
     initialTags: string[];
+    viewAsPublic: boolean;
+    sortByUpdated: boolean;
     selectedDate: Date | undefined;
   }
 
@@ -57,7 +60,16 @@
     { text: "A note kept is a thought that survived the morning.", author: "私のノート" },
   ];
 
-  let { memos, activityMemos, tags, initialSearch, initialTags, selectedDate }: Props = $props();
+  let {
+    memos,
+    activityMemos,
+    tags,
+    initialSearch,
+    initialTags,
+    viewAsPublic,
+    sortByUpdated,
+    selectedDate,
+  }: Props = $props();
 
   let content = $state("");
   let visibility = $state<MemoVisibility>("private");
@@ -65,7 +77,7 @@
   let composerOpen = $state(false);
   let pinnedOpen = $state(false);
   let error = $state("");
-  let search = $state("");
+  let search = $state<string | undefined>();
 
   const del = createDeleteActions();
   const edit = createEditActions();
@@ -76,14 +88,16 @@
   const ac = createTagAutocomplete(() => tagNames);
 
   const visLabel = $derived(visibility === "public" ? "Public" : "Private");
+  const activeSearch = $derived(search ?? initialSearch);
+  const showCardResults = $derived(Boolean(activeSearch.trim()) || sortByUpdated);
   const filtered = $derived(
     memos.filter((m) => {
       if (selectedDate && !isSameDay(new Date(m.updatedAt), selectedDate)) return false;
       if (initialTags.length > 0 && !initialTags.some((t) => m.tags.includes(t))) return false;
-      if (!search) return true;
+      if (!activeSearch) return true;
       return (
-        m.content.toLowerCase().includes(search.toLowerCase()) ||
-        m.tags.some((t) => t.includes(search.toLowerCase()))
+        m.content.toLowerCase().includes(activeSearch.toLowerCase()) ||
+        m.tags.some((t) => t.includes(activeSearch.toLowerCase()))
       );
     }),
   );
@@ -206,7 +220,7 @@
 
 <div class="min-h-screen bg-background text-foreground font-sans overflow-hidden">
   <div class="max-w-280 mx-auto px-4 sm:px-8 pb-24 pt-7 overflow-y-auto h-full">
-    <Masthead {memos} {tags} />
+    <Masthead {memos} {tags} {viewAsPublic} />
 
     <!-- TAG STRIP -->
     <div class="flex gap-1.5 overflow-x-auto pb-3.5 mb-4 border-b border-border scrollbar-none">
@@ -238,12 +252,24 @@
       />
       <input
         placeholder="Search memos..."
-        value={search}
+        value={activeSearch}
         oninput={(e) => syncSearch((e.target as HTMLInputElement).value)}
-        class="w-full h-9 pl-9 pr-3 rounded border border-border bg-background text-sm
+        class="w-full h-9 pl-9 pr-10 rounded border border-border bg-background text-sm
           text-foreground placeholder:text-muted-foreground outline-none
           focus:border-accent transition-colors"
       />
+      <button
+        type="button"
+        onclick={() => updateQuery({ sort: sortByUpdated ? null : "updated" })}
+        class="absolute right-1.5 top-1/2 -translate-y-1/2 flex h-6 w-6 items-center justify-center rounded transition-colors {sortByUpdated
+          ? 'bg-accent/10 text-accent hover:bg-accent/10'
+          : 'text-muted-foreground hover:text-foreground hover:bg-muted'}"
+        aria-pressed={sortByUpdated}
+        aria-label={sortByUpdated ? "Sort by created time" : "Sort by updated time"}
+        title={sortByUpdated ? "Sort by created time" : "Sort by updated time"}
+      >
+        <Clock3 size={13} />
+      </button>
     </div>
 
     <!-- JOURNAL + RAIL -->
@@ -344,7 +370,7 @@
           {@const isEditing = edit.editingId === memo.id}
           <div>
             <p class="font-mono text-[11px] text-muted-foreground tracking-wide mb-1">
-              {timeOnly(memo.createdAt)} · {memo.visibility}
+              {timeOnly(sortByUpdated ? memo.updatedAt : memo.createdAt)} · {memo.visibility}
             </p>
 
             <div
@@ -468,7 +494,13 @@
           </div>
         {/snippet}
 
-        {#if pinnedFiltered.length > 0}
+        {#if showCardResults}
+          <div class="space-y-2">
+            {#each filtered as memo (memo.id)}
+              {@render renderMemo(memo)}
+            {/each}
+          </div>
+        {:else if pinnedFiltered.length > 0}
           <Collapsible bind:open={pinnedOpen} class="mb-4">
             <CollapsibleTrigger
               class="pinned-trigger w-fit max-w-full rounded px-0.5 py-px font-mono text-xs leading-5 text-muted-foreground hover:bg-muted hover:text-foreground"
@@ -496,33 +528,37 @@
           </Collapsible>
         {/if}
 
-        <div class="hidden sm:block">
-          <Timeline groups={timelineContent}>
-            {#snippet children(memo)}
-              {@render renderMemo(memo)}
-            {/snippet}
-          </Timeline>
-        </div>
+        {#if !showCardResults}
+          <div class="hidden sm:block">
+            <Timeline groups={timelineContent}>
+              {#snippet children(memo)}
+                {@render renderMemo(memo)}
+              {/snippet}
+            </Timeline>
+          </div>
 
-        <div class="space-y-6 sm:hidden">
-          {#each timelineContent as group (group.key)}
-            <section>
-              <div class="flex items-baseline gap-2 px-1 mb-2">
-                <span class="font-serif text-[1.0625rem] font-semibold text-foreground">
-                  {group.heading}
-                </span>
-                <span class="font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
-                  {group.subLabel}
-                </span>
-              </div>
-              <div class="space-y-1">
-                {#each group.items as memo (memo.id)}
-                  {@render renderMemo(memo)}
-                {/each}
-              </div>
-            </section>
-          {/each}
-        </div>
+          <div class="space-y-6 sm:hidden">
+            {#each timelineContent as group (group.key)}
+              <section>
+                <div class="flex items-baseline gap-2 px-1 mb-2">
+                  <span class="font-serif text-[1.0625rem] font-semibold text-foreground">
+                    {group.heading}
+                  </span>
+                  <span
+                    class="font-mono text-[11px] uppercase tracking-widest text-muted-foreground"
+                  >
+                    {group.subLabel}
+                  </span>
+                </div>
+                <div class="space-y-1">
+                  {#each group.items as memo (memo.id)}
+                    {@render renderMemo(memo)}
+                  {/each}
+                </div>
+              </section>
+            {/each}
+          </div>
+        {/if}
 
         {#if filtered.length === 0 && !composerOpen}
           <p class="py-20 text-center text-sm text-muted-foreground">No memos found.</p>
@@ -559,12 +595,24 @@
             />
             <input
               placeholder="Search..."
-              value={search}
+              value={activeSearch}
               oninput={(e) => syncSearch((e.target as HTMLInputElement).value)}
-              class="w-full h-8 pl-7 pr-3 rounded border border-border bg-muted text-sm
+              class="w-full h-8 pl-7 pr-9 rounded border border-border bg-muted text-sm
                 text-foreground placeholder:text-muted-foreground outline-none
                 focus:border-accent focus:bg-background transition-colors"
             />
+            <button
+              type="button"
+              onclick={() => updateQuery({ sort: sortByUpdated ? null : "updated" })}
+              class="absolute right-1.5 top-1/2 -translate-y-1/2 flex h-5.5 w-5.5 items-center justify-center rounded transition-colors {sortByUpdated
+                ? 'bg-accent/10 text-accent hover:bg-accent/10'
+                : 'text-muted-foreground hover:text-foreground hover:bg-muted'}"
+              aria-pressed={sortByUpdated}
+              aria-label={sortByUpdated ? "Sort by created time" : "Sort by updated time"}
+              title={sortByUpdated ? "Sort by created time" : "Sort by updated time"}
+            >
+              <Clock3 size={12} />
+            </button>
           </div>
         </div>
       </aside>

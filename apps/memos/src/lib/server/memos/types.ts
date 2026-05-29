@@ -6,6 +6,7 @@ export interface MemoListFilters {
   archivedOnly?: boolean;
   tags?: string[];
   publicOnly?: boolean;
+  sortByUpdated?: boolean;
 }
 
 export interface CreateMemoInput {

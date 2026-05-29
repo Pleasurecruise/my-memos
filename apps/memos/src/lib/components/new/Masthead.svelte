@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import { goto, invalidateAll } from "$app/navigation";
+  import { goto } from "$app/navigation";
   import { page } from "$app/state";
   import {
     applyTheme,
@@ -9,15 +9,28 @@
     Popover,
     PopoverContent,
     PopoverTrigger,
+    Tooltip,
   } from "@my-memos/ui";
-  import { Home, Archive, MessageSquare, Sun, Moon, LogIn, LogOut } from "@lucide/svelte";
+  import {
+    Home,
+    Archive,
+    MessageSquare,
+    Sun,
+    Moon,
+    LogIn,
+    LogOut,
+    Globe,
+    UserRound,
+  } from "@lucide/svelte";
   import { signIn, signOut } from "$lib/auth-client";
   import { showToast } from "$lib/stores/toast.svelte";
+  import { updateQuery } from "$lib/utils";
   import type { Memo, TagCount } from "$lib/types";
 
   interface Props {
     memos?: Memo[];
     tags?: TagCount[];
+    viewAsPublic?: boolean;
   }
 
   const THEME_KEY = "my-memos:theme";
@@ -27,7 +40,7 @@
     { href: "/chat", label: "Chat", Icon: MessageSquare, requiresAuth: true },
   ] as const;
 
-  let { memos = [], tags = [] }: Props = $props();
+  let { memos = [], tags = [], viewAsPublic = false }: Props = $props();
 
   let isDark = $state(false);
 
@@ -109,15 +122,31 @@
         </span>
       {/if}
 
+      {#if page.data.user}
+        <Tooltip content={viewAsPublic ? "View as private" : "View as public"} side="top">
+          <button
+            type="button"
+            onclick={() => updateQuery({ view: viewAsPublic ? null : "public" })}
+            class="flex items-center justify-center h-8 w-8 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+            aria-pressed={viewAsPublic}
+            aria-label={viewAsPublic ? "View as private" : "View as public"}
+          >
+            {#if viewAsPublic}<UserRound size={15} />{:else}<Globe size={15} />{/if}
+          </button>
+        </Tooltip>
+      {/if}
+
       <!-- theme -->
-      <button
-        type="button"
-        onclick={() => (isDark = !isDark)}
-        class="flex items-center justify-center h-8 w-8 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-        aria-label="Toggle theme"
-      >
-        {#if isDark}<Sun size={15} />{:else}<Moon size={15} />{/if}
-      </button>
+      <Tooltip content={isDark ? "Light mode" : "Dark mode"} side="top">
+        <button
+          type="button"
+          onclick={() => (isDark = !isDark)}
+          class="flex items-center justify-center h-8 w-8 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+          aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
+        >
+          {#if isDark}<Sun size={15} />{:else}<Moon size={15} />{/if}
+        </button>
+      </Tooltip>
 
       <!-- avatar / auth -->
       <Popover>

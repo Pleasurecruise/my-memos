@@ -2,6 +2,8 @@ export interface PageFilters {
   search: string;
   date: string;
   tags: string[];
+  viewAsPublic: boolean;
+  sortByUpdated: boolean;
 }
 
 export function parsePageFilters(url: URL): PageFilters {
@@ -14,5 +16,7 @@ export function parsePageFilters(url: URL): PageFilters {
         .filter(Boolean)
     : [];
   const search = url.searchParams.get("search")?.trim() ?? "";
-  return { search, date, tags };
+  const viewAsPublic = url.searchParams.get("view") === "public";
+  const sortByUpdated = url.searchParams.get("sort") === "updated";
+  return { search, date, tags, viewAsPublic, sortByUpdated };
 }

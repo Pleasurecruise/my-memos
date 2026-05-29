@@ -68,6 +68,8 @@ It also contains a local demo surface in [packages/ui/dev](/Users/pleasure1234/G
 - `/` loads memos and tag counts with optional filters.
 - Unauthenticated users can browse public memos.
 - Authenticated users can browse all non-archived memos.
+- Authenticated users can toggle `view=public` to browse only public memos without private memo data in the page payload.
+- The new home search control accepts `sort=updated` to show card results ordered by `updated_at`; the default timeline remains grouped by `created_at`.
 
 The main page load lives in [apps/memos/src/routes/+page.server.ts](/Users/pleasure1234/Github/my-memos/apps/memos/src/routes/+page.server.ts:1).
 

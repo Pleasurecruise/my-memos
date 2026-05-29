@@ -9,6 +9,7 @@
   interface Props {
     tags?: TagCount[];
     activeTags?: string[];
+    viewAsPublic?: boolean;
     selectedDate?: Date;
     onDateChange?: (date: Date | undefined) => void;
     children: Snippet;
@@ -17,6 +18,7 @@
   let {
     tags = [],
     activeTags = [],
+    viewAsPublic = false,
     selectedDate,
     onDateChange = () => {},
     children,
@@ -55,6 +57,7 @@
   <Sidebar
     {tags}
     {activeTags}
+    {viewAsPublic}
     {isDark}
     open={sidebarOpen}
     onToggleTheme={() => (isDark = !isDark)}

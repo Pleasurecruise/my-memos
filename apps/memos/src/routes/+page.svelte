@@ -31,6 +31,7 @@
   <AppShell
     tags={data.tags}
     activeTags={data.filters.tags}
+    viewAsPublic={data.filters.viewAsPublic}
     {selectedDate}
     onDateChange={(d) => (selectedDate = d)}
   >
@@ -39,6 +40,7 @@
       tags={data.tags}
       initialSearch={data.filters.search}
       initialTags={data.filters.tags}
+      sortByUpdated={data.filters.sortByUpdated}
       {selectedDate}
     />
   </AppShell>
@@ -49,6 +51,8 @@
     tags={data.tags}
     initialSearch={data.filters.search}
     initialTags={data.filters.tags}
+    viewAsPublic={data.filters.viewAsPublic}
+    sortByUpdated={data.filters.sortByUpdated}
     {selectedDate}
   />
 {/if}

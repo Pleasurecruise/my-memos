@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { goto, invalidateAll } from "$app/navigation";
+  import { goto } from "$app/navigation";
   import { page } from "$app/state";
   import {
     Avatar,
@@ -19,12 +19,14 @@
     Home,
     Archive,
     MessageSquare,
+    Globe,
     Sun,
     Moon,
     CalendarDays,
     X,
     LogIn,
     LogOut,
+    UserRound,
   } from "@lucide/svelte";
   import type { TagCount } from "$lib/types";
   import { showToast } from "$lib/stores/toast.svelte";
@@ -38,6 +40,7 @@
   interface SidebarProps {
     tags: TagCount[];
     activeTags: string[];
+    viewAsPublic: boolean;
     isDark: boolean;
     open: boolean;
     onToggleTheme: () => void;
@@ -49,6 +52,7 @@
   let {
     tags,
     activeTags,
+    viewAsPublic,
     isDark,
     open,
     onToggleTheme,
@@ -193,21 +197,31 @@
     </div>
   </div>
 
-  <div class="px-3 py-4 shrink-0 border-t border-border flex items-center gap-1">
-    <Button
-      variant="ghost"
-      size="sm"
-      onclick={onToggleTheme}
-      class="flex-1 justify-start gap-2.5 font-normal text-muted-foreground"
-    >
-      {#if isDark}
-        <Sun size={14} />
-        Light mode
-      {:else}
-        <Moon size={14} />
-        Dark mode
-      {/if}
-    </Button>
+  <div class="px-3 py-4 shrink-0 border-t border-border flex items-center justify-end gap-1">
+    <Tooltip content={isDark ? "Light mode" : "Dark mode"} side="top">
+      <button
+        type="button"
+        onclick={onToggleTheme}
+        class="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+        aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
+      >
+        {#if isDark}<Sun size={15} />{:else}<Moon size={15} />{/if}
+      </button>
+    </Tooltip>
+
+    {#if page.data.user}
+      <Tooltip content={viewAsPublic ? "View as private" : "View as public"} side="top">
+        <button
+          type="button"
+          onclick={() => updateQuery({ view: viewAsPublic ? null : "public" })}
+          class="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+          aria-pressed={viewAsPublic}
+          aria-label={viewAsPublic ? "View as private" : "View as public"}
+        >
+          {#if viewAsPublic}<UserRound size={15} />{:else}<Globe size={15} />{/if}
+        </button>
+      </Tooltip>
+    {/if}
 
     <Popover>
       {#if page.data.user}

@@ -29,19 +29,18 @@ async function invalidateMemoCache(cache: KVNamespace): Promise<void> {
   ]);
 }
 
-export async function readMemoContent(bucket: R2Bucket, r2Key: string): Promise<string> {
-  const object = await bucket.get(r2Key);
-  if (!object) throw new Error(`Missing R2 object: ${r2Key}`);
-  return object.text();
-}
-
 export async function listMemos(
   d1: D1Database,
   cache: KVNamespace,
   filters: MemoListFilters = {},
 ): Promise<Memo[]> {
+  const sortColumn = filters.sortByUpdated ? memos.updatedAt : memos.createdAt;
   const shouldCache =
-    !filters.search && !filters.date && !filters.tags?.length && !filters.archivedOnly;
+    !filters.sortByUpdated &&
+    !filters.search &&
+    !filters.date &&
+    !filters.tags?.length &&
+    !filters.archivedOnly;
   const cacheKey = filters.publicOnly ? "memo:list:public" : "memo:list";
 
   if (shouldCache) {
@@ -75,7 +74,7 @@ export async function listMemos(
     .select()
     .from(memos)
     .where(and(...conditions))
-    .orderBy(desc(memos.pinned), desc(memos.createdAt));
+    .orderBy(desc(memos.pinned), desc(sortColumn));
 
   const result = rows.map(rowToMemo);
 

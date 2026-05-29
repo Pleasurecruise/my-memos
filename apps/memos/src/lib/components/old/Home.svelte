@@ -22,6 +22,7 @@
     Trash2,
     X,
     Check,
+    Clock3,
     Globe,
     Lock,
     ChevronRight,
@@ -45,10 +46,12 @@
     tags: TagCount[];
     initialSearch: string;
     initialTags: string[];
+    sortByUpdated: boolean;
     selectedDate: Date | undefined;
   }
 
-  let { memos, tags, initialSearch, initialTags, selectedDate }: MainContentProps = $props();
+  let { memos, tags, initialSearch, initialTags, sortByUpdated, selectedDate }: MainContentProps =
+    $props();
 
   let search = $state("");
   let content = $state("");
@@ -66,6 +69,7 @@
   const ac = createTagAutocomplete(() => tagNames);
 
   const visLabel = $derived(visibility === "public" ? "Public" : "Private");
+  const showCardResults = $derived(Boolean(search.trim()) || sortByUpdated);
   const filtered = $derived(
     memos.filter((m) => {
       const updatedAt = new Date(m.updatedAt);
@@ -294,14 +298,30 @@
       placeholder="Search memos..."
       value={search}
       oninput={(e) => syncSearch((e.target as HTMLInputElement).value)}
-      class="pl-9"
+      class="pl-9 pr-10"
     />
+    <button
+      type="button"
+      onclick={() => updateQuery({ sort: sortByUpdated ? null : "updated" })}
+      class="absolute right-1.5 top-1/2 -translate-y-1/2 flex h-6 w-6 items-center justify-center rounded transition-colors {sortByUpdated
+        ? 'bg-accent/10 text-accent hover:bg-accent/10'
+        : 'text-muted-foreground hover:text-foreground hover:bg-muted'}"
+      aria-pressed={sortByUpdated}
+      aria-label={sortByUpdated ? "Sort by created time" : "Sort by updated time"}
+      title={sortByUpdated ? "Sort by created time" : "Sort by updated time"}
+    >
+      <Clock3 size={13} />
+    </button>
   </div>
 
   <FilterBar {selectedDate} activeTags={initialTags} onRemoveTag={toggleCardTag} />
 
   <div class="space-y-3">
-    {#if pinned.length > 0}
+    {#if showCardResults}
+      {#each filtered as memo (memo.id)}
+        {@render renderCard(memo)}
+      {/each}
+    {:else if pinned.length > 0}
       <Collapsible bind:open={pinnedOpen}>
         <CollapsibleTrigger
           class="pinned-trigger w-fit max-w-full rounded px-0.5 py-px font-mono text-xs leading-5 text-muted-foreground hover:bg-muted hover:text-foreground"
@@ -329,9 +349,11 @@
       </Collapsible>
     {/if}
 
-    {#each rest as memo (memo.id)}
-      {@render renderCard(memo)}
-    {/each}
+    {#if !showCardResults}
+      {#each rest as memo (memo.id)}
+        {@render renderCard(memo)}
+      {/each}
+    {/if}
 
     {#if filtered.length === 0}
       <p class="text-center py-16 text-muted-foreground text-sm">No memos found.</p>
