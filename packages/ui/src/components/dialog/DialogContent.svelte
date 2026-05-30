@@ -1,17 +1,14 @@
-<script module lang="ts">
+<script lang="ts">
   import type { HTMLAttributes } from "svelte/elements";
   import type { Snippet } from "svelte";
-
-  export interface DialogContentProps extends Omit<HTMLAttributes<HTMLDivElement>, "role"> {
-    children?: Snippet;
-  }
-</script>
-
-<script lang="ts">
   import { getContext } from "svelte";
   import { fade, scale } from "svelte/transition";
   import { cn } from "../../lib/utils";
   import type { DialogContext } from "./Dialog.svelte";
+
+  export interface DialogContentProps extends Omit<HTMLAttributes<HTMLDivElement>, "role"> {
+    children?: Snippet;
+  }
 
   let { children, class: extraClass = "", ...rest }: DialogContentProps = $props();
 
@@ -40,6 +37,7 @@
 
   <!-- Panel -->
   <div
+    data-slot="content"
     class={cn(
       "fixed left-1/2 top-1/2 z-50 w-full max-w-md -translate-x-1/2 -translate-y-1/2",
       "bg-background border border-border rounded-xl shadow-lg",

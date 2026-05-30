@@ -1,18 +1,19 @@
-<script module lang="ts">
+<script lang="ts">
   import type { HTMLAttributes } from "svelte/elements";
   import type { Snippet } from "svelte";
+  import { cn } from "../../lib/utils";
 
   export interface TableFooterProps extends HTMLAttributes<HTMLTableSectionElement> {
     children?: Snippet;
   }
-</script>
-
-<script lang="ts">
-  import { cn } from "../../lib/utils";
 
   let { class: extraClass = "", children, ...rest }: TableFooterProps = $props();
 </script>
 
-<tfoot class={cn("border-t border-border font-medium text-foreground", extraClass)} {...rest}>
+<tfoot
+  data-slot="footer"
+  class={cn("border-t border-border font-medium text-foreground", extraClass)}
+  {...rest}
+>
   {@render children?.()}
 </tfoot>

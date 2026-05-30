@@ -1,16 +1,13 @@
-<script module lang="ts">
+<script lang="ts">
   import type { HTMLAttributes } from "svelte/elements";
   import type { Snippet } from "svelte";
+  import { cn } from "../../lib/utils";
+  import { tick } from "svelte";
 
   export interface ChatThreadProps extends HTMLAttributes<HTMLDivElement> {
     children?: Snippet;
     autoscroll?: boolean;
   }
-</script>
-
-<script lang="ts">
-  import { cn } from "../../lib/utils";
-  import { tick } from "svelte";
 
   let { children, autoscroll = true, class: extraClass = "", ...rest }: ChatThreadProps = $props();
 

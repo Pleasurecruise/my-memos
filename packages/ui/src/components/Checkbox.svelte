@@ -1,14 +1,11 @@
-<script module lang="ts">
+<script lang="ts">
   import type { HTMLInputAttributes } from "svelte/elements";
+  import { Check } from "@lucide/svelte";
+  import { cn } from "../lib/utils";
 
   export interface CheckboxProps extends Omit<HTMLInputAttributes, "type"> {
     error?: boolean;
   }
-</script>
-
-<script lang="ts">
-  import { Check } from "@lucide/svelte";
-  import { cn } from "../lib/utils";
 
   let { error, class: extraClass = "", ...rest }: CheckboxProps = $props();
 </script>

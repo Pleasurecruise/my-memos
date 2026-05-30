@@ -1,16 +1,13 @@
-<script module lang="ts">
+<script lang="ts">
   import type { HTMLSelectAttributes } from "svelte/elements";
   import type { Snippet } from "svelte";
+  import { ChevronDown } from "@lucide/svelte";
+  import { cn } from "../lib/utils";
 
   export interface SelectProps extends HTMLSelectAttributes {
     error?: boolean;
     children?: Snippet;
   }
-</script>
-
-<script lang="ts">
-  import { ChevronDown } from "@lucide/svelte";
-  import { cn } from "../lib/utils";
 
   const base = cn(
     "flex h-9 w-full appearance-none rounded-md border bg-background px-3 py-1 pr-8",

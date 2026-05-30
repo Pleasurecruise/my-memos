@@ -132,7 +132,7 @@
       <aside
         style="
         width:240px; flex-shrink:0; display:flex; flex-direction:column;
-        border-right:1px solid var(--color-border); overflow-y:auto;
+        border-right:1px solid var(--color-border); overflow-y:auto; scrollbar-width:none;
       "
       >
         <!-- brand -->
@@ -191,7 +191,10 @@
       </aside>
 
       <!-- main feed -->
-      <main style="flex:1; overflow-y:auto; padding:24px 28px;">
+      <main
+        class="demo-new-scroll"
+        style="flex:1; overflow-y:auto; padding:24px 28px; scrollbar-width:none;"
+      >
         <!-- composer card -->
         <div
           style="
@@ -284,7 +287,10 @@
 
     <!-- ══════════════════════════════════════════════════════ NEW -->
   {:else}
-    <div style="height:100%; overflow-y:auto; background:var(--color-background);">
+    <div
+      class="demo-new-scroll"
+      style="height:100%; overflow-y:auto; background:var(--color-background); scrollbar-width:none;"
+    >
       <div style="max-width:1040px; margin:0 auto; padding:28px 32px 60px;">
         <!-- masthead -->
         <div
@@ -669,3 +675,9 @@
     </div>
   {/each}
 </div>
+
+<style>
+  .demo-new-scroll::-webkit-scrollbar {
+    display: none;
+  }
+</style>

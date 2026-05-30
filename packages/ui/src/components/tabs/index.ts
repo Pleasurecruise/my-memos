@@ -1,3 +1,6 @@
+export { default as Tabs } from "./Tabs.svelte";
+export type { TabsProps, TabsContext } from "./Tabs.svelte";
+
 export { default as TabsList } from "./TabsList.svelte";
 export type { TabsListProps } from "./TabsList.svelte";
 

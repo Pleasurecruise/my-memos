@@ -1,19 +1,21 @@
-<script module lang="ts">
+<script lang="ts">
   import type { HTMLAttributes } from "svelte/elements";
   import type { Snippet } from "svelte";
+  import { cn } from "../../lib/utils";
 
   export interface BreadcrumbSeparatorProps extends HTMLAttributes<HTMLLIElement> {
     children?: Snippet;
   }
-</script>
-
-<script lang="ts">
-  import { cn } from "../../lib/utils";
 
   let { class: extraClass = "", children, ...rest }: BreadcrumbSeparatorProps = $props();
 </script>
 
-<li aria-hidden="true" class={cn("select-none text-muted-foreground/50", extraClass)} {...rest}>
+<li
+  aria-hidden="true"
+  data-slot="separator"
+  class={cn("select-none text-muted-foreground/50", extraClass)}
+  {...rest}
+>
   {#if children}
     {@render children()}
   {:else}

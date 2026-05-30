@@ -1,18 +1,19 @@
-<script module lang="ts">
+<script lang="ts">
   import type { HTMLAttributes } from "svelte/elements";
   import type { Snippet } from "svelte";
+  import { cn } from "../../lib/utils";
 
   export interface AlertTitleProps extends HTMLAttributes<HTMLParagraphElement> {
     children?: Snippet;
   }
-</script>
-
-<script lang="ts">
-  import { cn } from "../../lib/utils";
 
   let { class: extraClass = "", children, ...rest }: AlertTitleProps = $props();
 </script>
 
-<p class={cn("mb-1 font-medium leading-none tracking-tight", extraClass)} {...rest}>
+<p
+  data-slot="title"
+  class={cn("mb-1 font-medium leading-none tracking-tight", extraClass)}
+  {...rest}
+>
   {@render children?.()}
 </p>

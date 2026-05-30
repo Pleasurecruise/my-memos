@@ -1,6 +1,9 @@
-<script module lang="ts">
+<script lang="ts">
   import type { HTMLAttributes } from "svelte/elements";
   import type { Snippet } from "svelte";
+  import { cn } from "../../lib/utils";
+  import Avatar from "../Avatar.svelte";
+  import ThinkingIndicator from "./ThinkingIndicator.svelte";
 
   export type ChatRole = "user" | "assistant" | "system";
 
@@ -13,12 +16,6 @@
     typing?: boolean;
     children?: Snippet;
   }
-</script>
-
-<script lang="ts">
-  import { cn } from "../../lib/utils";
-  import Avatar from "../Avatar.svelte";
-  import ThinkingIndicator from "./ThinkingIndicator.svelte";
 
   let {
     role,

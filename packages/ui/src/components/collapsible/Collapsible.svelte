@@ -1,6 +1,8 @@
-<script module lang="ts">
+<script lang="ts">
   import type { HTMLAttributes } from "svelte/elements";
   import type { Snippet } from "svelte";
+  import { setContext } from "svelte";
+  import { cn } from "../../lib/utils";
 
   export interface CollapsibleContext {
     readonly open: boolean;
@@ -12,11 +14,6 @@
     open?: boolean;
     children?: Snippet;
   }
-</script>
-
-<script lang="ts">
-  import { setContext } from "svelte";
-  import { cn } from "../../lib/utils";
 
   let {
     open = $bindable(false),
@@ -38,6 +35,11 @@
   });
 </script>
 
-<div data-state={open ? "open" : "closed"} class={cn("w-full", extraClass)} {...rest}>
+<div
+  data-slot="root"
+  data-state={open ? "open" : "closed"}
+  class={cn("w-full", extraClass)}
+  {...rest}
+>
   {@render children?.()}
 </div>

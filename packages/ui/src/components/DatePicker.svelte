@@ -1,15 +1,13 @@
-<script module lang="ts">
+<script lang="ts">
+  import { ChevronLeft, ChevronRight } from "@lucide/svelte";
+  import { untrack } from "svelte";
+  import { cn } from "../lib/utils";
+
   export interface DatePickerProps {
     value?: Date;
     onChange?: (date: Date) => void;
     class?: string;
   }
-</script>
-
-<script lang="ts">
-  import { ChevronLeft, ChevronRight } from "@lucide/svelte";
-  import { untrack } from "svelte";
-  import { cn } from "../lib/utils";
 
   const MONTHS = [
     "January",
@@ -105,7 +103,9 @@
 
   <div class="grid grid-cols-7 mb-1">
     {#each DAY_LABELS as d (d)}
-      <span class="flex items-center justify-center text-2.5 font-medium text-muted-foreground h-7">
+      <span
+        class="flex items-center justify-center text-[0.625rem] font-medium text-muted-foreground h-7"
+      >
         {d}
       </span>
     {/each}

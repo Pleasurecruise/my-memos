@@ -1,5 +1,6 @@
-<script module lang="ts">
+<script lang="ts">
   import type { HTMLAttributes } from "svelte/elements";
+  import { cn } from "../lib/utils";
 
   export type AvatarSize = "sm" | "md" | "lg" | "xl";
 
@@ -9,10 +10,6 @@
     fallback?: string;
     size?: AvatarSize;
   }
-</script>
-
-<script lang="ts">
-  import { cn } from "../lib/utils";
 
   const sizes: Record<AvatarSize, string> = {
     sm: "h-7 w-7 text-xs",

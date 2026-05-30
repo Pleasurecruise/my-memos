@@ -14,6 +14,7 @@
   import {
     Home,
     Archive,
+    NotebookText,
     MessageSquare,
     Sun,
     Moon,
@@ -37,6 +38,7 @@
   const NAV_ITEMS = [
     { href: "/", label: "Home", Icon: Home, requiresAuth: false },
     { href: "/archive", label: "Archive", Icon: Archive, requiresAuth: true },
+    { href: "/note", label: "Note", Icon: NotebookText, requiresAuth: true },
     { href: "/chat", label: "Chat", Icon: MessageSquare, requiresAuth: true },
   ] as const;
 
@@ -88,10 +90,17 @@
       <span class="font-serif text-sm text-muted-foreground pb-0.5 hidden sm:inline"
         >私のノート</span
       >
+      {#if memos.length > 0}
+        <span class="font-mono text-xs text-muted-foreground pt-0.5 hidden sm:inline">
+          <strong class="text-foreground font-semibold">{memos.length}</strong> entries
+          {#if todayCount > 0}
+            &nbsp;·&nbsp;<strong class="text-foreground font-semibold">{todayCount}</strong> today
+          {/if}
+        </span>
+      {/if}
     </div>
   </div>
 
-  <!-- controls: nav 左 + theme/avatar 右，移动端同行，桌面端接着 wordmark -->
   <div class="flex items-center justify-between sm:flex-1 sm:justify-end gap-2 sm:gap-4">
     <!-- nav -->
     <nav class="flex gap-1 sm:pr-3 sm:mr-1 sm:border-r sm:border-border">
@@ -113,15 +122,6 @@
 
     <!-- theme + avatar -->
     <div class="flex items-center gap-2 shrink-0">
-      {#if memos.length > 0}
-        <span class="font-mono text-xs text-muted-foreground mr-1 hidden sm:inline">
-          <strong class="text-foreground font-semibold">{memos.length}</strong> entries
-          {#if todayCount > 0}
-            &nbsp;·&nbsp;<strong class="text-foreground font-semibold">{todayCount}</strong> today
-          {/if}
-        </span>
-      {/if}
-
       {#if page.data.user}
         <Tooltip content={viewAsPublic ? "View as private" : "View as public"} side="top">
           <button

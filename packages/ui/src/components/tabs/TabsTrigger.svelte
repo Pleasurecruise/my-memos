@@ -1,23 +1,33 @@
-<script module lang="ts">
+<script lang="ts">
   import type { HTMLButtonAttributes } from "svelte/elements";
   import type { Snippet } from "svelte";
+  import { getContext } from "svelte";
+  import { cn } from "../../lib/utils";
+  import type { TabsContext } from "./Tabs.svelte";
 
   export interface TabsTriggerProps extends HTMLButtonAttributes {
-    active?: boolean;
+    value: string;
     children?: Snippet;
   }
-</script>
 
-<script lang="ts">
-  import { cn } from "../../lib/utils";
+  let { value, class: extraClass = "", children, onclick, ...rest }: TabsTriggerProps = $props();
 
-  let { active, class: extraClass = "", children, ...rest }: TabsTriggerProps = $props();
+  const ctx = getContext<TabsContext>("tabs");
+  const active = $derived(ctx.value === value);
+
+  function handleClick(e: MouseEvent & { currentTarget: EventTarget & HTMLButtonElement }) {
+    onclick?.(e);
+    if (!e.defaultPrevented) ctx.onValueChange(value);
+  }
 </script>
 
 <button
   role="tab"
   type="button"
+  data-slot="trigger"
   aria-selected={active}
+  data-state={active ? "active" : "inactive"}
+  onclick={handleClick}
   class={cn(
     "-mb-px border-b-2 px-4 py-2 font-sans text-sm font-medium",
     "cursor-pointer transition-colors duration-100",

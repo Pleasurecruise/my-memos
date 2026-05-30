@@ -1,14 +1,11 @@
-<script module lang="ts">
+<script lang="ts">
   import type { HTMLTextareaAttributes } from "svelte/elements";
+  import { cn } from "../lib/utils";
 
   export interface TextareaProps extends HTMLTextareaAttributes {
     error?: boolean;
     autoresize?: boolean;
   }
-</script>
-
-<script lang="ts">
-  import { cn } from "../lib/utils";
 
   const base = cn(
     "flex min-h-20 w-full rounded-md border bg-background px-3 py-2",
@@ -36,7 +33,6 @@
 
   $effect(() => {
     if (autoresize && el) {
-      // Re-run when value prop changes (e.g. cleared after submit)
       void rest.value;
       Promise.resolve().then(resize);
     }

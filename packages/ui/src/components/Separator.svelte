@@ -1,13 +1,10 @@
-<script module lang="ts">
+<script lang="ts">
   import type { HTMLAttributes } from "svelte/elements";
+  import { cn } from "../lib/utils";
 
   export interface SeparatorProps extends HTMLAttributes<HTMLDivElement> {
     orientation?: "horizontal" | "vertical";
   }
-</script>
-
-<script lang="ts">
-  import { cn } from "../lib/utils";
 
   let { orientation = "horizontal", class: extraClass = "", ...rest }: SeparatorProps = $props();
 </script>

@@ -9,7 +9,7 @@
   --color-border-strong: var(--palette-light-sand);
   --color-divider: var(--palette-light-oat);
   --color-accent: var(--palette-brand-light);
-  --color-accent-foreground: var(--palette-light-paper); /* light text on dark bengara */
+  --color-accent-foreground: var(--palette-light-paper); /* light text on dark suou */
   --color-success: var(--palette-success-light);
   --color-warning: var(--palette-warning-light);
   --color-error: var(--palette-error-light);
@@ -51,7 +51,7 @@
   --color-border-strong: var(--palette-dark-3);
   --color-divider: var(--palette-dark-1);
   --color-accent: var(--palette-brand-dark);
-  --color-accent-foreground: var(--palette-dark-0); /* dark text on lighter shu-sabi */
+  --color-accent-foreground: var(--palette-dark-0); /* dark text on lighter suou */
   --color-success: var(--palette-success-dark);
   --color-warning: var(--palette-warning-dark);
   --color-error: var(--palette-error-dark);

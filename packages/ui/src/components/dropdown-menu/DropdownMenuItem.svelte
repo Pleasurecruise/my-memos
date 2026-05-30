@@ -1,17 +1,14 @@
-<script module lang="ts">
+<script lang="ts">
   import type { HTMLButtonAttributes } from "svelte/elements";
   import type { Snippet } from "svelte";
+  import { getContext } from "svelte";
+  import { cn } from "../../lib/utils";
+  import type { DropdownMenuContext } from "./DropdownMenu.svelte";
 
   export interface DropdownMenuItemProps extends HTMLButtonAttributes {
     destructive?: boolean;
     children?: Snippet;
   }
-</script>
-
-<script lang="ts">
-  import { getContext } from "svelte";
-  import { cn } from "../../lib/utils";
-  import type { DropdownMenuContext } from "./DropdownMenu.svelte";
 
   let {
     destructive = false,
@@ -32,6 +29,7 @@
 <button
   type="button"
   role="menuitem"
+  data-slot="item"
   tabindex={-1}
   class={cn(
     "flex w-full items-center gap-2 rounded-md px-2 py-1.5",

@@ -13,6 +13,9 @@
     Collapsible,
     CollapsibleContent,
     CollapsibleTrigger,
+    Command,
+    CommandList,
+    CommandItem,
   } from "@my-memos/ui";
   import {
     Search,
@@ -25,6 +28,7 @@
     Clock3,
     Globe,
     Lock,
+    Hash,
     ChevronRight,
   } from "@lucide/svelte";
   import type { Memo, MemoVisibility, TagCount } from "$lib/types";
@@ -255,25 +259,21 @@
     </div>
 
     {#if ac.open && ac.suggestions.length > 0}
-      <div
-        class="absolute top-full left-0 right-0 mt-1 bg-background border border-border rounded-lg shadow-md z-50 overflow-hidden"
+      <Command
+        bind:activeIndex={ac.activeIndex}
+        onselect={(item) => {
+          content = ac.select(item.key) ?? content;
+        }}
       >
-        {#each ac.suggestions as tag, i (tag)}
-          <button
-            type="button"
-            onmousedown={(e) => {
-              e.preventDefault();
-              content = ac.select(tag) ?? content;
-            }}
-            class="w-full px-3 py-2 text-sm text-left flex items-center gap-2 transition-colors {i ===
-            ac.activeIndex
-              ? 'bg-accent/10 text-accent'
-              : 'text-foreground hover:bg-muted'}"
-          >
-            <span class="text-xs opacity-50">#</span>{tag}
-          </button>
-        {/each}
-      </div>
+        <CommandList class="absolute top-full left-0 right-0 mt-1 z-50">
+          {#each ac.suggestions as tag, i (tag)}
+            <CommandItem item={{ key: tag, label: tag }} index={i}>
+              <Hash class="h-4 w-4 shrink-0 text-muted-foreground" />
+              <span class="truncate">{tag}</span>
+            </CommandItem>
+          {/each}
+        </CommandList>
+      </Command>
     {/if}
   </div>
 

@@ -15,8 +15,8 @@ export function createTagAutocomplete(getTagNames: () => string[]) {
     const names = getTagNames();
     if (!names.length) return [];
     return query === ""
-      ? names.slice(0, 8)
-      : names.filter((t) => t.toLowerCase().startsWith(query.toLowerCase())).slice(0, 8);
+      ? names
+      : names.filter((t) => t.toLowerCase().startsWith(query.toLowerCase()));
   });
 
   function onValueChange(value: string): void {
@@ -33,15 +33,9 @@ export function createTagAutocomplete(getTagNames: () => string[]) {
 
   function onKeydown(e: KeyboardEvent): string | null {
     if (!open || suggestions.length === 0) return null;
-    if (e.key === "ArrowDown") {
+    if (e.key === "Tab") {
       e.preventDefault();
-      activeIndex = (activeIndex + 1) % suggestions.length;
-    } else if (e.key === "ArrowUp") {
-      e.preventDefault();
-      activeIndex = (activeIndex - 1 + suggestions.length) % suggestions.length;
-    } else if (e.key === "Tab") {
-      e.preventDefault();
-      return select(suggestions[activeIndex]);
+      if (suggestions.length > 0) return select(suggestions[activeIndex]);
     } else if (e.key === "Escape") {
       open = false;
     }
@@ -66,6 +60,9 @@ export function createTagAutocomplete(getTagNames: () => string[]) {
     },
     get activeIndex() {
       return activeIndex;
+    },
+    set activeIndex(v: number) {
+      activeIndex = v;
     },
     get suggestions() {
       return suggestions;

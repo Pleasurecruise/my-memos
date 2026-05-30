@@ -1,6 +1,7 @@
-<script module lang="ts">
+<script lang="ts">
   import type { HTMLAttributes } from "svelte/elements";
   import type { Snippet } from "svelte";
+  import { cn } from "../lib/utils";
 
   export type BadgeVariant =
     | "default"
@@ -14,10 +15,6 @@
     variant?: BadgeVariant;
     children?: Snippet;
   }
-</script>
-
-<script lang="ts">
-  import { cn } from "../lib/utils";
 
   const base = "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium font-sans";
 

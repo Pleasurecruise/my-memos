@@ -1,6 +1,7 @@
-<script module lang="ts">
+<script lang="ts">
   import type { HTMLButtonAttributes } from "svelte/elements";
   import type { Snippet } from "svelte";
+  import { cn } from "../lib/utils";
 
   export type ButtonVariant =
     | "default"
@@ -16,10 +17,6 @@
     size?: ButtonSize;
     children?: Snippet;
   }
-</script>
-
-<script lang="ts">
-  import { cn } from "../lib/utils";
 
   const base = cn(
     "inline-flex items-center justify-center gap-2",

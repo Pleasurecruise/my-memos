@@ -1,16 +1,13 @@
-<script module lang="ts">
+<script lang="ts">
   import type { HTMLButtonAttributes } from "svelte/elements";
   import type { Snippet } from "svelte";
+  import { getContext } from "svelte";
+  import { cn } from "../../lib/utils";
+  import type { CollapsibleContext } from "./Collapsible.svelte";
 
   export interface CollapsibleTriggerProps extends HTMLButtonAttributes {
     children?: Snippet;
   }
-</script>
-
-<script lang="ts">
-  import { getContext } from "svelte";
-  import { cn } from "../../lib/utils";
-  import type { CollapsibleContext } from "./Collapsible.svelte";
 
   let {
     children,
@@ -30,6 +27,7 @@
 
 <button
   {type}
+  data-slot="trigger"
   aria-expanded={ctx.open}
   data-state={ctx.open ? "open" : "closed"}
   onclick={handleClick}

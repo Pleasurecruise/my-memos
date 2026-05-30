@@ -1,14 +1,11 @@
-<script module lang="ts">
+<script lang="ts">
   import type { HTMLAttributes } from "svelte/elements";
   import type { Snippet } from "svelte";
+  import { cn } from "../lib/utils";
 
   export interface PreProps extends HTMLAttributes<HTMLPreElement> {
     children?: Snippet;
   }
-</script>
-
-<script lang="ts">
-  import { cn } from "../lib/utils";
 
   let { class: extraClass = "", children, ...rest }: PreProps = $props();
 </script>

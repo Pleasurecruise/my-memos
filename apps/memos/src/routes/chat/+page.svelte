@@ -11,8 +11,8 @@
   const LAYOUT_KEY = "my-memos:layout";
 
   onMount(() => {
-    const saved = localStorage.getItem(LAYOUT_KEY) as "old" | "new" | null;
-    layout = saved ?? "new";
+    const saved = localStorage.getItem(LAYOUT_KEY);
+    layout = saved === "old" ? "old" : "new";
   });
 
   function toggleLayout() {

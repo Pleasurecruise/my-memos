@@ -1,5 +1,6 @@
-<script module lang="ts">
+<script lang="ts">
   import type { Snippet } from "svelte";
+  import { setContext } from "svelte";
 
   export interface DialogContext {
     readonly open: boolean;
@@ -10,10 +11,6 @@
     open?: boolean;
     children?: Snippet;
   }
-</script>
-
-<script lang="ts">
-  import { setContext } from "svelte";
 
   let { open = $bindable(false), children }: DialogProps = $props();
 

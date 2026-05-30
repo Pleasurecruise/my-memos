@@ -1,6 +1,7 @@
-<script module lang="ts">
+<script lang="ts">
   import type { HTMLAttributes } from "svelte/elements";
   import type { Snippet } from "svelte";
+  import { cn } from "../../lib/utils";
 
   export type AlertVariant = "default" | "success" | "warning" | "error";
 
@@ -8,10 +9,6 @@
     variant?: AlertVariant;
     children?: Snippet;
   }
-</script>
-
-<script lang="ts">
-  import { cn } from "../../lib/utils";
 
   const variants: Record<AlertVariant, string> = {
     default: "border-border bg-muted text-foreground",
@@ -25,6 +22,7 @@
 
 <div
   role="alert"
+  data-slot="root"
   class={cn("rounded-lg border px-4 py-3 font-sans text-sm", variants[variant], extraClass)}
   {...rest}
 >

@@ -1,16 +1,13 @@
-<script module lang="ts">
+<script lang="ts">
   import type { HTMLAttributes } from "svelte/elements";
+  import { Loader2 } from "@lucide/svelte";
+  import { cn } from "../lib/utils";
 
   export type SpinnerSize = "sm" | "md" | "lg";
 
   export interface SpinnerProps extends HTMLAttributes<HTMLSpanElement> {
     size?: SpinnerSize;
   }
-</script>
-
-<script lang="ts">
-  import { Loader2 } from "@lucide/svelte";
-  import { cn } from "../lib/utils";
 
   const sizes: Record<SpinnerSize, number> = { sm: 16, md: 20, lg: 24 };
 

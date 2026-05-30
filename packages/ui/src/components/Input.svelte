@@ -1,13 +1,10 @@
-<script module lang="ts">
+<script lang="ts">
   import type { HTMLInputAttributes } from "svelte/elements";
+  import { cn } from "../lib/utils";
 
   export interface InputProps extends HTMLInputAttributes {
     error?: boolean;
   }
-</script>
-
-<script lang="ts">
-  import { cn } from "../lib/utils";
 
   const base = cn(
     "flex h-9 w-full rounded-md border bg-background px-3 py-1",

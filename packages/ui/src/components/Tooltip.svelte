@@ -1,5 +1,7 @@
-<script module lang="ts">
+<script lang="ts">
   import type { Snippet } from "svelte";
+  import { cn } from "../lib/utils";
+  import { fade } from "svelte/transition";
 
   export type TooltipSide = "top" | "bottom" | "left" | "right";
 
@@ -10,11 +12,6 @@
     children: Snippet;
     class?: string;
   }
-</script>
-
-<script lang="ts">
-  import { cn } from "../lib/utils";
-  import { fade } from "svelte/transition";
 
   let {
     content,
@@ -38,9 +35,10 @@
   }
 </script>
 
-<!-- svelte-ignore a11y_no_static_element_interactions -->
 <div
   class={cn("relative inline-flex", extraClass)}
+  role="none"
+  tabindex="-1"
   onmouseenter={show}
   onmouseleave={hide}
   onfocusin={show}

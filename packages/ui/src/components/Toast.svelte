@@ -1,5 +1,6 @@
-<script module lang="ts">
+<script lang="ts">
   import type { HTMLAttributes } from "svelte/elements";
+  import { cn } from "../lib/utils";
 
   export type ToastVariant = "default" | "success" | "warning" | "error";
 
@@ -8,10 +9,6 @@
     title: string;
     description?: string;
   }
-</script>
-
-<script lang="ts">
-  import { cn } from "../lib/utils";
 
   const borders: Record<ToastVariant, string> = {
     default: "border-border",
@@ -45,7 +42,7 @@
   )}
   {...rest}
 >
-  <span class={cn("mt-1.25 h-1.5 w-1.5 shrink-0 rounded-full", dots[variant])}></span>
+  <span class={cn("mt-[0.3125rem] h-1.5 w-1.5 shrink-0 rounded-full", dots[variant])}></span>
   <div class="flex flex-col gap-0.5">
     <p class="font-sans text-sm font-medium text-foreground">{title}</p>
     {#if description}

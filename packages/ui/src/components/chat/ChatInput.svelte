@@ -1,5 +1,8 @@
-<script module lang="ts">
+<script lang="ts">
   import type { HTMLAttributes } from "svelte/elements";
+  import { cn } from "../../lib/utils";
+  import Button from "../Button.svelte";
+  import { ArrowUp } from "@lucide/svelte";
 
   export interface ChatInputProps extends HTMLAttributes<HTMLDivElement> {
     value?: string;
@@ -8,12 +11,6 @@
     maxRows?: number;
     onsend?: (value: string) => void;
   }
-</script>
-
-<script lang="ts">
-  import { cn } from "../../lib/utils";
-  import Button from "../Button.svelte";
-  import { ArrowUp } from "@lucide/svelte";
 
   let {
     value = $bindable(""),

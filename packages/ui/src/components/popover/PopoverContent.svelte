@@ -1,6 +1,10 @@
-<script module lang="ts">
+<script lang="ts">
   import type { HTMLAttributes } from "svelte/elements";
   import type { Snippet } from "svelte";
+  import { getContext } from "svelte";
+  import { scale } from "svelte/transition";
+  import { cn } from "../../lib/utils";
+  import type { PopoverContext } from "./Popover.svelte";
 
   export type PopoverSide = "top" | "bottom";
   export type PopoverAlign = "start" | "center" | "end";
@@ -10,13 +14,6 @@
     align?: PopoverAlign;
     children?: Snippet;
   }
-</script>
-
-<script lang="ts">
-  import { getContext } from "svelte";
-  import { scale } from "svelte/transition";
-  import { cn } from "../../lib/utils";
-  import type { PopoverContext } from "./Popover.svelte";
 
   let {
     side = "bottom",
@@ -50,7 +47,7 @@
 
 {#if ctx.open}
   <div
-    role="dialog"
+    data-slot="content"
     class={cn(
       "absolute z-50 rounded-lg border border-border bg-background shadow-md",
       "min-w-48 p-3 focus:outline-none",

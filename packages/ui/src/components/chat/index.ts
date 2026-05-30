@@ -6,3 +6,5 @@ export type { ChatThreadProps } from "./ChatThread.svelte";
 
 export { default as ChatInput } from "./ChatInput.svelte";
 export type { ChatInputProps } from "./ChatInput.svelte";
+
+export { default as ThinkingIndicator } from "./ThinkingIndicator.svelte";

@@ -1,6 +1,10 @@
-<script module lang="ts">
+<script lang="ts">
   import type { HTMLAttributes } from "svelte/elements";
   import type { Snippet } from "svelte";
+  import { getContext } from "svelte";
+  import { scale } from "svelte/transition";
+  import { cn } from "../../lib/utils";
+  import type { DropdownMenuContext } from "./DropdownMenu.svelte";
 
   export type DropdownMenuAlign = "start" | "center" | "end";
 
@@ -8,13 +12,6 @@
     align?: DropdownMenuAlign;
     children?: Snippet;
   }
-</script>
-
-<script lang="ts">
-  import { getContext } from "svelte";
-  import { scale } from "svelte/transition";
-  import { cn } from "../../lib/utils";
-  import type { DropdownMenuContext } from "./DropdownMenu.svelte";
 
   let {
     align = "start",
@@ -72,6 +69,7 @@
   <div
     bind:this={el}
     role="menu"
+    data-slot="content"
     aria-orientation="vertical"
     class={cn(
       "absolute top-full z-50 mt-1 rounded-lg border border-border bg-background shadow-md",

@@ -1,5 +1,6 @@
-<script module lang="ts">
+<script lang="ts">
   import type { HTMLAttributes } from "svelte/elements";
+  import { cn } from "../lib/utils";
 
   export interface HeatingRateDay {
     key: string;
@@ -21,10 +22,6 @@
     showRate?: boolean;
     showWeekdayLabels?: boolean;
   }
-</script>
-
-<script lang="ts">
-  import { cn } from "../lib/utils";
 
   const weekdayLabels = ["", "Mon", "", "Wed", "", "Fri", ""];
 

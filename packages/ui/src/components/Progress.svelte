@@ -1,13 +1,10 @@
-<script module lang="ts">
+<script lang="ts">
   import type { HTMLAttributes } from "svelte/elements";
+  import { cn } from "../lib/utils";
 
   export interface ProgressProps extends HTMLAttributes<HTMLDivElement> {
     value?: number;
   }
-</script>
-
-<script lang="ts">
-  import { cn } from "../lib/utils";
 
   let { value = 0, class: extraClass = "", ...rest }: ProgressProps = $props();
 

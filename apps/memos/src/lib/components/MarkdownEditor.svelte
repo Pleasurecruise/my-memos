@@ -7,6 +7,8 @@
     class?: string;
     onkeydown?: (e: KeyboardEvent) => void;
     ontextchange?: (value: string) => void;
+    onblur?: () => void;
+    editorElement?: HTMLTextAreaElement | null;
   }
 
   let {
@@ -15,6 +17,8 @@
     class: extraClass = "",
     onkeydown,
     ontextchange,
+    onblur,
+    editorElement = $bindable(null),
   }: Props = $props();
 
   function handleInput(e: Event) {
@@ -29,8 +33,10 @@
 
 <textarea
   bind:value
+  bind:this={editorElement}
   {placeholder}
   oninput={handleInput}
   onkeydown={handleKeydown}
+  {onblur}
   class={cn("md-editor", extraClass)}
 ></textarea>

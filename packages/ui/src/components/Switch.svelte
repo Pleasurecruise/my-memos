@@ -1,11 +1,8 @@
-<script module lang="ts">
+<script lang="ts">
   import type { HTMLInputAttributes } from "svelte/elements";
+  import { cn } from "../lib/utils";
 
   export interface SwitchProps extends Omit<HTMLInputAttributes, "type"> {}
-</script>
-
-<script lang="ts">
-  import { cn } from "../lib/utils";
 
   let { class: extraClass = "", ...rest }: SwitchProps = $props();
 </script>

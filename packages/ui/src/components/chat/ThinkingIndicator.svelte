@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount, onDestroy } from "svelte";
-  import { THINKING_VERBS } from "./thinking-verbs";
+  import { THINKING_VERBS } from "../../lib/thinking-verbs";
 
   let index = $state(Math.floor(Math.random() * THINKING_VERBS.length));
   let timer: ReturnType<typeof setInterval>;

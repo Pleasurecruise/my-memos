@@ -47,21 +47,21 @@ Warm charcoal ramp, R > B throughout. All text colors meet WCAG AA on `--palette
 | `--palette-dark-text`     | `#e6e3dc` | body text       | 14.0 : 1                                |
 | `--palette-dark-text-dim` | `#9a948d` | secondary text  | 5.28 : 1 on dark-0 / 5.27 : 1 on dark-1 |
 
-### Brand Accent — 煤竹色 Susutake-iro
+### Brand Accent — 蘇芳色 Suou-iro
 
-煤竹色（すすたけいろ）is the color of bamboo aged by smoke in old Japanese kitchen ceilings — a deep, muted amber-brown with no chromatic boldness. The name encodes patience and time: beauty that accumulates through repetition, not through display. Chosen to reflect a reserved, structured, tradition-grounded sensibility.
+蘇芳色（すおういろ）is the color of dye extracted from the heartwood of the sappan tree (_Caesalpinia sappan_), used in Heian-era court robes and noble garments. A deep, subdued rose-crimson with low saturation — stately without being loud, warm without being bright. The name carries the weight of classical refinement: beauty that asserts itself through depth, not through display.
 
 | Variable                | Hex       | Mode  | Role                    | Contrast           |
 | ----------------------- | --------- | ----- | ----------------------- | ------------------ |
-| `--palette-brand-light` | `#6d5626` | light | text, links, focus ring | 6.48 : 1 on paper  |
-| `--palette-brand-dark`  | `#b89a64` | dark  | text, links, focus ring | 6.66 : 1 on dark-0 |
+| `--palette-brand-light` | `#963c5a` | light | text, links, focus ring | 6.30 : 1 on paper  |
+| `--palette-brand-dark`  | `#d8a0b2` | dark  | text, links, focus ring | 8.04 : 1 on dark-0 |
 
 Accent-foreground (text **on** an accent-colored background):
 
 | Context    | Foreground              | Hex       | Contrast              |
 | ---------- | ----------------------- | --------- | --------------------- |
-| light mode | `--palette-light-paper` | `#faf7eb` | 6.48 : 1 on `#6d5626` |
-| dark mode  | `--palette-dark-0`      | `#1a1917` | 6.66 : 1 on `#b89a64` |
+| light mode | `--palette-light-paper` | `#faf7eb` | 6.30 : 1 on `#963c5a` |
+| dark mode  | `--palette-dark-0`      | `#1a1917` | 8.04 : 1 on `#d8a0b2` |
 
 ### Semantic States
 

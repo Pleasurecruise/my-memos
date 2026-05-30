@@ -1,5 +1,7 @@
-<script module lang="ts">
+<script lang="ts">
   import type { Snippet } from "svelte";
+  import { setContext } from "svelte";
+  import { cn } from "../../lib/utils";
 
   export interface DropdownMenuContext {
     readonly open: boolean;
@@ -13,11 +15,6 @@
     children?: Snippet;
     class?: string;
   }
-</script>
-
-<script lang="ts">
-  import { setContext } from "svelte";
-  import { cn } from "../../lib/utils";
 
   let { open = $bindable(false), children, class: extraClass = "" }: DropdownMenuProps = $props();
 
@@ -39,6 +36,6 @@
   });
 </script>
 
-<div bind:this={wrapper} class={cn("relative inline-flex", extraClass)}>
+<div bind:this={wrapper} data-slot="root" class={cn("relative inline-flex", extraClass)}>
   {@render children?.()}
 </div>
