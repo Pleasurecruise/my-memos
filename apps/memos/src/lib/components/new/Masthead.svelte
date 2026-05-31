@@ -115,7 +115,7 @@
             : 'text-muted-foreground hover:text-foreground hover:bg-muted'}"
         >
           <Icon size={13} />
-          {label}
+          <span class="hidden sm:inline">{label}</span>
         </button>
       {/each}
     </nav>

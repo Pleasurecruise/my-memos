@@ -243,8 +243,8 @@
   }
 </script>
 
-<div class="min-h-screen bg-background text-foreground font-sans overflow-hidden">
-  <div class="max-w-280 mx-auto px-4 sm:px-8 pb-24 pt-7 overflow-y-auto h-full">
+<div class="min-h-screen bg-background text-foreground font-sans">
+  <div class="max-w-280 mx-auto px-4 sm:px-8 pb-24 pt-7">
     <Masthead {memos} {tags} {viewAsPublic} />
 
     <!-- TAG STRIP -->

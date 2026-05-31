@@ -1,6 +1,7 @@
 <script lang="ts">
   import { invalidateAll } from "$app/navigation";
-  import { LoaderCircle, Save, X } from "@lucide/svelte";
+  import { goto } from "$app/navigation";
+  import { LoaderCircle, Save, X, Pencil, ArrowLeft } from "@lucide/svelte";
   import { cn } from "@my-memos/ui";
   import ButtonGroup from "$lib/components/ButtonGroup.svelte";
   import ArticleSide from "$lib/components/note/ArticleSide.svelte";
@@ -62,12 +63,12 @@
 
     <section id="note" class={cn("mx-auto mt-6 w-full sm:mt-8", !isEditing && "max-w-162.5")}>
       <div>
-        <div class="flex flex-col gap-y-3 sm:flex-row sm:items-start sm:gap-x-3">
+        <div class="flex flex-row flex-wrap items-center gap-x-2 gap-y-1">
           <div class="min-w-0 flex-1">
             <ArticleHeader title={display.title} text={display.excerpt} />
           </div>
 
-          <div class="flex items-center gap-1.5 sm:justify-end sm:pt-0.5">
+          <div class="flex items-center">
             {#if isEditing}
               <ButtonGroup>
                 <button
@@ -92,6 +93,21 @@
                     <Save class="size-4" />
                   {/if}
                 </button>
+              </ButtonGroup>
+            {:else}
+              <ButtonGroup class="xl:hidden">
+                <button
+                  type="button"
+                  onclick={toggleEdit}
+                  class="inline-flex h-8 w-8 items-center justify-center border border-border bg-background text-muted-foreground transition-colors hover:text-foreground"
+                  aria-label="Edit"><Pencil class="size-4" /></button
+                >
+                <button
+                  type="button"
+                  onclick={() => goto("/note")}
+                  class="inline-flex h-8 w-8 items-center justify-center border border-border bg-background text-muted-foreground transition-colors hover:text-foreground"
+                  aria-label="All notes"><ArrowLeft class="size-4" /></button
+                >
               </ButtonGroup>
             {/if}
           </div>

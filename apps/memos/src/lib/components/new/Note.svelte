@@ -119,11 +119,14 @@
   <div class="max-w-280 mx-auto px-4 sm:px-8 pb-24 pt-7">
     <Masthead />
 
-    <div class="max-w-180 mx-auto mb-6">
+    <div class="max-w-180 mx-auto mb-8">
       <div class="relative inline-block">
-        <h1 class="font-serif font-semibold text-6 text-foreground leading-none">note</h1>
+        <h1 class="font-serif font-semibold text-7 text-foreground leading-none">note</h1>
         <span class="absolute left-0 -bottom-1.5 h-0.5 w-8 rounded-sm bg-accent"></span>
       </div>
+      <p class="text-sm text-muted-foreground mt-4">
+        Long-form writing — linked, searchable, and always in markdown.
+      </p>
     </div>
 
     <div class="max-w-180 mx-auto mt-6 text-foreground/80">
