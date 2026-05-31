@@ -1,4 +1,6 @@
 import { error, redirect } from "@sveltejs/kit";
+import type { R2ListOptions } from "@cloudflare/workers-types";
+import { BLOG_PREFIX, slugFromR2Key } from "$lib/server/blog";
 import type { PageServerLoad } from "./$types";
 
 export const load: PageServerLoad = async ({ platform, locals, url }) => {
@@ -11,23 +13,32 @@ export const load: PageServerLoad = async ({ platform, locals, url }) => {
 
   const bucket = platform.env.MEMOS_BUCKET;
   const paths: string[] = [];
-  const fileMeta: Record<string, { size: number; updated: string }> = {};
+  const fileMeta: Record<string, { size: number; createdAt: string; updatedAt: string }> = {};
 
   let cursor: string | undefined;
 
   do {
-    const result = await bucket.list({ prefix: "blog/", cursor });
+    const listOpts: R2ListOptions & { include: string[] } = {
+      prefix: BLOG_PREFIX,
+      limit: 1000,
+      cursor,
+      include: ["customMetadata"],
+    };
+    const listingResponse = await bucket.list(listOpts);
 
-    for (const object of result.objects) {
-      if (object.key.endsWith("/")) continue;
-      paths.push(object.key);
-      fileMeta[object.key] = {
-        size: object.size,
-        updated: object.uploaded.toISOString(),
+    for (const r2Object of listingResponse.objects) {
+      if (r2Object.key.endsWith("/") || !r2Object.key.toLowerCase().endsWith(".md")) continue;
+      const path = slugFromR2Key(r2Object.key);
+      const fallbackDate = r2Object.uploaded.toISOString();
+      paths.push(path);
+      fileMeta[path] = {
+        size: r2Object.size,
+        createdAt: r2Object.customMetadata?.createdAt ?? fallbackDate,
+        updatedAt: r2Object.customMetadata?.updatedAt ?? fallbackDate,
       };
     }
 
-    cursor = result.truncated ? result.cursor : undefined;
+    cursor = listingResponse.truncated ? listingResponse.cursor : undefined;
   } while (cursor);
 
   return { paths, fileMeta };

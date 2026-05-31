@@ -1,31 +1,117 @@
 <script lang="ts">
-  import { Tree } from "@my-memos/ui";
+  import { onMount } from "svelte";
   import Masthead from "./Masthead.svelte";
 
   interface Props {
     paths: string[];
-    fileMeta: Record<string, { size: number; updated: string }>;
+    fileMeta: Record<string, { size: number; createdAt: string; updatedAt: string }>;
   }
 
   let { paths, fileMeta }: Props = $props();
 
-  const BLOG_PREFIX = "blog/";
-  const relativePaths = $derived(
-    paths.map((p) => (p.startsWith(BLOG_PREFIX) ? p.slice(BLOG_PREFIX.length) : p)),
-  );
-
-  function formatSize(bytes: number): string {
-    if (bytes < 1024) return `${bytes} B`;
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  interface NoteListItem {
+    id: string;
+    title: string;
+    date: Date;
+    href: string;
+    type: string;
   }
 
-  function formatDate(iso: string): string {
-    const d = new Date(iso);
-    return d.toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-    });
+  const entries = $derived(
+    paths
+      .map((path) => {
+        const meta = fileMeta[path];
+        const date = meta ? new Date(meta.createdAt) : new Date(0);
+        const segments = path.split("/").filter(Boolean);
+        const fileName = segments.at(-1) ?? path;
+        const folder = segments.slice(0, -1).join("/");
+
+        return {
+          id: path,
+          title: titleFromPath(fileName),
+          date,
+          href: `/note/${path.split("/").map(encodeURIComponent).join("/")}`,
+          type: typeFromFolder(folder),
+        };
+      })
+      .sort((a, b) => b.date.getTime() - a.date.getTime()),
+  );
+
+  const groupedEntries = $derived.by(() => {
+    const yearGroups = new Map<number, Map<number, NoteListItem[]>>();
+
+    for (const entry of entries) {
+      const year = entry.date.getFullYear();
+      const month = entry.date.getMonth();
+      const monthGroups = yearGroups.get(year) ?? new Map<number, NoteListItem[]>();
+      monthGroups.set(month, [...(monthGroups.get(month) ?? []), entry]);
+      yearGroups.set(year, monthGroups);
+    }
+
+    return [...yearGroups.entries()]
+      .sort((a, b) => b[0] - a[0])
+      .map(([year, monthGroups]) => ({
+        year,
+        count: [...monthGroups.values()].reduce(
+          (total, monthEntries) => total + monthEntries.length,
+          0,
+        ),
+        months: [...monthGroups.entries()]
+          .sort((a, b) => b[0] - a[0])
+          .map(([month, monthEntries]) => ({
+            month,
+            entries: monthEntries.sort((a, b) => b.date.getTime() - a.date.getTime()),
+          })),
+      }));
+  });
+  onMount(() => {
+    const highlightTimer = setTimeout(() => {
+      const selectId = new URLSearchParams(location.search).get("selectId");
+      if (!selectId) return;
+
+      const target = Array.from(document.querySelectorAll<HTMLElement>("[data-id]")).find(
+        (element) => element.dataset.id === selectId,
+      );
+      if (!target) return;
+
+      target.scrollIntoView({ behavior: "smooth", block: "center" });
+      target.animate(
+        [
+          { backgroundColor: "color-mix(in srgb, var(--color-accent) 16%, transparent)" },
+          { backgroundColor: "transparent" },
+        ],
+        {
+          duration: 1500,
+          easing: "ease-in-out",
+          fill: "both",
+          iterations: 1,
+        },
+      );
+    }, 100);
+
+    return () => clearTimeout(highlightTimer);
+  });
+
+  function formatDay(date: Date): string {
+    return new Intl.DateTimeFormat("en-US", {
+      day: "2-digit",
+    }).format(date);
+  }
+
+  function formatMonth(month: number): string {
+    const date = new Date(2020, month, 1);
+    const cn = new Intl.DateTimeFormat("zh-CN", { month: "long" }).format(date);
+    const en = new Intl.DateTimeFormat("en-US", { month: "short" }).format(date).toUpperCase();
+    return `${cn} · ${en}`;
+  }
+
+  function titleFromPath(path: string): string {
+    return path.replace(/\.md$/i, "").replace(/[-_]/g, " ").replace(/\s+/g, " ").trim();
+  }
+
+  function typeFromFolder(folder: string): string {
+    const segments = folder.split("/").filter(Boolean);
+    return segments.at(-1) ?? "root";
   }
 </script>
 
@@ -33,14 +119,53 @@
   <div class="max-w-280 mx-auto px-4 sm:px-8 pb-24 pt-7">
     <Masthead />
 
-    <div class="max-w-180 mx-auto mb-8">
+    <div class="max-w-180 mx-auto mb-6">
       <div class="relative inline-block">
-        <h1 class="font-serif font-semibold text-7 text-foreground leading-none">note</h1>
+        <h1 class="font-serif font-semibold text-6 text-foreground leading-none">note</h1>
         <span class="absolute left-0 -bottom-1.5 h-0.5 w-8 rounded-sm bg-accent"></span>
       </div>
-      <p class="text-sm text-muted-foreground mt-4">Blog files stored in R2 bucket.</p>
     </div>
 
-    <div class="max-w-180 mx-auto"></div>
+    <div class="max-w-180 mx-auto mt-6 text-foreground/80">
+      {#each groupedEntries as yearGroup}
+        <section class="my-5">
+          <h2 class="mb-4 text-sm font-medium text-foreground">
+            {yearGroup.year}本年
+            <span class="ml-1 text-xs text-muted-foreground">{yearGroup.count} 篇</span>
+          </h2>
+
+          {#each yearGroup.months as monthSection}
+            <section class="mb-4">
+              <h3 class="mb-2 text-xs font-medium tracking-wide text-muted-foreground">
+                {formatMonth(monthSection.month)}
+              </h3>
+
+              <ol class="space-y-1.5">
+                {#each monthSection.entries as entry}
+                  <li
+                    class="grid grid-cols-[2.25rem_minmax(0,1fr)_max-content] gap-3"
+                    data-id={entry.id}
+                  >
+                    <span class="font-mono text-sm leading-5 tabular-nums text-muted-foreground">
+                      {formatDay(entry.date)}
+                    </span>
+                    <a
+                      href={entry.href}
+                      class="min-w-0 truncate text-sm leading-5 text-foreground underline-offset-4 transition-colors hover:text-accent hover:underline"
+                      title={entry.id}
+                    >
+                      {entry.title}
+                    </a>
+                    <span class="text-xs leading-5 text-muted-foreground">
+                      {entry.type}
+                    </span>
+                  </li>
+                {/each}
+              </ol>
+            </section>
+          {/each}
+        </section>
+      {/each}
+    </div>
   </div>
 </div>

@@ -15,3 +15,9 @@ export interface TagCount {
   name: string;
   count: number;
 }
+
+export interface TocEntry {
+  depth: number;
+  text: string;
+  id: string;
+}
