@@ -1,6 +1,5 @@
-export function extractTitle(source: string): string {
-  const match = source.match(/^# (.+)$/m);
-  return match ? match[1].trim() : "";
+export function stripLeadingTitleHeading(source: string): string {
+  return source.replace(/^\uFEFF?#\s+[^\r\n]+(?:\r?\n|$)/, "").replace(/^\r?\n/, "");
 }
 
 export function slugToTitle(slug: string): string {

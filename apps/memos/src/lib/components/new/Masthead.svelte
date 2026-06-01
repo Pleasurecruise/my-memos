@@ -69,7 +69,9 @@
   }
 </script>
 
-<header class="flex flex-col sm:flex-row sm:items-end gap-5 pb-4 border-b border-border mb-4">
+<header
+  class="flex flex-col gap-4 lg:flex-row lg:items-end lg:gap-5 pb-4 border-b border-border mb-4"
+>
   <!-- wordmark -->
   <div class="flex flex-col gap-1.5 shrink-0">
     <p class="font-mono text-[10px] tracking-[0.18em] uppercase text-muted-foreground">
@@ -87,11 +89,11 @@
         my memos
         <span class="absolute left-0 -bottom-1.75 h-0.75 w-13 rounded-sm bg-accent"></span>
       </span>
-      <span class="font-serif text-sm text-muted-foreground pb-0.5 hidden sm:inline"
+      <span class="font-serif text-sm text-muted-foreground pb-0.5 hidden lg:inline"
         >私のノート</span
       >
       {#if memos.length > 0}
-        <span class="font-mono text-xs text-muted-foreground pt-0.5 hidden sm:inline">
+        <span class="font-mono text-xs text-muted-foreground pt-0.5 hidden lg:inline">
           <strong class="text-foreground font-semibold">{memos.length}</strong> entries
           {#if todayCount > 0}
             &nbsp;·&nbsp;<strong class="text-foreground font-semibold">{todayCount}</strong> today
@@ -101,9 +103,9 @@
     </div>
   </div>
 
-  <div class="flex items-center justify-between sm:flex-1 sm:justify-end gap-2 sm:gap-4">
+  <div class="flex items-center justify-between gap-2 lg:flex-1 lg:justify-end lg:gap-4">
     <!-- nav -->
-    <nav class="flex gap-1 sm:pr-3 sm:mr-1 sm:border-r sm:border-border">
+    <nav class="flex gap-1 lg:pr-3 lg:mr-1 lg:border-r lg:border-border">
       {#each NAV_ITEMS as { href, label, Icon, requiresAuth } (href)}
         {@const active = page.url.pathname === href}
         <button
@@ -115,7 +117,7 @@
             : 'text-muted-foreground hover:text-foreground hover:bg-muted'}"
         >
           <Icon size={13} />
-          <span class="hidden sm:inline">{label}</span>
+          <span class="hidden lg:inline">{label}</span>
         </button>
       {/each}
     </nav>

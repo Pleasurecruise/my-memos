@@ -1,12 +1,20 @@
 <script lang="ts">
   import { isSameDay } from "date-fns";
-  import { updateQuery } from "$lib/utils";
-  import { Button } from "@my-memos/ui";
+  import { updateQuery, groupBy } from "$lib/utils";
+  import {
+    Button,
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+  } from "@my-memos/ui";
   import { RotateCcw, Trash2, Lock } from "@lucide/svelte";
   import type { Memo } from "$lib/types";
   import { createDeleteActions, createRestoreActions } from "$lib/stores/memo-actions.svelte";
   import MarkdownContent from "$lib/components/MarkdownContent.svelte";
-  import DeleteDialog from "$lib/components/DeleteDialog.svelte";
+
   import Masthead from "./Masthead.svelte";
 
   interface Props {
@@ -30,13 +38,9 @@
   const grouped = $derived(groupByMonth(filtered));
 
   function groupByMonth(items: Memo[]) {
-    const map = new Map<string, Memo[]>();
-    for (const m of items) {
-      const k = new Date(m.createdAt).toISOString().slice(0, 7);
-      if (!map.has(k)) map.set(k, []);
-      map.get(k)!.push(m);
-    }
-    return [...map.entries()].sort((a, b) => b[0].localeCompare(a[0]));
+    return [
+      ...groupBy(items, (m) => new Date(m.createdAt).toISOString().slice(0, 7)).entries(),
+    ].sort((a, b) => b[0].localeCompare(a[0]));
   }
 
   function monthLabel(iso: string) {
@@ -163,10 +167,19 @@
   </div>
 </div>
 
-<DeleteDialog
-  bind:open={del.showDeleteDialog}
-  isDeleting={del.isDeleting}
-  title="Permanently delete this memo?"
-  onConfirm={del.confirm}
-  onCancel={del.cancel}
-/>
+<Dialog bind:open={del.showDeleteDialog}>
+  <DialogContent>
+    <DialogHeader>
+      <DialogTitle>Permanently delete this memo?</DialogTitle>
+      <DialogDescription
+        >This action cannot be undone. The memo will be permanently removed.</DialogDescription
+      >
+    </DialogHeader>
+    <DialogFooter>
+      <Button variant="outline" onclick={del.cancel} disabled={del.isDeleting}>Cancel</Button>
+      <Button variant="destructive" onclick={del.confirm} disabled={del.isDeleting}>
+        {del.isDeleting ? "Deleting…" : "Delete"}
+      </Button>
+    </DialogFooter>
+  </DialogContent>
+</Dialog>

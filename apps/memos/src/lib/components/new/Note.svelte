@@ -1,10 +1,11 @@
 <script lang="ts">
   import { onMount } from "svelte";
+  import { Plus } from "@lucide/svelte";
   import Masthead from "./Masthead.svelte";
 
   interface Props {
     paths: string[];
-    fileMeta: Record<string, { size: number; createdAt: string; updatedAt: string }>;
+    fileMeta: Record<string, { size: number; createdAt: string; updatedAt: string; title: string }>;
   }
 
   let { paths, fileMeta }: Props = $props();
@@ -28,7 +29,7 @@
 
         return {
           id: path,
-          title: titleFromPath(fileName),
+          title: meta?.title,
           date,
           href: `/note/${path.split("/").map(encodeURIComponent).join("/")}`,
           type: typeFromFolder(folder),
@@ -105,10 +106,6 @@
     return `${cn} · ${en}`;
   }
 
-  function titleFromPath(path: string): string {
-    return path.replace(/\.md$/i, "").replace(/[-_]/g, " ").replace(/\s+/g, " ").trim();
-  }
-
   function typeFromFolder(folder: string): string {
     const segments = folder.split("/").filter(Boolean);
     return segments.at(-1) ?? "root";
@@ -120,9 +117,16 @@
     <Masthead />
 
     <div class="max-w-180 mx-auto mb-8">
-      <div class="relative inline-block">
-        <h1 class="font-serif font-semibold text-7 text-foreground leading-none">note</h1>
-        <span class="absolute left-0 -bottom-1.5 h-0.5 w-8 rounded-sm bg-accent"></span>
+      <div class="flex items-start justify-between gap-4">
+        <div class="relative inline-block">
+          <h1 class="font-serif font-semibold text-7 text-foreground leading-none">note</h1>
+          <span class="absolute left-0 -bottom-1.5 h-0.5 w-8 rounded-sm bg-accent"></span>
+        </div>
+        <a
+          href="/note/new"
+          class="inline-flex items-center gap-1 text-xs text-muted-foreground/60 transition-colors hover:text-muted-foreground"
+          aria-label="New note"><Plus class="size-3" /> new</a
+        >
       </div>
       <p class="text-sm text-muted-foreground mt-4">
         Long-form writing — linked, searchable, and always in markdown.

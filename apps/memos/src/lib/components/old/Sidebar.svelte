@@ -18,7 +18,6 @@
   import {
     Home,
     Archive,
-    NotebookText,
     MessageSquare,
     Globe,
     Sun,
@@ -35,7 +34,6 @@
   const NAV_ITEMS = [
     { href: "/", label: "Home", icon: Home, requiresAuth: false },
     { href: "/archive", label: "Archive", icon: Archive, requiresAuth: true },
-    { href: "/note", label: "Note", icon: NotebookText, requiresAuth: true },
     { href: "/chat", label: "Chat", icon: MessageSquare, requiresAuth: true },
   ] as const;
 

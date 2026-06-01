@@ -30,5 +30,5 @@
     "vite-plus": "0.1.23",
     "wrangler": "4.95.0"
   },
-  "packageManager": "pnpm@11.4.0"
+  "packageManager": "pnpm@11.5.0"
 }

@@ -3,6 +3,8 @@ import type { TocEntry } from "$lib/types";
 import { compileMarkdown, type CompiledNote } from "./compiler";
 
 const KV_PREFIX = "blog-note:";
+const CATEGORIES_KEY = "blog-categories";
+const CATEGORIES_TTL = 300; // 5 minutes
 
 interface CachedNote {
   title: string;
@@ -92,4 +94,18 @@ export async function compileNote(
 
   inflightCompilations.set(slug, promise);
   return promise;
+}
+
+export async function readCategoriesKv(kv: KVNamespace): Promise<string[]> {
+  const raw = await kv.get(CATEGORIES_KEY, "json");
+  if (Array.isArray(raw) && raw.every((v) => typeof v === "string")) return raw;
+  return [];
+}
+
+export async function writeCategoriesKv(kv: KVNamespace, categories: string[]): Promise<void> {
+  await kv.put(CATEGORIES_KEY, JSON.stringify(categories), { expirationTtl: CATEGORIES_TTL });
+}
+
+export async function deleteCategoriesKv(kv: KVNamespace): Promise<void> {
+  await kv.delete(CATEGORIES_KEY);
 }

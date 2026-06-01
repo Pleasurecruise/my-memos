@@ -5,15 +5,21 @@
   import {
     Alert,
     AlertDescription,
+    Button,
     Collapsible,
     CollapsibleContent,
     CollapsibleTrigger,
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
     HeatingRate,
     Timeline,
   } from "@my-memos/ui";
   import { Command, CommandList, CommandItem } from "@my-memos/ui";
   import type { TimelineGroup } from "@my-memos/ui";
-  import { Button } from "@my-memos/ui";
   import {
     Globe,
     Hash,
@@ -37,11 +43,11 @@
   } from "$lib/stores/memo-actions.svelte";
   import { apiCreateMemo } from "$lib/api/memos";
   import { showToast } from "$lib/stores/toast.svelte";
-  import { getCaretScreenPosition, updateQuery } from "$lib/utils";
+  import { getCaretScreenPosition, updateQuery, groupBy } from "$lib/utils";
   import { createTagAutocomplete } from "$lib/stores/tag-autocomplete.svelte";
   import MarkdownContent from "$lib/components/MarkdownContent.svelte";
   import MarkdownEditor from "$lib/components/MarkdownEditor.svelte";
-  import DeleteDialog from "$lib/components/DeleteDialog.svelte";
+
   import Masthead from "./Masthead.svelte";
 
   interface Props {
@@ -114,7 +120,8 @@
 
   const visLabel = $derived(visibility === "public" ? "Public" : "Private");
   const activeSearch = $derived(search ?? initialSearch);
-  const showCardResults = $derived(Boolean(activeSearch.trim()) || sortByUpdated);
+  const hasSearch = $derived(Boolean(activeSearch.trim()));
+  const showCardResults = $derived(hasSearch || sortByUpdated);
   const filtered = $derived(
     memos.filter((m) => {
       if (selectedDate && !isSameDay(new Date(m.updatedAt), selectedDate)) return false;
@@ -181,13 +188,9 @@
   });
 
   function groupByDay(items: Memo[]) {
-    const map = new Map<string, Memo[]>();
-    for (const m of items) {
-      const k = format(new Date(m.createdAt), "yyyy-MM-dd");
-      if (!map.has(k)) map.set(k, []);
-      map.get(k)!.push(m);
-    }
-    return [...map.entries()].sort((a, b) => b[0].localeCompare(a[0]));
+    return [...groupBy(items, (m) => format(new Date(m.createdAt), "yyyy-MM-dd")).entries()].sort(
+      (a, b) => b[0].localeCompare(a[0]),
+    );
   }
 
   function dayLabel(iso: string) {
@@ -223,6 +226,11 @@
   function syncSearch(value: string) {
     search = value;
     updateQuery({ search: value.trim() || null });
+  }
+
+  function clearSearch() {
+    search = "";
+    updateQuery({ search: null });
   }
 
   async function saveMemo() {
@@ -270,7 +278,7 @@
       {/each}
     </div>
 
-    <div class="relative md:hidden mb-4">
+    <div class="relative lg:hidden mb-4">
       <Search
         size={14}
         class="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none"
@@ -279,10 +287,21 @@
         placeholder="Search memos..."
         value={activeSearch}
         oninput={(e) => syncSearch((e.target as HTMLInputElement).value)}
-        class="w-full h-9 pl-9 pr-10 rounded border border-border bg-background text-sm
+        class="w-full h-9 pl-9 pr-17 rounded border border-border bg-background text-sm
           text-foreground placeholder:text-muted-foreground outline-none
           focus:border-accent transition-colors"
       />
+      {#if hasSearch}
+        <button
+          type="button"
+          onclick={clearSearch}
+          class="absolute right-8.5 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          aria-label="Clear search"
+          title="Clear search"
+        >
+          <X size={13} />
+        </button>
+      {/if}
       <button
         type="button"
         onclick={() => updateQuery({ sort: sortByUpdated ? null : "updated" })}
@@ -298,8 +317,8 @@
     </div>
 
     <!-- JOURNAL + RAIL -->
-    <div class="grid gap-10 grid-cols-1 md:grid-cols-[1fr_300px]">
-      <div>
+    <div class="grid grid-cols-1 gap-10 lg:grid-cols-[minmax(0,1fr)_300px]">
+      <div class="min-w-0">
         {#if composerOpen}
           <div class="relative mb-4">
             <div class="border border-border rounded-lg bg-background shadow-xs overflow-hidden">
@@ -592,7 +611,7 @@
       </div>
 
       <!-- RIGHT: sticky rail (hidden on mobile) -->
-      <aside class="hidden md:flex sticky top-8 flex-col gap-4 self-start">
+      <aside class="hidden min-w-0 lg:flex sticky top-8 flex-col gap-4 self-start">
         <!-- quiet thought -->
         <div class="border border-border rounded-lg bg-muted p-4">
           <p class="font-mono text-[10px] tracking-widest uppercase text-muted-foreground mb-2">
@@ -623,10 +642,21 @@
               placeholder="Search..."
               value={activeSearch}
               oninput={(e) => syncSearch((e.target as HTMLInputElement).value)}
-              class="w-full h-8 pl-7 pr-9 rounded border border-border bg-muted text-sm
+              class="w-full h-8 pl-7 pr-15 rounded border border-border bg-muted text-sm
                 text-foreground placeholder:text-muted-foreground outline-none
                 focus:border-accent focus:bg-background transition-colors"
             />
+            {#if hasSearch}
+              <button
+                type="button"
+                onclick={clearSearch}
+                class="absolute right-7 top-1/2 flex h-5.5 w-5.5 -translate-y-1/2 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                aria-label="Clear search"
+                title="Clear search"
+              >
+                <X size={12} />
+              </button>
+            {/if}
             <button
               type="button"
               onclick={() => updateQuery({ sort: sortByUpdated ? null : "updated" })}
@@ -646,9 +676,19 @@
   </div>
 </div>
 
-<DeleteDialog
-  bind:open={del.showDeleteDialog}
-  isDeleting={del.isDeleting}
-  onConfirm={del.confirm}
-  onCancel={del.cancel}
-/>
+<Dialog bind:open={del.showDeleteDialog}>
+  <DialogContent>
+    <DialogHeader>
+      <DialogTitle>Delete this memo?</DialogTitle>
+      <DialogDescription
+        >This action cannot be undone. The memo will be permanently removed.</DialogDescription
+      >
+    </DialogHeader>
+    <DialogFooter>
+      <Button variant="outline" onclick={del.cancel} disabled={del.isDeleting}>Cancel</Button>
+      <Button variant="destructive" onclick={del.confirm} disabled={del.isDeleting}>
+        {del.isDeleting ? "Deleting…" : "Delete"}
+      </Button>
+    </DialogFooter>
+  </DialogContent>
+</Dialog>

@@ -1,4 +1,5 @@
 import type { TocEntry } from "$lib/types";
+import { encodeSlug } from "$lib/utils/url";
 
 export interface NoteUpdateResponse {
   note: {
@@ -14,6 +15,12 @@ export interface NoteUpdateResponse {
   };
 }
 
+interface NoteInput {
+  body: string;
+  title: string;
+  category: string;
+}
+
 async function extractError(res: Response): Promise<string> {
   try {
     const raw: unknown = await res.json();
@@ -26,19 +33,11 @@ async function extractError(res: Response): Promise<string> {
   }
 }
 
-function encodeSlug(slug: string): string {
-  return slug
-    .replace(/\.md$/i, "")
-    .split("/")
-    .map((segment) => encodeURIComponent(segment))
-    .join("/");
-}
-
-export async function apiUpdateNote(slug: string, content: string): Promise<NoteUpdateResponse> {
-  const res = await fetch(`/api/notes/${encodeSlug(slug)}`, {
-    method: "PATCH",
+export async function apiCreateNote(input: NoteInput): Promise<NoteUpdateResponse> {
+  const res = await fetch("/api/notes", {
+    method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ content }),
+    body: JSON.stringify(input),
   });
 
   if (!res.ok) throw new Error(await extractError(res));
@@ -48,4 +47,28 @@ export async function apiUpdateNote(slug: string, content: string): Promise<Note
     throw new Error("Invalid API response.");
   }
   return raw as NoteUpdateResponse;
+}
+
+export async function apiUpdateNote(slug: string, input: NoteInput): Promise<NoteUpdateResponse> {
+  const res = await fetch(`/api/notes/${encodeSlug(slug)}`, {
+    method: "PATCH",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(input),
+  });
+
+  if (!res.ok) throw new Error(await extractError(res));
+
+  const raw: unknown = await res.json();
+  if (!raw || typeof raw !== "object" || !("note" in raw)) {
+    throw new Error("Invalid API response.");
+  }
+  return raw as NoteUpdateResponse;
+}
+
+export async function apiDeleteNote(slug: string): Promise<void> {
+  const res = await fetch(`/api/notes/${encodeSlug(slug)}`, {
+    method: "DELETE",
+  });
+
+  if (!res.ok) throw new Error(await extractError(res));
 }

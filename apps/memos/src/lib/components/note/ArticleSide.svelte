@@ -1,7 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import { goto } from "$app/navigation";
-  import { ArrowLeft, ArrowUp, Pencil, Eye } from "@lucide/svelte";
+  import { ArrowUp, Pencil, Eye } from "@lucide/svelte";
 
   interface Props {
     onedit?: () => void;
@@ -62,10 +61,6 @@
 
   function scrollToTop() {
     window.scrollTo({ top: 0, behavior: "smooth" });
-  }
-
-  function handleBack() {
-    goto("/note");
   }
 
   onMount(() => {
@@ -148,18 +143,5 @@
     {:else}
       <Pencil size={15} strokeWidth={2.25} />
     {/if}
-  </button>
-
-  <div class="my-1 h-px w-4 bg-border"></div>
-
-  <!-- back -->
-  <button
-    type="button"
-    onclick={handleBack}
-    aria-label="All notes"
-    title="All notes"
-    class="cursor-pointer rounded-full p-1.5 text-muted-foreground transition-[color,opacity] duration-150 hover:text-foreground hover:opacity-100"
-  >
-    <ArrowLeft size={15} strokeWidth={2.25} />
   </button>
 </aside>

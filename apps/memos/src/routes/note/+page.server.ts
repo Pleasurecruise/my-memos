@@ -1,6 +1,6 @@
 import { error, redirect } from "@sveltejs/kit";
 import type { R2ListOptions } from "@cloudflare/workers-types";
-import { BLOG_PREFIX, slugFromR2Key } from "$lib/server/blog";
+import { BLOG_PREFIX, slugFromR2Key, slugToTitle } from "$lib/server/blog";
 import type { PageServerLoad } from "./$types";
 
 export const load: PageServerLoad = async ({ platform, locals, url }) => {
@@ -13,7 +13,10 @@ export const load: PageServerLoad = async ({ platform, locals, url }) => {
 
   const bucket = platform.env.MEMOS_BUCKET;
   const paths: string[] = [];
-  const fileMeta: Record<string, { size: number; createdAt: string; updatedAt: string }> = {};
+  const fileMeta: Record<
+    string,
+    { size: number; createdAt: string; updatedAt: string; title: string }
+  > = {};
 
   let cursor: string | undefined;
 
@@ -35,6 +38,7 @@ export const load: PageServerLoad = async ({ platform, locals, url }) => {
         size: r2Object.size,
         createdAt: r2Object.customMetadata?.createdAt ?? fallbackDate,
         updatedAt: r2Object.customMetadata?.updatedAt ?? fallbackDate,
+        title: r2Object.customMetadata?.title ?? slugToTitle(path),
       };
     }
 

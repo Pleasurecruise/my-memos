@@ -1,14 +1,21 @@
 <script lang="ts">
   import { isSameDay } from "date-fns";
   import { updateQuery } from "$lib/utils";
-  import { Button } from "@my-memos/ui";
+  import {
+    Button,
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+  } from "@my-memos/ui";
   import { RotateCcw, Trash2 } from "@lucide/svelte";
   import type { Memo } from "$lib/types";
   import { createDeleteActions, createRestoreActions } from "$lib/stores/memo-actions.svelte";
   import MemoCard from "$lib/components/MemoCard.svelte";
   import MarkdownContent from "$lib/components/MarkdownContent.svelte";
   import FilterBar from "$lib/components/FilterBar.svelte";
-  import DeleteDialog from "$lib/components/DeleteDialog.svelte";
 
   interface ArchiveContentProps {
     memos: Memo[];
@@ -92,10 +99,19 @@
   </div>
 </div>
 
-<DeleteDialog
-  bind:open={del.showDeleteDialog}
-  isDeleting={del.isDeleting}
-  title="Permanently delete this memo?"
-  onConfirm={del.confirm}
-  onCancel={del.cancel}
-/>
+<Dialog bind:open={del.showDeleteDialog}>
+  <DialogContent>
+    <DialogHeader>
+      <DialogTitle>Permanently delete this memo?</DialogTitle>
+      <DialogDescription
+        >This action cannot be undone. The memo will be permanently removed.</DialogDescription
+      >
+    </DialogHeader>
+    <DialogFooter>
+      <Button variant="outline" onclick={del.cancel} disabled={del.isDeleting}>Cancel</Button>
+      <Button variant="destructive" onclick={del.confirm} disabled={del.isDeleting}>
+        {del.isDeleting ? "Deleting…" : "Delete"}
+      </Button>
+    </DialogFooter>
+  </DialogContent>
+</Dialog>

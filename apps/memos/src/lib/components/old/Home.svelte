@@ -7,6 +7,12 @@
   import { showToast } from "$lib/stores/toast.svelte";
   import {
     Button,
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
     Input,
     Alert,
     AlertDescription,
@@ -42,7 +48,7 @@
   import MarkdownContent from "$lib/components/MarkdownContent.svelte";
   import MarkdownEditor from "$lib/components/MarkdownEditor.svelte";
   import FilterBar from "$lib/components/FilterBar.svelte";
-  import DeleteDialog from "$lib/components/DeleteDialog.svelte";
+
   import { createTagAutocomplete } from "$lib/stores/tag-autocomplete.svelte";
 
   interface MainContentProps {
@@ -73,7 +79,8 @@
   const ac = createTagAutocomplete(() => tagNames);
 
   const visLabel = $derived(visibility === "public" ? "Public" : "Private");
-  const showCardResults = $derived(Boolean(search.trim()) || sortByUpdated);
+  const hasSearch = $derived(Boolean(search.trim()));
+  const showCardResults = $derived(hasSearch || sortByUpdated);
   const filtered = $derived(
     memos.filter((m) => {
       const updatedAt = new Date(m.updatedAt);
@@ -108,6 +115,11 @@
   function syncSearch(value: string) {
     search = value;
     updateQuery({ search: value.trim() || null });
+  }
+
+  function clearSearch() {
+    search = "";
+    updateQuery({ search: null });
   }
 
   async function saveMemo() {
@@ -298,8 +310,19 @@
       placeholder="Search memos..."
       value={search}
       oninput={(e) => syncSearch((e.target as HTMLInputElement).value)}
-      class="pl-9 pr-10"
+      class="pl-9 pr-17"
     />
+    {#if hasSearch}
+      <button
+        type="button"
+        onclick={clearSearch}
+        class="absolute right-8.5 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+        aria-label="Clear search"
+        title="Clear search"
+      >
+        <X size={13} />
+      </button>
+    {/if}
     <button
       type="button"
       onclick={() => updateQuery({ sort: sortByUpdated ? null : "updated" })}
@@ -361,9 +384,19 @@
   </div>
 </div>
 
-<DeleteDialog
-  bind:open={del.showDeleteDialog}
-  isDeleting={del.isDeleting}
-  onConfirm={del.confirm}
-  onCancel={del.cancel}
-/>
+<Dialog bind:open={del.showDeleteDialog}>
+  <DialogContent>
+    <DialogHeader>
+      <DialogTitle>Delete this memo?</DialogTitle>
+      <DialogDescription
+        >This action cannot be undone. The memo will be permanently removed.</DialogDescription
+      >
+    </DialogHeader>
+    <DialogFooter>
+      <Button variant="outline" onclick={del.cancel} disabled={del.isDeleting}>Cancel</Button>
+      <Button variant="destructive" onclick={del.confirm} disabled={del.isDeleting}>
+        {del.isDeleting ? "Deleting…" : "Delete"}
+      </Button>
+    </DialogFooter>
+  </DialogContent>
+</Dialog>
