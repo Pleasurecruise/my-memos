@@ -12,6 +12,8 @@
     DialogDescription,
     DialogFooter,
     Button,
+    Toast,
+    type ToastVariant,
   } from "@my-memos/ui";
   import ButtonGroup from "$lib/components/ButtonGroup.svelte";
   import ArticleSide from "$lib/components/note/ArticleSide.svelte";
@@ -34,6 +36,10 @@
   let deleting = $state(false);
   let showDeleteDialog = $state(false);
   let showUnsavedDialog = $state(false);
+  let toastVisible = $state(false);
+  let toastTitle = $state("");
+  let toastVariant = $state<ToastVariant>("success");
+  let toastTimer = $state<ReturnType<typeof setTimeout> | null>(null);
   let error = $state("");
   let savedNote = $state<PageData | null>(null);
   let draftTitle = $state("");
@@ -118,15 +124,20 @@
             category: resolvedCategory,
           });
 
-      savedNote = { ...display, ...result.note };
+      const oldSlug = display.slug;
       draftMarkdown = result.note.source;
-      mode = "preview";
+
+      showToast("Note saved", "success");
+
       if (creating) {
         await goto(`/note?selectId=${encodeURIComponent(result.note.slug)}`);
-      } else if (result.note.slug !== display.slug) {
-        await invalidateAll();
+      } else if (result.note.slug !== oldSlug) {
+        savedNote = { ...display, ...result.note };
+        mode = "preview";
         await goto(`/note/${encodeSlug(result.note.slug)}`, { replaceState: creating });
       } else {
+        savedNote = { ...display, ...result.note };
+        mode = "preview";
         await invalidateAll();
         savedNote = null;
       }
@@ -135,6 +146,16 @@
     } finally {
       isSaving = false;
     }
+  }
+
+  function showToast(title: string, variant: ToastVariant) {
+    if (toastTimer) clearTimeout(toastTimer);
+    toastTitle = title;
+    toastVariant = variant;
+    toastVisible = true;
+    toastTimer = setTimeout(() => {
+      toastVisible = false;
+    }, 2500);
   }
 
   function cancelEdit() {
@@ -246,7 +267,7 @@
         {#if !isEditing}
           <NoteToc entries={display.toc} />
         {:else}
-          <div class="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-[2fr_1fr] sm:max-w-100">
+          <div class="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-[3fr_2fr] sm:max-w-140">
             <div class="grid gap-2">
               <label
                 for="note-title"
@@ -269,27 +290,31 @@
               >
                 category
               </label>
-              <Select
-                id="note-category"
-                value={selectedCategory}
-                onchange={(e) => {
-                  selectedCategory = (e.target as HTMLSelectElement).value;
-                  if (selectedCategory !== NEW_CATEGORY_VALUE) newCategory = "";
-                }}
-              >
-                <option value="">Select category...</option>
-                {#each categoryOptions as category (category)}
-                  <option value={category}>{category}</option>
-                {/each}
-                <option value={NEW_CATEGORY_VALUE}>New category...</option>
-              </Select>
-              {#if selectedCategory === NEW_CATEGORY_VALUE}
-                <Input
-                  placeholder={data.defaultCategory}
-                  value={newCategory}
-                  oninput={(e) => (newCategory = (e.target as HTMLInputElement).value)}
-                />
-              {/if}
+              <div class="flex gap-2">
+                <Select
+                  id="note-category"
+                  class="flex-1"
+                  value={selectedCategory}
+                  onchange={(e) => {
+                    selectedCategory = (e.target as HTMLSelectElement).value;
+                    if (selectedCategory !== NEW_CATEGORY_VALUE) newCategory = "";
+                  }}
+                >
+                  <option value="">Select category...</option>
+                  {#each categoryOptions as category (category)}
+                    <option value={category}>{category}</option>
+                  {/each}
+                  <option value={NEW_CATEGORY_VALUE}>New category...</option>
+                </Select>
+                {#if selectedCategory === NEW_CATEGORY_VALUE}
+                  <Input
+                    class="flex-1"
+                    placeholder={data.defaultCategory}
+                    value={newCategory}
+                    oninput={(e) => (newCategory = (e.target as HTMLInputElement).value)}
+                  />
+                {/if}
+              </div>
             </div>
           </div>
         {/if}
@@ -360,3 +385,12 @@
     </DialogFooter>
   </DialogContent>
 </Dialog>
+
+<div
+  class="fixed bottom-6 right-6 z-50 transition-all duration-300"
+  class:pointer-events-none={!toastVisible}
+  class:translate-y-2={!toastVisible}
+  class:opacity-0={!toastVisible}
+>
+  <Toast variant={toastVariant} title={toastTitle} />
+</div>
