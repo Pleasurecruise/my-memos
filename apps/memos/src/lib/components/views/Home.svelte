@@ -40,15 +40,15 @@
     createEditActions,
     createPinActions,
     createArchiveActions,
-  } from "$lib/stores/memo-actions.svelte";
-  import { apiCreateMemo } from "$lib/api/memos";
-  import { showToast } from "$lib/stores/toast.svelte";
+  } from "$lib/state/memo-actions.svelte";
+  import { apiCreateMemo } from "$lib/services/memos";
+  import { showToast } from "$lib/state/toast.svelte";
   import { getCaretScreenPosition, updateQuery, groupBy } from "$lib/utils";
-  import { createTagAutocomplete } from "$lib/stores/tag-autocomplete.svelte";
+  import { createTagAutocomplete } from "$lib/state/tag-autocomplete.svelte";
   import MarkdownContent from "$lib/components/MarkdownContent.svelte";
   import MarkdownEditor from "$lib/components/MarkdownEditor.svelte";
 
-  import Masthead from "./Masthead.svelte";
+  import Masthead from "$lib/components/layout/Masthead.svelte";
 
   interface Props {
     memos: Memo[];

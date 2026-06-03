@@ -4,8 +4,8 @@
     renderChartSchema,
     type RenderChartPayload,
     type RenderChartSpec,
-  } from "$lib/chat/chart";
-  import Frame from "./Frame.svelte";
+  } from "$lib/visual/chart";
+  import { ChartRenderer } from "$lib/components/visual";
 
   interface ChartParseResult {
     value: RenderChartSpec | null;
@@ -21,7 +21,6 @@
   let { spec, streaming }: Props = $props();
 
   const parsed = $derived(parseSpec(spec));
-  const chartCode = $derived(parsed.value?.code);
   const title = $derived(
     parsed.value?.title ?? parsed.partialTitle ?? (streaming ? "Generating chart" : "Chart"),
   );
@@ -41,28 +40,23 @@
   }
 </script>
 
-{#if parsed.value}
-  <div class="w-full max-w-[760px]">
-    <Card>
-      <CardHeader class="pb-2">
-        <CardTitle class="text-sm font-medium">{title}</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <Frame
+<div class="w-full max-w-[760px]">
+  <Card class={parsed.value ? "" : "border-destructive/30 bg-destructive/5"}>
+    <CardHeader class="pb-2">
+      <CardTitle class="text-sm font-medium">{title}</CardTitle>
+    </CardHeader>
+    <CardContent>
+      {#if parsed.value}
+        <ChartRenderer
+          code={parsed.value.code}
           {title}
-          code={chartCode}
           {streaming}
           width={parsed.value.width ?? 720}
           height={parsed.value.height ?? 360}
         />
-      </CardContent>
-    </Card>
-  </div>
-{:else}
-  <div class="w-full max-w-[760px]">
-    <Card class="border-destructive/30 bg-destructive/5">
-      <CardHeader><CardTitle class="text-sm font-medium">{title}</CardTitle></CardHeader>
-      <CardContent><p class="text-xs text-muted-foreground">{parsed.error}</p></CardContent>
-    </Card>
-  </div>
-{/if}
+      {:else}
+        <p class="text-xs text-muted-foreground">{parsed.error}</p>
+      {/if}
+    </CardContent>
+  </Card>
+</div>

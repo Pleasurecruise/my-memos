@@ -1,5 +1,5 @@
 <script lang="ts">
-  import NewNote from "$lib/components/new/Note.svelte";
+  import NewNote from "$lib/components/views/Note.svelte";
   import type { PageData } from "./$types";
 
   let { data }: { data: PageData } = $props();

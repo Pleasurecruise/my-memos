@@ -1,8 +1,8 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import AppShell from "$lib/components/old/AppShell.svelte";
-  import OldArchive from "$lib/components/old/Archive.svelte";
-  import NewArchive from "$lib/components/new/Archive.svelte";
+  import AppShell from "$lib/components/layout/AppShell.svelte";
+  import OldArchive from "$lib/components/views-legacy/Archive.svelte";
+  import NewArchive from "$lib/components/views/Archive.svelte";
   import type { PageData } from "./$types";
 
   let { data }: { data: PageData } = $props();

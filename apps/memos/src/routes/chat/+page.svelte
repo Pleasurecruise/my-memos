@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import OldChat from "$lib/components/old/Chat.svelte";
-  import NewChat from "$lib/components/new/Chat.svelte";
+  import OldChat from "$lib/components/views-legacy/Chat.svelte";
+  import NewChat from "$lib/components/views/Chat.svelte";
   import type { PageData } from "./$types";
 
   let { data }: { data: PageData } = $props();

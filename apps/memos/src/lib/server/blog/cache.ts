@@ -1,5 +1,5 @@
 import type { KVNamespace } from "@cloudflare/workers-types";
-import type { TocEntry } from "$lib/types";
+import type { TocEntry, VisualBlock } from "$lib/types";
 import { compileMarkdown, type CompiledNote } from "./compiler";
 
 const KV_PREFIX = "blog-note:";
@@ -10,6 +10,7 @@ interface CachedNote {
   title: string;
   html: string;
   toc: TocEntry[];
+  visualBlocks: VisualBlock[];
   excerpt: string;
   source: string;
   uploadedAt: string;
@@ -39,6 +40,7 @@ export async function readNoteKv(
     title: data.title,
     html: data.html,
     toc: data.toc as TocEntry[],
+    visualBlocks: Array.isArray(data.visualBlocks) ? (data.visualBlocks as VisualBlock[]) : [],
     excerpt: data.excerpt,
     source: data.source,
     uploadedAt,
@@ -58,6 +60,7 @@ export async function writeNoteKv(
     title,
     html: compiled.html,
     toc: compiled.toc,
+    visualBlocks: compiled.visualBlocks,
     excerpt: compiled.excerpt,
     source,
     uploadedAt,

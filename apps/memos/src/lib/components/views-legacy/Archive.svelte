@@ -12,10 +12,10 @@
   } from "@my-memos/ui";
   import { RotateCcw, Trash2 } from "@lucide/svelte";
   import type { Memo } from "$lib/types";
-  import { createDeleteActions, createRestoreActions } from "$lib/stores/memo-actions.svelte";
+  import { createDeleteActions, createRestoreActions } from "$lib/state/memo-actions.svelte";
   import MemoCard from "$lib/components/MemoCard.svelte";
   import MarkdownContent from "$lib/components/MarkdownContent.svelte";
-  import FilterBar from "$lib/components/FilterBar.svelte";
+  import MemoFilterBar from "$lib/components/MemoFilterBar.svelte";
 
   interface ArchiveContentProps {
     memos: Memo[];
@@ -53,7 +53,7 @@
     </p>
   </div>
 
-  <FilterBar {selectedDate} activeTags={initialTags} onRemoveTag={toggleCardTag} />
+  <MemoFilterBar {selectedDate} activeTags={initialTags} onRemoveTag={toggleCardTag} />
 
   <div class="space-y-3">
     {#each filtered as memo (memo.id)}

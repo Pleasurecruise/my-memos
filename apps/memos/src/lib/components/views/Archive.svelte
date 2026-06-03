@@ -12,10 +12,10 @@
   } from "@my-memos/ui";
   import { RotateCcw, Trash2, Lock } from "@lucide/svelte";
   import type { Memo } from "$lib/types";
-  import { createDeleteActions, createRestoreActions } from "$lib/stores/memo-actions.svelte";
+  import { createDeleteActions, createRestoreActions } from "$lib/state/memo-actions.svelte";
   import MarkdownContent from "$lib/components/MarkdownContent.svelte";
 
-  import Masthead from "./Masthead.svelte";
+  import Masthead from "$lib/components/layout/Masthead.svelte";
 
   interface Props {
     memos: Memo[];

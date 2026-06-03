@@ -1,8 +1,8 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import AppShell from "$lib/components/old/AppShell.svelte";
-  import OldHome from "$lib/components/old/Home.svelte";
-  import NewHome from "$lib/components/new/Home.svelte";
+  import AppShell from "$lib/components/layout/AppShell.svelte";
+  import OldHome from "$lib/components/views-legacy/Home.svelte";
+  import NewHome from "$lib/components/views/Home.svelte";
   import type { PageData } from "./$types";
 
   let { data }: { data: PageData } = $props();

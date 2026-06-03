@@ -71,6 +71,7 @@ export const load: PageServerLoad = async ({ params, platform, locals, url }) =>
     return {
       html: "",
       toc: [],
+      visualBlocks: [],
       excerpt: "",
       title: "",
       slug,
@@ -101,6 +102,7 @@ export const load: PageServerLoad = async ({ params, platform, locals, url }) =>
       return {
         html: compiled.html,
         toc: compiled.toc,
+        visualBlocks: compiled.visualBlocks,
         excerpt: compiled.excerpt,
         title,
         slug,
@@ -116,6 +118,7 @@ export const load: PageServerLoad = async ({ params, platform, locals, url }) =>
     return {
       html: cached.html,
       toc: cached.toc,
+      visualBlocks: cached.visualBlocks,
       excerpt: cached.excerpt,
       title,
       slug,
@@ -136,6 +139,7 @@ export const load: PageServerLoad = async ({ params, platform, locals, url }) =>
   return {
     html: compiled.html,
     toc: compiled.toc,
+    visualBlocks: compiled.visualBlocks,
     excerpt: compiled.excerpt,
     title,
     slug,

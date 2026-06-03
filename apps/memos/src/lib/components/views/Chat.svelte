@@ -13,13 +13,13 @@
     CollapsibleTrigger,
   } from "@my-memos/ui";
   import MarkdownContent from "$lib/components/MarkdownContent.svelte";
-  import { parseRenderChartPayload } from "$lib/chat/chart";
-  import { parseRenderSvgPayload } from "$lib/chat/svg";
-  import { parseRenderWidgetPayload } from "$lib/chat/widget";
-  import Chart from "$lib/components/chat/Chart.svelte";
-  import Svg from "$lib/components/chat/Svg.svelte";
-  import Widget from "$lib/components/chat/Widget.svelte";
-  import Masthead from "./Masthead.svelte";
+  import { parseRenderChartPayload } from "$lib/visual/chart";
+  import { parseRenderSvgPayload } from "$lib/visual/svg";
+  import { parseRenderWidgetPayload } from "$lib/visual/widget";
+  import Chart from "$lib/components/chat/ChatChart.svelte";
+  import Svg from "$lib/components/chat/ChatSvg.svelte";
+  import Widget from "$lib/components/chat/ChatWidget.svelte";
+  import Masthead from "$lib/components/layout/Masthead.svelte";
 
   interface Props {
     user: { image?: string | null; name: string } | null;

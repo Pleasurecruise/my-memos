@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const renderWidgetSchema = z.object({
+export const widgetSpecSchema = z.object({
   title: z
     .string()
     .min(1)
@@ -16,7 +16,7 @@ export const renderWidgetSchema = z.object({
       "HTML fragment to render. Structure: <style> (short) → content HTML → <script> last. " +
         "No DOCTYPE, <html>, <head>, or <body>. " +
         "Scripts execute after streaming completes. Load libraries from CDN: cdnjs.cloudflare.com, esm.sh, cdn.jsdelivr.net, unpkg.com. " +
-        "CSS custom properties are pre-defined: --color-text-primary (#e0e0e0), --color-background-primary (#1a1a1a), --color-border-tertiary, --font-sans, --border-radius-md, etc.",
+        "CSS custom properties are pre-defined in the rendering context: --color-text-primary (#e6e3dc), --color-background-primary (#1a1917), --color-text-secondary, --color-background-secondary, --color-border-primary, --color-border-secondary, --color-border-tertiary, --font-sans, --border-radius-md, --border-radius-lg, etc. Dark mode only — all colors are warm charcoal.",
     ),
   width: z
     .number()
@@ -34,15 +34,16 @@ export const renderWidgetSchema = z.object({
     .describe("Container height in pixels. Default: 500. Auto-resizes if content is taller."),
 });
 
-export const partialRenderWidgetSchema = renderWidgetSchema.partial();
+export type WidgetSpec = z.infer<typeof widgetSpecSchema>;
 
-export type RenderWidgetSpec = z.infer<typeof renderWidgetSchema>;
+export const renderWidgetSchema = widgetSpecSchema;
+export const partialRenderWidgetSchema = widgetSpecSchema.partial();
+export type RenderWidgetSpec = WidgetSpec;
 export type PartialRenderWidgetSpec = z.infer<typeof partialRenderWidgetSchema>;
-export type RenderWidgetPayload = RenderWidgetSpec | PartialRenderWidgetSpec | null;
+export type RenderWidgetPayload = WidgetSpec | PartialRenderWidgetSpec | null;
 
 export function parseRenderWidgetPayload(value: object | null) {
   if (value === null) return null;
-
   const result = partialRenderWidgetSchema.safeParse(value);
   return result.success ? result.data : null;
 }

@@ -3,8 +3,8 @@
   import { invalidateAll } from "$app/navigation";
   import { page } from "$app/state";
   import { updateQuery } from "$lib/utils";
-  import { apiCreateMemo } from "$lib/api/memos";
-  import { showToast } from "$lib/stores/toast.svelte";
+  import { apiCreateMemo } from "$lib/services/memos";
+  import { showToast } from "$lib/state/toast.svelte";
   import {
     Button,
     Dialog,
@@ -43,13 +43,13 @@
     createEditActions,
     createPinActions,
     createArchiveActions,
-  } from "$lib/stores/memo-actions.svelte";
+  } from "$lib/state/memo-actions.svelte";
   import MemoCard from "$lib/components/MemoCard.svelte";
   import MarkdownContent from "$lib/components/MarkdownContent.svelte";
   import MarkdownEditor from "$lib/components/MarkdownEditor.svelte";
-  import FilterBar from "$lib/components/FilterBar.svelte";
+  import MemoFilterBar from "$lib/components/MemoFilterBar.svelte";
 
-  import { createTagAutocomplete } from "$lib/stores/tag-autocomplete.svelte";
+  import { createTagAutocomplete } from "$lib/state/tag-autocomplete.svelte";
 
   interface MainContentProps {
     memos: Memo[];
@@ -337,7 +337,7 @@
     </button>
   </div>
 
-  <FilterBar {selectedDate} activeTags={initialTags} onRemoveTag={toggleCardTag} />
+  <MemoFilterBar {selectedDate} activeTags={initialTags} onRemoveTag={toggleCardTag} />
 
   <div class="space-y-3">
     {#if showCardResults}

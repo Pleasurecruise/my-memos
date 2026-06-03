@@ -4,6 +4,7 @@ import { and, desc, eq, like, or, sql } from "drizzle-orm";
 import { memos } from "../db/schema";
 import type { MemoRow } from "../db/schema";
 import { buildMemoR2Key, createMemoId, normalizeTags } from "./utils";
+import { stripHashtags } from "$lib/utils";
 import type { CreateMemoInput, UpdateMemoInput, MemoListFilters } from "./types";
 import type { Memo, TagCount } from "$lib/types";
 
@@ -176,7 +177,23 @@ export async function updateMemo(
     setValues.excerpt = content;
     setValues.tagsJson = input.tags?.length ? input.tags : normalizeTags(content);
   } else if (input.tags !== undefined) {
-    setValues.tagsJson = input.tags.length ? input.tags : existing.tagsJson;
+    const newTags = input.tags.length ? input.tags : [];
+    setValues.tagsJson = newTags;
+
+    // Sync R2 body: strip old hashtags from the body, then append new ones at the end
+    const bodyObj = await bucket.get(existing.r2Key);
+    if (bodyObj) {
+      let body = (await bodyObj.text()).trimEnd();
+      body = stripHashtags(body).trimEnd();
+      if (newTags.length > 0) {
+        const tagLine = newTags.map((t) => `#${t}`).join(" ");
+        body = body + "\n\n" + tagLine;
+      }
+      await bucket.put(existing.r2Key, body, {
+        httpMetadata: { contentType: "text/markdown; charset=utf-8" },
+      });
+      setValues.excerpt = body;
+    }
   }
 
   if (input.visibility !== undefined) setValues.visibility = input.visibility;

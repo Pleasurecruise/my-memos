@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const renderChartSchema = z.object({
+export const chartSpecSchema = z.object({
   title: z
     .string()
     .min(1)
@@ -27,11 +27,13 @@ export const renderChartSchema = z.object({
     .describe("Height in pixels. Default: 360."),
 });
 
-export const partialRenderChartSchema = renderChartSchema.partial();
+export type ChartSpec = z.infer<typeof chartSpecSchema>;
 
-export type RenderChartSpec = z.infer<typeof renderChartSchema>;
+export const renderChartSchema = chartSpecSchema;
+export const partialRenderChartSchema = chartSpecSchema.partial();
+export type RenderChartSpec = ChartSpec;
 export type PartialRenderChartSpec = z.infer<typeof partialRenderChartSchema>;
-export type RenderChartPayload = RenderChartSpec | PartialRenderChartSpec | null;
+export type RenderChartPayload = ChartSpec | PartialRenderChartSpec | null;
 
 export function parseRenderChartPayload(value: object | null) {
   if (value === null) return null;

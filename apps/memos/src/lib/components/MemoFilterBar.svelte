@@ -1,13 +1,13 @@
 <script lang="ts">
   import { X } from "@lucide/svelte";
 
-  interface FilterBarProps {
+  interface MemoFilterBarProps {
     selectedDate: Date | undefined;
     activeTags: string[];
     onRemoveTag: (tag: string) => void;
   }
 
-  let { selectedDate, activeTags, onRemoveTag }: FilterBarProps = $props();
+  let { selectedDate, activeTags, onRemoveTag }: MemoFilterBarProps = $props();
 </script>
 
 {#if selectedDate || activeTags.length > 0}

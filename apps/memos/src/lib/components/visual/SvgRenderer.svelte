@@ -2,35 +2,26 @@
   import { onMount } from "svelte";
   import DOMPurify from "dompurify";
   import mermaid from "mermaid";
-  import { Card, CardContent, CardHeader, CardTitle } from "@my-memos/ui";
-  import {
-    partialRenderSvgSchema,
-    renderSvgSchema,
-    type RenderSvgPayload,
-    type RenderSvgSpec,
-  } from "$lib/chat/svg";
-
-  interface SvgParseResult {
-    value: RenderSvgSpec | null;
-    error: string;
-    partialTitle?: string;
-  }
+  import type { StaticVisualFormat } from "$lib/visual/svg";
 
   interface Props {
-    spec: RenderSvgPayload;
-    streaming: boolean;
+    /** SVG markup (<svg>...</svg>) or Mermaid source. */
+    code: string;
+    /** "svg" or "mermaid". */
+    format: StaticVisualFormat;
+    /** Display title. */
+    title: string;
+    /** Optional caption below the diagram. */
+    caption?: string;
+    /** Additional CSS class on the wrapper. */
+    class?: string;
   }
 
-  let { spec, streaming }: Props = $props();
+  let { code, format, title, caption, class: extraClass = "" }: Props = $props();
   let mounted = $state(false);
   let mermaidSvg = $state("");
   let mermaidError = $state("");
   let renderToken = 0;
-
-  const parsed = $derived(parseVisualSpec(spec));
-  const title = $derived(
-    parsed.value?.title ?? parsed.partialTitle ?? (streaming ? "Generating visual" : "Diagram"),
-  );
 
   onMount(() => {
     mounted = true;
@@ -43,33 +34,17 @@
   });
 
   $effect(() => {
-    if (!mounted || !parsed.value || parsed.value.format !== "mermaid") {
+    if (!mounted || format !== "mermaid") {
       mermaidSvg = "";
       mermaidError = "";
       return;
     }
     const token = ++renderToken;
-    void renderDiagram(parsed.value, token);
+    void renderDiagram(token);
   });
 
-  function parseVisualSpec(value: RenderSvgPayload): SvgParseResult {
-    if (streaming && value === null) return { value: null, error: "Generating visual..." };
-    const result = renderSvgSchema.safeParse(value);
-    if (!result.success) {
-      if (streaming) {
-        const partial = partialRenderSvgSchema.safeParse(value);
-        return { value: null, error: "Generating visual...", partialTitle: partial.data?.title };
-      }
-      return { value: null, error: result.error.issues[0]?.message ?? "Invalid visual spec." };
-    }
-    if (result.data.format === "svg" && !result.data.code.trimStart().startsWith("<svg")) {
-      return { value: null, error: "SVG visuals must start with an <svg> element." };
-    }
-    return { value: result.data, error: "" };
-  }
-
-  function sanitizeSvg(code: string) {
-    return DOMPurify.sanitize(code, {
+  function sanitizeSvg(svgCode: string) {
+    return DOMPurify.sanitize(svgCode, {
       USE_PROFILES: { svg: true, svgFilters: true },
       FORBID_TAGS: [
         "script",
@@ -93,14 +68,16 @@
     });
   }
 
-  async function renderDiagram(value: RenderSvgSpec, token: number) {
+  async function renderDiagram(token: number) {
     mermaidError = "";
     mermaidSvg = "";
-    let code = value.code.trim();
-    code = code.replace(/^```mermaid\s*\n?/i, "").replace(/\n?```\s*$/, "");
+    const cleaned = code
+      .trim()
+      .replace(/^```mermaid\s*\n?/i, "")
+      .replace(/\n?```\s*$/, "");
     try {
       const id = `svg-${token}-${Math.random().toString(36).slice(2)}`;
-      const { svg } = await mermaid.render(id, code);
+      const { svg } = await mermaid.render(id, cleaned);
       if (token === renderToken) mermaidSvg = svg;
     } catch (error) {
       if (token === renderToken)
@@ -109,43 +86,28 @@
   }
 
   function svgContent(): string | null {
-    if (!parsed.value) return null;
-    if (parsed.value.format === "svg") return sanitizeSvg(parsed.value.code);
+    if (format === "svg") return sanitizeSvg(code);
     if (mermaidSvg) return mermaidSvg;
     return null;
   }
 </script>
 
-{#if parsed.value}
-  <div class="w-full max-w-190">
-    <Card>
-      <CardHeader class="pb-2">
-        <CardTitle class="text-sm font-medium">{title}</CardTitle>
-      </CardHeader>
-      <CardContent>
-        {#if svgContent()}
-          <div class="svg-host [&_svg]:max-w-full [&_svg]:h-auto [&_svg]:mx-auto">
-            {@html svgContent()}
-          </div>
-        {:else if mermaidError}
-          <p class="text-xs text-muted-foreground py-8 text-center">{mermaidError}</p>
-        {:else}
-          <p class="text-xs text-muted-foreground py-8 text-center">Rendering diagram…</p>
-        {/if}
-        {#if parsed.value.caption}
-          <p class="text-xs text-muted-foreground mt-2">{parsed.value.caption}</p>
-        {/if}
-      </CardContent>
-    </Card>
-  </div>
-{:else}
-  <div class="w-full max-w-190">
-    <Card class="border-destructive/30 bg-destructive/5">
-      <CardHeader><CardTitle class="text-sm font-medium">{title}</CardTitle></CardHeader>
-      <CardContent><p class="text-xs text-muted-foreground">{parsed.error}</p></CardContent>
-    </Card>
-  </div>
-{/if}
+<div class={extraClass}>
+  {#if format === "svg" || mermaidSvg}
+    <div class="svg-host [&_svg]:max-w-full [&_svg]:h-auto [&_svg]:mx-auto">
+      {@html svgContent()}
+    </div>
+  {:else if mermaidError}
+    <p class="text-xs text-muted-foreground py-8 text-center">{mermaidError}</p>
+  {:else if format === "mermaid"}
+    <p class="text-xs text-muted-foreground py-8 text-center">Rendering diagram…</p>
+  {:else}
+    <p class="text-xs text-muted-foreground py-8 text-center">Invalid visual format.</p>
+  {/if}
+  {#if caption}
+    <p class="text-xs text-muted-foreground mt-2">{caption}</p>
+  {/if}
+</div>
 
 <style>
   .svg-host {
@@ -219,6 +181,7 @@
   .svg-host :global(svg ellipse.c-blue) {
     fill: var(--svg-blue-fill);
     stroke: var(--svg-blue-stroke);
+    stroke-width: 1px;
   }
   .svg-host :global(svg .c-purple > rect),
   .svg-host :global(svg .c-purple > circle),
@@ -228,6 +191,7 @@
   .svg-host :global(svg ellipse.c-purple) {
     fill: var(--svg-purple-fill);
     stroke: var(--svg-purple-stroke);
+    stroke-width: 1px;
   }
   .svg-host :global(svg .c-coral > rect),
   .svg-host :global(svg .c-coral > circle),
@@ -237,6 +201,7 @@
   .svg-host :global(svg ellipse.c-coral) {
     fill: var(--svg-coral-fill);
     stroke: var(--svg-coral-stroke);
+    stroke-width: 1px;
   }
   .svg-host :global(svg .c-pink > rect),
   .svg-host :global(svg .c-pink > circle),
@@ -246,6 +211,7 @@
   .svg-host :global(svg ellipse.c-pink) {
     fill: var(--svg-pink-fill);
     stroke: var(--svg-pink-stroke);
+    stroke-width: 1px;
   }
   .svg-host :global(svg .c-teal > rect),
   .svg-host :global(svg .c-teal > circle),
@@ -255,6 +221,7 @@
   .svg-host :global(svg ellipse.c-teal) {
     fill: var(--svg-teal-fill);
     stroke: var(--svg-teal-stroke);
+    stroke-width: 1px;
   }
   .svg-host :global(svg .c-green > rect),
   .svg-host :global(svg .c-green > circle),
@@ -264,6 +231,7 @@
   .svg-host :global(svg ellipse.c-green) {
     fill: var(--svg-green-fill);
     stroke: var(--svg-green-stroke);
+    stroke-width: 1px;
   }
   .svg-host :global(svg .c-amber > rect),
   .svg-host :global(svg .c-amber > circle),
@@ -273,6 +241,7 @@
   .svg-host :global(svg ellipse.c-amber) {
     fill: var(--svg-amber-fill);
     stroke: var(--svg-amber-stroke);
+    stroke-width: 1px;
   }
   .svg-host :global(svg .c-red > rect),
   .svg-host :global(svg .c-red > circle),
@@ -282,6 +251,7 @@
   .svg-host :global(svg ellipse.c-red) {
     fill: var(--svg-red-fill);
     stroke: var(--svg-red-stroke);
+    stroke-width: 1px;
   }
   .svg-host :global(svg .c-gray > rect),
   .svg-host :global(svg .c-gray > circle),
@@ -291,6 +261,7 @@
   .svg-host :global(svg ellipse.c-gray) {
     fill: var(--svg-gray-fill);
     stroke: var(--svg-gray-stroke);
+    stroke-width: 1px;
   }
   .svg-host :global(svg .c-blue > .t),
   .svg-host :global(svg .c-blue > .th),

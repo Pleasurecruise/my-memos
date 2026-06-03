@@ -16,11 +16,12 @@
     type ToastVariant,
   } from "@my-memos/ui";
   import ButtonGroup from "$lib/components/ButtonGroup.svelte";
+  import { VisualBlocks } from "$lib/components/visual";
   import ArticleSide from "$lib/components/note/ArticleSide.svelte";
 
-  import { apiCreateNote, apiDeleteNote, apiUpdateNote } from "$lib/notes-client";
+  import { apiCreateNote, apiDeleteNote, apiUpdateNote } from "$lib/services/notes";
   import { categoryFromSlug, encodeSlug } from "$lib/utils/url";
-  import Masthead from "$lib/components/new/Masthead.svelte";
+  import Masthead from "$lib/components/layout/Masthead.svelte";
   import ArticleHeader from "$lib/components/note/ArticleHeader.svelte";
   import NoteEditor from "$lib/components/note/NoteEditor.svelte";
   import NoteToc from "$lib/components/note/NoteToc.svelte";
@@ -343,6 +344,9 @@
         <article class="article mt-6 sm:mt-8">
           {@html display.html}
         </article>
+        {#if display.visualBlocks?.length}
+          <VisualBlocks blocks={display.visualBlocks} />
+        {/if}
       {/if}
     </section>
 

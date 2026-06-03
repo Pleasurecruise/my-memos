@@ -2,7 +2,7 @@ import { z } from "zod";
 
 export const staticVisualFormatSchema = z.enum(["svg", "mermaid"]);
 
-export const renderSvgSchema = z.object({
+export const svgSpecSchema = z.object({
   title: z
     .string()
     .min(1)
@@ -32,16 +32,17 @@ export const renderSvgSchema = z.object({
     ),
 });
 
-export const partialRenderSvgSchema = renderSvgSchema.partial();
-
-export type RenderSvgSpec = z.infer<typeof renderSvgSchema>;
-export type PartialRenderSvgSpec = z.infer<typeof partialRenderSvgSchema>;
+export type SvgSpec = z.infer<typeof svgSpecSchema>;
 export type StaticVisualFormat = z.infer<typeof staticVisualFormatSchema>;
-export type RenderSvgPayload = RenderSvgSpec | PartialRenderSvgSpec | null;
+
+export const renderSvgSchema = svgSpecSchema;
+export const partialRenderSvgSchema = svgSpecSchema.partial();
+export type RenderSvgSpec = SvgSpec;
+export type PartialRenderSvgSpec = z.infer<typeof partialRenderSvgSchema>;
+export type RenderSvgPayload = SvgSpec | PartialRenderSvgSpec | null;
 
 export function parseRenderSvgPayload(value: object | null) {
   if (value === null) return null;
-
   const result = partialRenderSvgSchema.safeParse(value);
   return result.success ? result.data : null;
 }

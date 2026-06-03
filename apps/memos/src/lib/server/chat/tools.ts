@@ -2,12 +2,13 @@ import { tool } from "ai";
 import { z } from "zod";
 import { drizzle } from "drizzle-orm/d1";
 import { and, desc, eq, like, sql } from "drizzle-orm";
-import { renderChartSchema } from "$lib/chat/chart";
-import { renderSvgSchema } from "$lib/chat/svg";
-import { renderWidgetSchema } from "$lib/chat/widget";
+import { renderChartSchema } from "$lib/visual/chart";
+import { renderSvgSchema } from "$lib/visual/svg";
+import { renderWidgetSchema } from "$lib/visual/widget";
 import { memos } from "$lib/server/db/schema";
 import { listTagCounts } from "$lib/server/memos/repository";
 import { createMemoId, buildMemoR2Key, normalizeTags } from "$lib/server/memos/utils";
+import { stripHashtags } from "$lib/utils";
 
 type Env = NonNullable<App.Platform>["env"];
 
@@ -38,7 +39,7 @@ export function createChatTools(env: Env) {
         "Use for visual content that does not need dynamic JavaScript. " +
         "For SVG: provide raw SVG starting with <svg>. Use the pre-built CSS classes: " +
         "color ramps (c-blue, c-teal, c-amber, c-green, c-red, c-purple, c-coral, c-pink, c-gray), " +
-        "text classes (t, ts, th), container classes (box, node, arr). " +
+        "text classes (t, ts, th), container classes (box, node, arr, leader). " +
         "For Mermaid: provide Mermaid diagram source (ERDs, sequence diagrams, Gantt charts). " +
         "Do not include HTML wrappers, script tags, event handlers, iframes, or external resources.",
       inputSchema: renderSvgSchema,
@@ -262,7 +263,23 @@ export function createChatTools(env: Env) {
           setValues.excerpt = trimmed;
           setValues.tagsJson = tags?.length ? tags : normalizeTags(trimmed);
         } else if (tags !== undefined) {
-          setValues.tagsJson = tags;
+          const newTags = tags.length ? tags : [];
+          setValues.tagsJson = newTags;
+
+          // Sync R2 body: strip old hashtags, then append new ones at the end
+          const bodyObj = await MEMOS_BUCKET.get(existing.r2Key);
+          if (bodyObj) {
+            let body = (await bodyObj.text()).trimEnd();
+            body = stripHashtags(body).trimEnd();
+            if (newTags.length > 0) {
+              const tagLine = newTags.map((t) => `#${t}`).join(" ");
+              body = body + "\n\n" + tagLine;
+            }
+            await MEMOS_BUCKET.put(existing.r2Key, body, {
+              httpMetadata: { contentType: "text/markdown; charset=utf-8" },
+            });
+            setValues.excerpt = body;
+          }
         }
 
         if (visibility !== undefined) setValues.visibility = visibility;

@@ -23,8 +23,8 @@
     Globe,
     UserRound,
   } from "@lucide/svelte";
-  import { signIn, signOut } from "$lib/auth-client";
-  import { showToast } from "$lib/stores/toast.svelte";
+  import { signIn, signOut } from "$lib/services/auth";
+  import { showToast } from "$lib/state/toast.svelte";
   import { updateQuery } from "$lib/utils";
   import type { Memo, TagCount } from "$lib/types";
 

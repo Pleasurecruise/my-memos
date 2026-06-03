@@ -1,6 +1,6 @@
 import { invalidateAll } from "$app/navigation";
-import { apiUpdateMemo, apiDeleteMemo } from "$lib/api/memos";
-import { showToast } from "$lib/stores/toast.svelte";
+import { apiUpdateMemo, apiDeleteMemo } from "$lib/services/memos";
+import { showToast } from "$lib/state/toast.svelte";
 import type { Memo, MemoVisibility } from "$lib/types";
 
 export function createDeleteActions() {

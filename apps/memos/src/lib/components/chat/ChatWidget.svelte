@@ -4,8 +4,8 @@
     renderWidgetSchema,
     type RenderWidgetPayload,
     type RenderWidgetSpec,
-  } from "$lib/chat/widget";
-  import Frame from "./Frame.svelte";
+  } from "$lib/visual/widget";
+  import { WidgetRenderer } from "$lib/components/visual";
 
   interface WidgetParseResult {
     value: RenderWidgetSpec | null;
@@ -21,7 +21,6 @@
   let { spec, streaming }: Props = $props();
 
   const parsed = $derived(parseSpec(spec));
-  const widgetCode = $derived(parsed.value?.code);
   const title = $derived(
     parsed.value?.title?.replace(/_/g, " ") ??
       parsed.partialTitle?.replace(/_/g, " ") ??
@@ -43,28 +42,23 @@
   }
 </script>
 
-{#if parsed.value}
-  <div class="w-full max-w-[860px]">
-    <Card>
-      <CardHeader class="pb-2">
-        <CardTitle class="text-sm font-medium">{title}</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <Frame
+<div class="w-full max-w-215">
+  <Card class={parsed.value ? "" : "border-destructive/30 bg-destructive/5"}>
+    <CardHeader class="pb-2">
+      <CardTitle class="text-sm font-medium">{title}</CardTitle>
+    </CardHeader>
+    <CardContent>
+      {#if parsed.value}
+        <WidgetRenderer
+          code={parsed.value.code}
           {title}
-          code={widgetCode}
           {streaming}
           width={parsed.value.width ?? 800}
           height={parsed.value.height ?? 500}
         />
-      </CardContent>
-    </Card>
-  </div>
-{:else}
-  <div class="w-full max-w-[860px]">
-    <Card class="border-destructive/30 bg-destructive/5">
-      <CardHeader><CardTitle class="text-sm font-medium">{title}</CardTitle></CardHeader>
-      <CardContent><p class="text-xs text-muted-foreground">{parsed.error}</p></CardContent>
-    </Card>
-  </div>
-{/if}
+      {:else}
+        <p class="text-xs text-muted-foreground">{parsed.error}</p>
+      {/if}
+    </CardContent>
+  </Card>
+</div>

@@ -14,7 +14,7 @@
   } from "@my-memos/ui";
   import { format } from "date-fns";
   import { updateQuery } from "$lib/utils";
-  import { signIn, signOut } from "$lib/auth-client";
+  import { signIn, signOut } from "$lib/services/auth";
   import {
     Home,
     Archive,
@@ -29,7 +29,7 @@
     UserRound,
   } from "@lucide/svelte";
   import type { TagCount } from "$lib/types";
-  import { showToast } from "$lib/stores/toast.svelte";
+  import { showToast } from "$lib/state/toast.svelte";
 
   const NAV_ITEMS = [
     { href: "/", label: "Home", icon: Home, requiresAuth: false },

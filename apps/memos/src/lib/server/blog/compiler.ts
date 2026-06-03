@@ -8,7 +8,8 @@ import rehypeShikiFromHighlighter from "@shikijs/rehype/core";
 import type { Root as MdastRoot, Text } from "mdast";
 import type { Plugin } from "unified";
 import { visit } from "unist-util-visit";
-import type { TocEntry } from "$lib/types";
+import type { TocEntry, VisualBlock } from "$lib/types";
+import { extractVisualBlocks } from "./visual-blocks";
 import { getHighlighter } from "./shiki";
 import { rehypeToc } from "./rehype-toc";
 import { rehypeTables } from "./rehype-tables";
@@ -17,6 +18,7 @@ export interface CompiledNote {
   html: string;
   toc: TocEntry[];
   excerpt: string;
+  visualBlocks: VisualBlock[];
 }
 
 const remarkExcerpt: Plugin<[{ segments: string[] }], MdastRoot> = (options) => (tree) => {
@@ -37,7 +39,11 @@ function markdownToHast() {
 export async function compileMarkdown(source: string): Promise<CompiledNote> {
   const toc: TocEntry[] = [];
   const excerptSegments: string[] = [];
-  const shouldHighlight = /(^|\n)```[^\s`\n]+/.test(source);
+
+  // Extract visual blocks before compiling so fenced code with visual
+  // languages (svg, mermaid, chart, widget) are not syntax-highlighted.
+  const { markdown: processedSource, blocks: visualBlocks } = extractVisualBlocks(source);
+  const shouldHighlight = /(^|\n)```[^\s`\n]+/.test(processedSource);
 
   const processor = unified()
     .use(remarkParse)
@@ -70,11 +76,14 @@ export async function compileMarkdown(source: string): Promise<CompiledNote> {
     .use(rehypeToc, { toc })
     .use(rehypeTables)
     .use(rehypeStringify)
-    .process(source);
+    .process(processedSource);
+
+  // Strip placeholder divs used to mark visual block positions.
+  const html = String(result).replace(/<div data-visual-block="\d+"><\/div>/g, "");
 
   const excerpt = excerptSegments.join(" ").replace(/\s+/g, " ").trim();
 
-  return { html: String(result), toc, excerpt };
+  return { html, toc, excerpt, visualBlocks };
 }
 
 export async function compileEditorHtml(source: string): Promise<string> {

@@ -1,7 +1,7 @@
 <script lang="ts">
   import { ChatThread, ChatMessage, ChatInput } from "@my-memos/ui";
   import { beforeNavigate } from "$app/navigation";
-  import AppShell from "./AppShell.svelte";
+  import AppShell from "$lib/components/layout/AppShell.svelte";
   import MarkdownContent from "$lib/components/MarkdownContent.svelte";
 
   interface Props {

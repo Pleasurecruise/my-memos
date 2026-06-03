@@ -21,3 +21,11 @@ export interface TocEntry {
   text: string;
   id: string;
 }
+
+export type VisualBlockType = "svg" | "mermaid" | "chart" | "widget";
+
+export interface VisualBlock {
+  type: VisualBlockType;
+  code: string;
+  index: number;
+}

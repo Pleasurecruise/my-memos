@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { Plus } from "@lucide/svelte";
-  import Masthead from "./Masthead.svelte";
+  import Masthead from "$lib/components/layout/Masthead.svelte";
 
   interface Props {
     paths: string[];
