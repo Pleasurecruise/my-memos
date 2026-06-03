@@ -37,16 +37,18 @@ function markdownToHast() {
 export async function compileMarkdown(source: string): Promise<CompiledNote> {
   const toc: TocEntry[] = [];
   const excerptSegments: string[] = [];
+  const shouldHighlight = /(^|\n)```[^\s`\n]+/.test(source);
 
-  const highlighter = await getHighlighter();
-
-  const result = await unified()
+  const processor = unified()
     .use(remarkParse)
     .use(remarkGfm)
     .use(remarkExcerpt, { segments: excerptSegments })
     .use(remarkRehype, { allowDangerousHtml: true })
-    .use(rehypeRaw)
-    .use(() =>
+    .use(rehypeRaw);
+
+  if (shouldHighlight) {
+    const highlighter = await getHighlighter();
+    processor.use(() =>
       rehypeShikiFromHighlighter(highlighter, {
         themes: { light: "github-light", dark: "github-dark" },
         lazy: true,
@@ -61,7 +63,10 @@ export async function compileMarkdown(source: string): Promise<CompiledNote> {
           },
         ],
       }),
-    )
+    );
+  }
+
+  const result = await processor
     .use(rehypeToc, { toc })
     .use(rehypeTables)
     .use(rehypeStringify)

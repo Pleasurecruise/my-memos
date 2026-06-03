@@ -3,7 +3,13 @@ import { svelteKitHandler } from "better-auth/svelte-kit";
 import { building } from "$app/environment";
 import type { Handle } from "@sveltejs/kit";
 
+const scannerNoisePaths = new Set(["/robots.txt", "/sitemap.xml"]);
+
 export const handle: Handle = async ({ event, resolve }) => {
+  if (scannerNoisePaths.has(event.url.pathname)) {
+    return new Response(null, { status: 204 });
+  }
+
   if (event.url.pathname === "/favicon.ico") {
     return Response.redirect(new URL("/favicon.png", event.url), 301);
   }

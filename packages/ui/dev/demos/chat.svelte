@@ -3,7 +3,7 @@
 </script>
 
 <script lang="ts">
-  import { ChatMessage, ChatThread, ChatInput } from "../../src";
+  import { ChatMessage, ChatThread, ChatInput, ChatToolbar } from "../../src";
   import DemoPage from "../DemoPage.svelte";
   import SectionLabel from "../SectionLabel.svelte";
 
@@ -112,6 +112,24 @@
         avatarFallback="U"
         timestamp="09:01"
       />
+    </div>
+  </section>
+
+  <!-- ChatToolbar -->
+  <section style="display: flex; flex-direction: column; gap: 12px;">
+    <SectionLabel>ChatToolbar — hover for actions</SectionLabel>
+    <div style="display: flex; flex-direction: column; gap: 4px;">
+      <ChatMessage
+        role="assistant"
+        content="试试鼠标悬停在这条消息上，会出现复制和重试按钮。"
+        avatarFallback="AI"
+      />
+      <div class="toolbar-row">
+        <ChatToolbar
+          content="试试鼠标悬停在这条消息上，会出现复制和重试按钮。"
+          onretry={() => alert("Retry clicked!")}
+        />
+      </div>
     </div>
   </section>
 

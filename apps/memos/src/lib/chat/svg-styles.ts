@@ -1,0 +1,38 @@
+export const SVG_CLASSES = [
+  "svg .t{font-family:var(--font-sans);font-size:14px;fill:var(--svg-primary)}",
+  "svg .ts{font-family:var(--font-sans);font-size:12px;fill:var(--svg-secondary)}",
+  "svg .th{font-family:var(--font-sans);font-size:14px;font-weight:500;fill:var(--svg-primary)}",
+  "svg .box{fill:var(--svg-surface);stroke:var(--svg-border)}",
+  "svg .node{cursor:pointer}svg .node:hover{opacity:.82}",
+  "svg .arr{fill:none;stroke:var(--svg-tertiary);stroke-width:1.5}",
+  "svg .leader{fill:none;stroke:var(--svg-tertiary);stroke-width:.5;stroke-dasharray:4 3}",
+  "svg .c-blue>rect,svg .c-blue>circle,svg .c-blue>ellipse,svg rect.c-blue,svg circle.c-blue,svg ellipse.c-blue{fill:var(--svg-blue-fill);stroke:var(--svg-blue-stroke)}",
+  "svg .c-purple>rect,svg .c-purple>circle,svg .c-purple>ellipse,svg rect.c-purple,svg circle.c-purple,svg ellipse.c-purple{fill:var(--svg-purple-fill);stroke:var(--svg-purple-stroke)}",
+  "svg .c-coral>rect,svg .c-coral>circle,svg .c-coral>ellipse,svg rect.c-coral,svg circle.c-coral,svg ellipse.c-coral{fill:var(--svg-coral-fill);stroke:var(--svg-coral-stroke)}",
+  "svg .c-pink>rect,svg .c-pink>circle,svg .c-pink>ellipse,svg rect.c-pink,svg circle.c-pink,svg ellipse.c-pink{fill:var(--svg-pink-fill);stroke:var(--svg-pink-stroke)}",
+  "svg .c-teal>rect,svg .c-teal>circle,svg .c-teal>ellipse,svg rect.c-teal,svg circle.c-teal,svg ellipse.c-teal{fill:var(--svg-teal-fill);stroke:var(--svg-teal-stroke)}",
+  "svg .c-green>rect,svg .c-green>circle,svg .c-green>ellipse,svg rect.c-green,svg circle.c-green,svg ellipse.c-green{fill:var(--svg-green-fill);stroke:var(--svg-green-stroke)}",
+  "svg .c-amber>rect,svg .c-amber>circle,svg .c-amber>ellipse,svg rect.c-amber,svg circle.c-amber,svg ellipse.c-amber{fill:var(--svg-amber-fill);stroke:var(--svg-amber-stroke)}",
+  "svg .c-red>rect,svg .c-red>circle,svg .c-red>ellipse,svg rect.c-red,svg circle.c-red,svg ellipse.c-red{fill:var(--svg-red-fill);stroke:var(--svg-red-stroke)}",
+  "svg .c-gray>rect,svg .c-gray>circle,svg .c-gray>ellipse,svg rect.c-gray,svg circle.c-gray,svg ellipse.c-gray{fill:var(--svg-gray-fill);stroke:var(--svg-gray-stroke)}",
+  "svg .c-blue>.t,svg .c-blue>.th,svg .c-purple>.t,svg .c-purple>.th,svg .c-coral>.t,svg .c-coral>.th,svg .c-pink>.t,svg .c-pink>.th,svg .c-teal>.t,svg .c-teal>.th,svg .c-green>.t,svg .c-green>.th,svg .c-amber>.t,svg .c-amber>.th,svg .c-red>.t,svg .c-red>.th,svg .c-gray>.t,svg .c-gray>.th{fill:var(--svg-primary)}",
+  "svg .c-blue>.ts,svg .c-purple>.ts,svg .c-coral>.ts,svg .c-pink>.ts,svg .c-teal>.ts,svg .c-green>.ts,svg .c-amber>.ts,svg .c-red>.ts,svg .c-gray>.ts{fill:var(--svg-secondary)}",
+].join("");
+
+/** CSS custom properties for the dark-mode iframe shell context. */
+export const SVG_DARK_VARS = [
+  "--svg-primary:var(--color-text-primary)",
+  "--svg-secondary:var(--color-text-secondary)",
+  "--svg-tertiary:var(--color-text-tertiary)",
+  "--svg-surface:var(--color-background-secondary)",
+  "--svg-border:var(--color-border-secondary)",
+  "--svg-blue-fill:#0C447C;--svg-blue-stroke:#85B7EB",
+  "--svg-purple-fill:#3C3489;--svg-purple-stroke:#AFA9EC",
+  "--svg-coral-fill:#712B13;--svg-coral-stroke:#F0997B",
+  "--svg-pink-fill:#72243E;--svg-pink-stroke:#ED93B1",
+  "--svg-teal-fill:#085041;--svg-teal-stroke:#5DCAA5",
+  "--svg-green-fill:#27500A;--svg-green-stroke:#97C459",
+  "--svg-amber-fill:#633806;--svg-amber-stroke:#EF9F27",
+  "--svg-red-fill:#791F1F;--svg-red-stroke:#F09595",
+  "--svg-gray-fill:#444441;--svg-gray-stroke:#B4B2A9",
+].join(";");

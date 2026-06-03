@@ -7,11 +7,18 @@
     ChatThread,
     ChatMessage,
     ChatInput,
+    ChatToolbar,
     Collapsible,
     CollapsibleContent,
     CollapsibleTrigger,
   } from "@my-memos/ui";
   import MarkdownContent from "$lib/components/MarkdownContent.svelte";
+  import { parseRenderChartPayload } from "$lib/chat/chart";
+  import { parseRenderSvgPayload } from "$lib/chat/svg";
+  import { parseRenderWidgetPayload } from "$lib/chat/widget";
+  import Chart from "$lib/components/chat/Chart.svelte";
+  import Svg from "$lib/components/chat/Svg.svelte";
+  import Widget from "$lib/components/chat/Widget.svelte";
   import Masthead from "./Masthead.svelte";
 
   interface Props {
@@ -64,6 +71,11 @@
         <ChatThread class="flex-1 min-h-0 overflow-y-auto pt-4">
           {#each chat.messages as msg (msg.id)}
             {#if msg.role === "assistant"}
+              {@const msgText = msg.parts
+                .filter((p): p is { type: "text"; text: string } => p.type === "text")
+                .map((p) => p.text)
+                .join("\n")
+                .trim()}
               <ChatMessage
                 role="assistant"
                 avatarSrc="/favicon.png"
@@ -75,43 +87,73 @@
                   <div class="flex flex-col gap-2">
                     {#each msg.parts as part, index (index)}
                       {#if isToolUIPart(part)}
-                        <Collapsible>
-                          <CollapsibleTrigger
-                            class="tool-trigger w-fit max-w-full rounded px-0.5 py-px font-mono text-xs leading-5 text-muted-foreground hover:bg-muted hover:text-foreground"
-                            aria-label={`Toggle ${getToolName(part)} tool details`}
-                          >
-                            <ChevronRight
-                              size={14}
-                              class="tool-chevron shrink-0 transition-transform duration-150"
-                            />
-                            <code class="text-foreground">{getToolName(part)}</code>
-                            <span class="min-w-0 truncate">{part.state.replaceAll("-", " ")}</span>
-                          </CollapsibleTrigger>
+                        {#if getToolName(part) === "render_chart" && part.state !== "output-error"}
+                          {@const payload =
+                            part.state === "output-available" ? part.output : part.input}
+                          <Chart
+                            spec={parseRenderChartPayload(
+                              typeof payload === "object" ? payload : null,
+                            )}
+                            streaming={part.state !== "output-available"}
+                          />
+                        {:else if getToolName(part) === "render_svg" && part.state !== "output-error"}
+                          {@const payload =
+                            part.state === "output-available" ? part.output : part.input}
+                          <Svg
+                            spec={parseRenderSvgPayload(
+                              typeof payload === "object" ? payload : null,
+                            )}
+                            streaming={part.state !== "output-available"}
+                          />
+                        {:else if getToolName(part) === "render_widget" && part.state !== "output-error"}
+                          {@const payload =
+                            part.state === "output-available" ? part.output : part.input}
+                          <Widget
+                            spec={parseRenderWidgetPayload(
+                              typeof payload === "object" ? payload : null,
+                            )}
+                            streaming={part.state !== "output-available"}
+                          />
+                        {:else}
+                          <Collapsible>
+                            <CollapsibleTrigger
+                              class="tool-trigger w-fit max-w-full rounded px-0.5 py-px font-mono text-xs leading-5 text-muted-foreground hover:bg-muted hover:text-foreground"
+                              aria-label={`Toggle ${getToolName(part)} tool details`}
+                            >
+                              <ChevronRight
+                                size={14}
+                                class="tool-chevron shrink-0 transition-transform duration-150"
+                              />
+                              <code class="text-foreground">{getToolName(part)}</code>
+                              <span class="min-w-0 truncate">{part.state.replaceAll("-", " ")}</span
+                              >
+                            </CollapsibleTrigger>
 
-                          <CollapsibleContent class="ml-5 mt-1 border-l border-border pl-3">
-                            <div class="flex flex-col gap-2 pb-1">
-                              {#if part.input && typeof part.input === "object" && !Array.isArray(part.input) && Object.keys(part.input).length}
-                                <div class="tool-detail">
-                                  <span>arguments</span>
-                                  <pre>{JSON.stringify(part.input, null, 2)}</pre>
-                                </div>
-                              {/if}
-                              {#if part.state === "output-available"}
-                                <div class="tool-detail">
-                                  <span>result</span>
-                                  <pre>{typeof part.output === "string"
-                                      ? part.output
-                                      : JSON.stringify(part.output, null, 2)}</pre>
-                                </div>
-                              {:else if part.state === "output-error"}
-                                <div class="tool-detail">
-                                  <span>error</span>
-                                  <pre>{part.errorText}</pre>
-                                </div>
-                              {/if}
-                            </div>
-                          </CollapsibleContent>
-                        </Collapsible>
+                            <CollapsibleContent class="ml-5 mt-1 border-l border-border pl-3">
+                              <div class="flex flex-col gap-2 pb-1">
+                                {#if part.input && typeof part.input === "object" && !Array.isArray(part.input) && Object.keys(part.input).length}
+                                  <div class="tool-detail">
+                                    <span>arguments</span>
+                                    <pre>{JSON.stringify(part.input, null, 2)}</pre>
+                                  </div>
+                                {/if}
+                                {#if part.state === "output-available"}
+                                  <div class="tool-detail">
+                                    <span>result</span>
+                                    <pre>{typeof part.output === "string"
+                                        ? part.output
+                                        : JSON.stringify(part.output, null, 2)}</pre>
+                                  </div>
+                                {:else if part.state === "output-error"}
+                                  <div class="tool-detail">
+                                    <span>error</span>
+                                    <pre>{part.errorText}</pre>
+                                  </div>
+                                {/if}
+                              </div>
+                            </CollapsibleContent>
+                          </Collapsible>
+                        {/if}
                       {:else if part.type === "text" && part.text.trim()}
                         <MarkdownContent content={part.text} class="bubble-md" />
                       {/if}
@@ -119,6 +161,14 @@
                   </div>
                 {/if}
               </ChatMessage>
+              {#if msgText && !isStreaming}
+                <div class="toolbar-row">
+                  <ChatToolbar
+                    content={msgText}
+                    onretry={() => chat.regenerate({ messageId: msg.id })}
+                  />
+                </div>
+              {/if}
             {:else}
               <ChatMessage role="user" avatarSrc={user?.image} avatarFallback={user?.name}>
                 {#each msg.parts as part, index (index)}
@@ -182,5 +232,10 @@
 
   :global(.tool-trigger[data-state="open"] .tool-chevron) {
     transform: rotate(90deg);
+  }
+
+  .toolbar-row {
+    display: flex;
+    padding: 0 16px 6px 52px;
   }
 </style>

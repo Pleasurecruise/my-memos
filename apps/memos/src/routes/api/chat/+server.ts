@@ -3,6 +3,7 @@ import type { RequestHandler } from "./$types";
 import { convertToModelMessages, streamText, stepCountIs, type UIMessage } from "ai";
 import { createProvider } from "$lib/server/chat/provider";
 import { createChatTools } from "$lib/server/chat/tools";
+import { GENERATIVE_UI_PROMPT } from "$lib/server/chat/prompt";
 
 export const POST: RequestHandler = async ({ request, platform, locals }) => {
   if (!locals.user) return json({ error: "Unauthorized." }, { status: 401 });
@@ -21,6 +22,7 @@ export const POST: RequestHandler = async ({ request, platform, locals }) => {
   const today = new Date().toISOString().slice(0, 10);
   let system = `Today's date (UTC): ${today}\n\n${promptMd || "You are a helpful personal assistant."}`;
   if (memoryMd) system += `\n\n<memory>\n${memoryMd}\n</memory>`;
+  system += `\n\n${GENERATIVE_UI_PROMPT}`;
 
   const provider = createProvider(platform.env);
   // const slug = platform.env.CF_CUSTOM_PROVIDER_SLUG;
