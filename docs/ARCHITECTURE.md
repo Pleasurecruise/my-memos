@@ -38,13 +38,13 @@ Key areas:
   Server-only auth, filters, and memo persistence helpers.
   - [apps/memos/src/lib/server/db/schema.ts](/Users/pleasure1234/Github/my-memos/apps/memos/src/lib/server/db/schema.ts)
     Drizzle ORM schema for the `memos` table; exports `MemoRow` inferred type.
-  - [apps/memos/src/lib/server/chat/tools.ts](/Users/pleasure1234/Github/my-memos/apps/memos/src/lib/server/chat/tools.ts)
-    Chat agent tool definitions, extracted from the API route.
+  - [apps/memos/src/lib/server/chat/tools](/Users/pleasure1234/Github/my-memos/apps/memos/src/lib/server/chat/tools)
+    Chat agent tool definitions, modularised by domain: `visual`, `memos-read`, `memos-write`, `web-search`.
 - [apps/memos/src/lib/components](/Users/pleasure1234/Github/my-memos/apps/memos/src/lib/components)
   App-specific Svelte UI not exported as reusable package components.
   Contains two layout generations:
-  - `new/` — default layout: `Masthead`, `Home`, `Chat`, `Archive`. Timeline-based feed, no sidebar.
-  - `old/` — legacy layout kept for comparison via the in-page toggle button.
+  - `views/` — default layout: `AppShell` + `Sidebar`, `Home`, `Chat`, `Archive`, `Note`. Sidebar-based with timeline feed.
+  - `views-legacy/` — legacy layout kept for comparison via the in-page toggle button.
 - [apps/memos/migrations](/Users/pleasure1234/Github/my-memos/apps/memos/migrations)
   D1 schema migrations applied by wrangler. Drizzle Kit also outputs generated SQL and its `_meta/` snapshots here; both should be committed.
 - [apps/memos/worker.ts](/Users/pleasure1234/Github/my-memos/apps/memos/worker.ts:1)
@@ -86,6 +86,17 @@ Route loader: [apps/memos/src/routes/archive/+page.server.ts](/Users/pleasure123
 - Uses an SSE API route for model output streaming.
 
 Route loader: [apps/memos/src/routes/chat/+page.server.ts](/Users/pleasure1234/Github/my-memos/apps/memos/src/routes/chat/+page.server.ts:1)
+
+### Note Pages
+
+- `/note` and `/note/[...slug]` are authenticated only.
+- Browse and edit long-form markdown notes stored in R2 under `blog/` prefix.
+- Supports categories, table of contents, and visual blocks.
+
+Route loaders:
+
+- [apps/memos/src/routes/note/+page.server.ts](/Users/pleasure1234/Github/my-memos/apps/memos/src/routes/note/+page.server.ts:1)
+- [apps/memos/src/routes/note/[...slug]/+page.server.ts](/Users/pleasure1234/Github/my-memos/apps/memos/src/routes/note/[...slug]/+page.server.ts:1)
 
 ## Authentication
 
@@ -134,6 +145,7 @@ R2 stores:
 
 - full memo markdown body
 - chat support files such as `agent/PROMPT.md` and `agent/MEMORY.md`
+- long-form notes under `blog/` prefix, with custom metadata (title, timestamps) and KV-compiled caches
 
 ### KV
 
@@ -157,10 +169,11 @@ Responsibilities:
 - cache unfiltered list results and tag counts in KV
 - write full content to R2 during create and update
 - invalidate cache after mutations
+- blog/note compilation pipeline in `apps/memos/src/lib/server/blog` for KV-cached HTML rendering, TOC generation, and visual block extraction
 
 The Drizzle schema (`apps/memos/src/lib/server/db/schema.ts`) is the authoritative source for the `memos` table shape and exports `MemoRow` via `typeof memos.$inferSelect`, eliminating hand-written row types.
 
-Chat agent tools are defined in [apps/memos/src/lib/server/chat/tools.ts](/Users/pleasure1234/Github/my-memos/apps/memos/src/lib/server/chat/tools.ts:1) and imported by the `/api/chat` route.
+Chat agent tools are defined in [apps/memos/src/lib/server/chat/tools](/Users/pleasure1234/Github/my-memos/apps/memos/src/lib/server/chat/tools/index.ts:1) and imported by the `/api/chat` route.
 
 ## API Surface
 
@@ -190,8 +203,27 @@ Behavior:
 - loads prompt and memory from R2 to build the system context
 - model: DeepSeek V4 Flash via Cloudflare AI Gateway
 - streams AI SDK UI message events for assistant text and tool parts
-- exposes tools: `get_tags`, `list_memos`, `search_memos`, `create_memo`, `update_memo`, `delete_memo`, `web_search`
+- exposes tools: `get_tags`, `list_memos`, `search_memos`, `create_memo`, `update_memo`, `delete_memo`, `web_search`, `render_chart`, `render_svg`, `render_widget`
 - after each completed assistant response, runs auto-dream memory maintenance to decide whether `agent/MEMORY.md` should be updated
+
+### `/api/chat/consolidate`
+
+File: [apps/memos/src/routes/api/chat/consolidate/+server.ts](/Users/pleasure1234/Github/my-memos/apps/memos/src/routes/api/chat/consolidate/+server.ts:1)
+
+- `POST` triggers auto-dream memory consolidation on demand (authenticated).
+
+### `/api/notes`
+
+File: [apps/memos/src/routes/api/notes/+server.ts](/Users/pleasure1234/Github/my-memos/apps/memos/src/routes/api/notes/+server.ts:1)
+
+- `POST` creates a new note (authenticated).
+
+### `/api/notes/[...slug]`
+
+File: [apps/memos/src/routes/api/notes/[...slug]/+server.ts](/Users/pleasure1234/Github/my-memos/apps/memos/src/routes/api/notes/[...slug]/+server.ts:1)
+
+- `PATCH` updates a note's content, title, or category (authenticated).
+- `DELETE` deletes a note (authenticated).
 
 ## Type Boundaries
 
@@ -205,7 +237,7 @@ If these drift, the app may still compile but fail at runtime.
 
 ## Known Inconsistencies To Watch
 
-- The SQL schema allows `visibility IN ('public', 'protected', 'private')`, but API validation only accepts `public` and `private`.
+- The 0001 SQL migration allows `visibility IN ('public', 'protected', 'private')`, but the Drizzle ORM schema and API/tool validation only accept `public` and `private`.
 - Root `wrangler.toml` is effectively production-shaped rather than environment-sliced.
 - Drizzle Kit snapshots (`_meta/`) live inside `apps/memos/migrations` alongside wrangler's migration files. Both must be committed so Drizzle can compute future diffs.
 
