@@ -34,12 +34,16 @@ export const widgetSpecSchema = z.object({
     .describe("Container height in pixels. Default: 500. Auto-resizes if content is taller."),
 });
 
+export const renderWidgetSchema = widgetSpecSchema;
+
+export const partialRenderWidgetSchema = widgetSpecSchema.partial();
+
 export type WidgetSpec = z.infer<typeof widgetSpecSchema>;
 
-export const renderWidgetSchema = widgetSpecSchema;
-export const partialRenderWidgetSchema = widgetSpecSchema.partial();
 export type RenderWidgetSpec = WidgetSpec;
+
 export type PartialRenderWidgetSpec = z.infer<typeof partialRenderWidgetSchema>;
+
 export type RenderWidgetPayload = WidgetSpec | PartialRenderWidgetSpec | null;
 
 export function parseRenderWidgetPayload(value: object | null) {

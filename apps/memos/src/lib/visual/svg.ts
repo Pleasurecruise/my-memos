@@ -32,13 +32,18 @@ export const svgSpecSchema = z.object({
     ),
 });
 
+export const renderSvgSchema = svgSpecSchema;
+
+export const partialRenderSvgSchema = svgSpecSchema.partial();
+
 export type SvgSpec = z.infer<typeof svgSpecSchema>;
+
 export type StaticVisualFormat = z.infer<typeof staticVisualFormatSchema>;
 
-export const renderSvgSchema = svgSpecSchema;
-export const partialRenderSvgSchema = svgSpecSchema.partial();
 export type RenderSvgSpec = SvgSpec;
+
 export type PartialRenderSvgSpec = z.infer<typeof partialRenderSvgSchema>;
+
 export type RenderSvgPayload = SvgSpec | PartialRenderSvgSpec | null;
 
 export function parseRenderSvgPayload(value: object | null) {

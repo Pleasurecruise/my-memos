@@ -16,6 +16,11 @@ export interface TagCount {
   count: number;
 }
 
+export interface MemoStats {
+  total: number;
+  today: number;
+}
+
 export interface TocEntry {
   depth: number;
   text: string;

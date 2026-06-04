@@ -1,7 +1,8 @@
 <script lang="ts">
-  import { isSameDay } from "date-fns";
+  import { format, isSameDay } from "date-fns";
   import { invalidateAll } from "$app/navigation";
   import { page } from "$app/state";
+  import { untrack } from "svelte";
   import { updateQuery } from "$lib/utils";
   import { apiCreateMemo } from "$lib/services/memos";
   import { showToast } from "$lib/state/toast.svelte";
@@ -53,15 +54,25 @@
 
   interface MainContentProps {
     memos: Memo[];
+    nextCursor: string | null;
     tags: TagCount[];
     initialSearch: string;
     initialTags: string[];
+    viewAsPublic: boolean;
     sortByUpdated: boolean;
     selectedDate: Date | undefined;
   }
 
-  let { memos, tags, initialSearch, initialTags, sortByUpdated, selectedDate }: MainContentProps =
-    $props();
+  let {
+    memos: initialMemos,
+    nextCursor: initialCursor,
+    tags,
+    initialSearch,
+    initialTags,
+    viewAsPublic,
+    sortByUpdated,
+    selectedDate,
+  }: MainContentProps = $props();
 
   let search = $state("");
   let content = $state("");
@@ -69,6 +80,11 @@
   let isSaving = $state(false);
   let pinnedOpen = $state(false);
   let error = $state("");
+  let allMemos = $state(untrack(() => initialMemos));
+  let cursor = $state(untrack(() => initialCursor));
+  let loadingMore = $state(false);
+  let sentinelEl = $state<HTMLDivElement | null>(null);
+  let loadRequestSeq = 0;
 
   const del = createDeleteActions();
   const edit = createEditActions();
@@ -81,6 +97,7 @@
   const visLabel = $derived(visibility === "public" ? "Public" : "Private");
   const hasSearch = $derived(Boolean(search.trim()));
   const showCardResults = $derived(hasSearch || sortByUpdated);
+  const memos = $derived(allMemos);
   const filtered = $derived(
     memos.filter((m) => {
       const updatedAt = new Date(m.updatedAt);
@@ -99,6 +116,55 @@
 
   $effect(() => {
     search = initialSearch;
+  });
+
+  $effect(() => {
+    allMemos = initialMemos;
+    cursor = initialCursor;
+    loadingMore = false;
+    loadRequestSeq += 1;
+  });
+
+  $effect(() => {
+    if (!sentinelEl || !cursor) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && cursor && !loadingMore) {
+          loadingMore = true;
+          const requestSeq = loadRequestSeq;
+          const queryParams = new URLSearchParams({ cursor, limit: "25" });
+          if (initialSearch) queryParams.set("search", initialSearch);
+          if (selectedDate) queryParams.set("date", format(selectedDate, "yyyy-MM-dd"));
+          if (initialTags.length > 0) queryParams.set("tags", initialTags.join(","));
+          if (viewAsPublic) queryParams.set("publicOnly", "true");
+          if (sortByUpdated) queryParams.set("sortByUpdated", "true");
+
+          fetch(`/api/memos?${queryParams.toString()}`)
+            .then((response) => {
+              if (!response.ok) throw new Error("Bad response");
+              return response.json();
+            })
+            .then((pageData) => {
+              if (requestSeq !== loadRequestSeq) return;
+              allMemos = [...allMemos, ...pageData.memos];
+              cursor = pageData.nextCursor;
+            })
+            .catch(() => {
+              if (requestSeq !== loadRequestSeq) return;
+              showToast("error", "Failed to load more memos");
+            })
+            .finally(() => {
+              if (requestSeq !== loadRequestSeq) return;
+              loadingMore = false;
+            });
+        }
+      },
+      { rootMargin: "200px" },
+    );
+
+    observer.observe(sentinelEl);
+    return () => observer.disconnect();
   });
 
   function toggleCardTag(tag: string) {
@@ -380,6 +446,19 @@
 
     {#if filtered.length === 0}
       <p class="text-center py-16 text-muted-foreground text-sm">No memos found.</p>
+    {/if}
+
+    {#if cursor}
+      <div bind:this={sentinelEl} class="h-4">
+        {#if loadingMore}
+          <div class="flex items-center justify-center gap-2 py-4 text-xs text-muted-foreground">
+            <span
+              class="inline-block w-3 h-3 border-2 border-accent/30 border-t-accent rounded-full animate-spin"
+            ></span>
+            loading...
+          </div>
+        {/if}
+      </div>
     {/if}
   </div>
 </div>

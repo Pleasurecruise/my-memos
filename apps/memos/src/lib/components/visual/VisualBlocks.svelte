@@ -14,7 +14,6 @@
       case "chart":
         return "Chart";
       case "svg":
-        return "Diagram";
       case "mermaid":
         return "Diagram";
       case "widget":
@@ -26,36 +25,37 @@
 </script>
 
 {#each blocks as block, i (i)}
+  {@const title = resolveTitle(block)}
   <div class="my-6">
     {#if block.type === "chart"}
       <Card>
         <CardHeader class="pb-2">
-          <CardTitle class="text-sm font-medium">{resolveTitle(block)}</CardTitle>
+          <CardTitle class="text-sm font-medium">{title}</CardTitle>
         </CardHeader>
         <CardContent>
-          <ChartRenderer code={block.code} title={resolveTitle(block)} streaming={false} />
+          <ChartRenderer code={block.code} {title} streaming={false} />
         </CardContent>
       </Card>
     {:else if block.type === "svg" || block.type === "mermaid"}
       <Card>
         <CardHeader class="pb-2">
-          <CardTitle class="text-sm font-medium">{resolveTitle(block)}</CardTitle>
+          <CardTitle class="text-sm font-medium">{title}</CardTitle>
         </CardHeader>
         <CardContent>
           <SvgRenderer
             code={block.code}
             format={block.type === "mermaid" ? "mermaid" : "svg"}
-            title={resolveTitle(block)}
+            {title}
           />
         </CardContent>
       </Card>
     {:else if block.type === "widget"}
       <Card>
         <CardHeader class="pb-2">
-          <CardTitle class="text-sm font-medium">{resolveTitle(block)}</CardTitle>
+          <CardTitle class="text-sm font-medium">{title}</CardTitle>
         </CardHeader>
         <CardContent>
-          <WidgetRenderer code={block.code} title={resolveTitle(block)} streaming={false} />
+          <WidgetRenderer code={block.code} {title} streaming={false} />
         </CardContent>
       </Card>
     {/if}

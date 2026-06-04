@@ -1,12 +1,18 @@
 import type { D1Database, KVNamespace, R2Bucket } from "@cloudflare/workers-types";
 import { drizzle } from "drizzle-orm/d1";
-import { and, desc, eq, like, or, sql } from "drizzle-orm";
+import { and, desc, eq, gte, like, or, sql } from "drizzle-orm";
 import { memos } from "../db/schema";
 import type { MemoRow } from "../db/schema";
+import { buildMemoDateCondition, buildMemoTagConditions } from "./query";
 import { buildMemoR2Key, createMemoId, normalizeTags } from "./utils";
 import { stripHashtags } from "$lib/utils";
-import type { CreateMemoInput, UpdateMemoInput, MemoListFilters } from "./types";
-import type { Memo, TagCount } from "$lib/types";
+import type { CreateMemoInput, UpdateMemoInput, MemoListFilters, MemoPage } from "./types";
+import type { Memo, MemoStats, TagCount } from "$lib/types";
+
+const DEFAULT_LIMIT = 25;
+const CURSOR_VALUE_SEPARATOR = "|";
+const MEMO_ID_RE = /^\d{8}T\d{6}Z-[0-9a-f]{8}$/;
+const SORT_VALUE_RE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/;
 
 function rowToMemo(row: MemoRow): Memo {
   return {
@@ -22,32 +28,37 @@ function rowToMemo(row: MemoRow): Memo {
 }
 
 async function invalidateMemoCache(cache: KVNamespace): Promise<void> {
-  await Promise.all([
-    cache.delete("memo:list"),
-    cache.delete("memo:list:public"),
-    cache.delete("memo:tags"),
-    cache.delete("memo:tags:public"),
-  ]);
+  await Promise.all([cache.delete("memo:tags"), cache.delete("memo:tags:public")]);
+}
+
+function encodeCursor(pinned: boolean, sortValue: string, id: string): string {
+  const pinnedValue = pinned ? "1" : "0";
+  const cursorValue = [pinnedValue, sortValue, id].join(CURSOR_VALUE_SEPARATOR);
+  return btoa(cursorValue);
+}
+
+function decodeCursor(raw: string): { p: boolean; v: string; i: string } | null {
+  if (!/^[A-Za-z0-9+/]{1,}={0,2}$/.test(raw) || raw.length % 4 !== 0) return null;
+
+  const [pinned, sortValue, id, extra] = atob(raw).split(CURSOR_VALUE_SEPARATOR);
+  if (extra !== undefined) return null;
+  if (pinned !== "0" && pinned !== "1") return null;
+  if (!SORT_VALUE_RE.test(sortValue) || !MEMO_ID_RE.test(id)) return null;
+
+  return { p: pinned === "1", v: sortValue, i: id };
+}
+
+export function isValidMemoCursor(raw: string): boolean {
+  return decodeCursor(raw) !== null;
 }
 
 export async function listMemos(
   d1: D1Database,
   cache: KVNamespace,
   filters: MemoListFilters = {},
-): Promise<Memo[]> {
+): Promise<MemoPage> {
   const sortColumn = filters.sortByUpdated ? memos.updatedAt : memos.createdAt;
-  const shouldCache =
-    !filters.sortByUpdated &&
-    !filters.search &&
-    !filters.date &&
-    !filters.tags?.length &&
-    !filters.archivedOnly;
-  const cacheKey = filters.publicOnly ? "memo:list:public" : "memo:list";
-
-  if (shouldCache) {
-    const cached = await cache.get(cacheKey);
-    if (cached) return JSON.parse(cached) as Memo[];
-  }
+  const limit = filters.limit ?? DEFAULT_LIMIT;
 
   const db = drizzle(d1);
   const conditions = [filters.archivedOnly ? eq(memos.archived, true) : eq(memos.archived, false)];
@@ -55,7 +66,7 @@ export async function listMemos(
   if (filters.publicOnly) conditions.push(eq(memos.visibility, "public"));
 
   if (filters.date) {
-    conditions.push(sql`substr(${memos.updatedAt}, 1, 10) = ${filters.date}`);
+    conditions.push(buildMemoDateCondition(memos.updatedAt, filters.date, "="));
   }
 
   if (filters.search) {
@@ -63,27 +74,62 @@ export async function listMemos(
   }
 
   if (filters.tags?.length) {
-    const tagClauses = filters.tags.map(
-      (tag) =>
-        sql`EXISTS (SELECT 1 FROM json_each(memos.tags_json) WHERE lower(json_each.value) = ${tag.toLowerCase()})`,
-    );
+    const tagClauses = buildMemoTagConditions(filters.tags);
     const tagCondition = or(...tagClauses);
     if (tagCondition) conditions.push(tagCondition);
   }
+
+  if (filters.cursor) {
+    const decoded = decodeCursor(filters.cursor);
+    if (!decoded) throw new Error("Invalid memo cursor.");
+    conditions.push(
+      sql`(${memos.pinned}, ${sortColumn}, ${memos.id}) < (${decoded.p ? 1 : 0}, ${decoded.v}, ${decoded.i})`,
+    );
+  }
+
+  // Fetch one extra to determine if there are more
+  const rows = await db
+    .select()
+    .from(memos)
+    .where(and(...conditions))
+    .orderBy(desc(memos.pinned), desc(sortColumn), desc(memos.id))
+    .limit(limit + 1);
+
+  const hasMore: boolean = rows.length > limit;
+  const pageRows = hasMore ? rows.slice(0, limit) : rows;
+  const pageMemos: Memo[] = pageRows.map(rowToMemo);
+
+  const nextCursor: string | null =
+    hasMore && pageMemos.length > 0
+      ? encodeCursor(
+          pageMemos[pageMemos.length - 1].pinned,
+          sortColumn === memos.updatedAt
+            ? pageMemos[pageMemos.length - 1].updatedAt
+            : pageMemos[pageMemos.length - 1].createdAt,
+          pageMemos[pageMemos.length - 1].id,
+        )
+      : null;
+
+  return { memos: pageMemos, nextCursor };
+}
+
+export async function listMemoActivity(
+  d1: D1Database,
+  publicOnly: boolean,
+  since: string,
+): Promise<Memo[]> {
+  const db = drizzle(d1);
+  const conditions = [eq(memos.archived, false), gte(memos.createdAt, since)];
+
+  if (publicOnly) conditions.push(eq(memos.visibility, "public"));
 
   const rows = await db
     .select()
     .from(memos)
     .where(and(...conditions))
-    .orderBy(desc(memos.pinned), desc(sortColumn));
+    .orderBy(desc(memos.createdAt), desc(memos.id));
 
-  const result = rows.map(rowToMemo);
-
-  if (shouldCache) {
-    await cache.put(cacheKey, JSON.stringify(result));
-  }
-
-  return result;
+  return rows.map(rowToMemo);
 }
 
 export async function listTagCounts(
@@ -109,6 +155,29 @@ export async function listTagCounts(
   const tags = (results ?? []).map((row) => ({ name: row.name, count: Number(row.count) }));
   await cache.put(cacheKey, JSON.stringify(tags));
   return tags;
+}
+
+export async function countMemoStats(
+  d1: D1Database,
+  today: string,
+  publicOnly = false,
+): Promise<MemoStats> {
+  const visibilityClause = publicOnly ? "AND visibility = 'public'" : "";
+  const row = await d1
+    .prepare(
+      `SELECT
+        COUNT(*) AS total,
+        SUM(CASE WHEN substr(created_at, 1, 10) = ? THEN 1 ELSE 0 END) AS today
+       FROM memos
+       WHERE archived = 0 ${visibilityClause}`,
+    )
+    .bind(today)
+    .first<{ total: number; today: number | null }>();
+
+  return {
+    total: row?.total ?? 0,
+    today: row?.today ?? 0,
+  };
 }
 
 export async function createMemo(

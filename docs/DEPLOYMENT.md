@@ -24,7 +24,7 @@ The current Worker expects these bindings to exist:
 | Binding        | Type   | Purpose                                          |
 | -------------- | ------ | ------------------------------------------------ |
 | `DB`           | D1     | Memo metadata and Better Auth tables             |
-| `MEMOS_CACHE`  | KV     | Cached memo lists and tag counts                 |
+| `MEMOS_CACHE`  | KV     | Derived caches such as tag counts                |
 | `MEMOS_BUCKET` | R2     | Full markdown memo bodies and agent memory files |
 | `ASSETS`       | Assets | Built SvelteKit client assets                    |
 
@@ -108,15 +108,18 @@ Run migrations before the first deployment and whenever schema changes are intro
 
 ### Adding a New Schema Change
 
-Drizzle Kit and wrangler both operate on `apps/memos/migrations`. The workflow is:
+Wrangler D1 SQL migrations are the source of truth. The workflow is:
 
 ```bash
-pnpm drizzle:generate    # generates SQL diff + updates _meta/ snapshots in apps/memos/migrations/
+# create a numbered SQL file in apps/memos/migrations/
 pnpm d1:migrate:local    # verify locally
 pnpm d1:migrate:remote   # apply to production
 ```
 
-Commit both the generated `.sql` file and the updated `_meta/` folder — Drizzle Kit needs the snapshots to compute future diffs correctly.
+When a migration changes the memo schema, update the Drizzle schema mirror in
+`apps/memos/src/lib/server/db/schema.ts` in the same change. Do not commit
+Drizzle-generated initial snapshots beside Wrangler migrations; they are a separate
+migration system and can attempt to recreate existing tables.
 
 ## Post-Deployment Checks
 
@@ -141,7 +144,7 @@ Verify these paths after deployment:
 
 ## Operational Notes
 
-- Memo bodies are stored in both `R2` (canonical) and D1's `excerpt` field. KV is cache only. Deleting KV entries should not lose source data.
+- Memo bodies are stored in both `R2` (canonical) and D1's `excerpt` field. Memo lists are paginated from D1; KV is cache only for derived data such as tag counts. Deleting KV entries should not lose source data.
 - The chat route reads `agent/PROMPT.md` and `agent/MEMORY.md` from `MEMOS_BUCKET`. Missing files degrade gracefully, but chat behavior will change.
 - Auto-dream memory maintenance may update `agent/MEMORY.md` after completed chat responses.
 - Long-form notes live in R2 under `blog/` prefix, with KV caches for compiled HTML. The note editor (`/note/[...slug]`) reads and updates R2 directly; the API endpoints (`/api/notes`) manage creation and deletion.

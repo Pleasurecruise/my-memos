@@ -46,7 +46,7 @@ Key areas:
   - `views/` — default layout: `AppShell` + `Sidebar`, `Home`, `Chat`, `Archive`, `Note`. Sidebar-based with timeline feed.
   - `views-legacy/` — legacy layout kept for comparison via the in-page toggle button.
 - [apps/memos/migrations](/Users/pleasure1234/Github/my-memos/apps/memos/migrations)
-  D1 schema migrations applied by wrangler. Drizzle Kit also outputs generated SQL and its `_meta/` snapshots here; both should be committed.
+  D1 schema migrations applied by wrangler. These numbered SQL files are the source of truth; the Drizzle schema mirrors the runtime table shape for query building.
 - [apps/memos/worker.ts](/Users/pleasure1234/Github/my-memos/apps/memos/worker.ts:1)
   Worker entry that exports the built SvelteKit handler.
 
@@ -151,12 +151,12 @@ R2 stores:
 
 KV stores derived cache entries only:
 
-- `memo:list`
-- `memo:list:public`
 - `memo:tags`
 - `memo:tags:public`
 
-Cache invalidation currently happens in repository writes.
+Memo lists are **not** cached in KV — full-list JSON blobs caused KV size/corruption issues and CPU rate limits on Workers. Instead, lists are paginated via cursor-based `limit=25` queries directly against D1 indexes.
+
+Cache invalidation currently happens in repository writes (tag counts only).
 
 ## Server Domain Logic
 
@@ -181,6 +181,8 @@ Chat agent tools are defined in [apps/memos/src/lib/server/chat/tools](/Users/pl
 
 File: [apps/memos/src/routes/api/memos/+server.ts](/Users/pleasure1234/Github/my-memos/apps/memos/src/routes/api/memos/+server.ts:1)
 
+- `GET`
+  Paginated memo list. Accepts `cursor` (base64-encoded compound cursor), `limit` (default 25, max 100), `search`, `date`, `tags` (comma-separated), `publicOnly`, `archivedOnly`, `sortByUpdated` query params. Returns `{ memos: Memo[], nextCursor: string | null }`. Used by the client for infinite-scroll loading.
 - `POST`
   Creates a memo for authenticated users.
 
@@ -237,8 +239,7 @@ If these drift, the app may still compile but fail at runtime.
 
 ## Known Inconsistencies To Watch
 
-- The 0001 SQL migration allows `visibility IN ('public', 'protected', 'private')`, but the Drizzle ORM schema and API/tool validation only accept `public` and `private`.
 - Root `wrangler.toml` is effectively production-shaped rather than environment-sliced.
-- Drizzle Kit snapshots (`_meta/`) live inside `apps/memos/migrations` alongside wrangler's migration files. Both must be committed so Drizzle can compute future diffs.
+- Schema changes should be made as Wrangler SQL migrations first, then mirrored in the Drizzle schema. Do not mix Drizzle-generated migrations with Wrangler-applied SQL files.
 
 These are not blockers for documentation, but they matter if you change behavior later.

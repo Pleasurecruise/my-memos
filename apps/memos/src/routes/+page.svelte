@@ -37,9 +37,11 @@
   >
     <OldHome
       memos={data.memos}
+      nextCursor={data.nextCursor}
       tags={data.tags}
       initialSearch={data.filters.search}
       initialTags={data.filters.tags}
+      viewAsPublic={data.filters.viewAsPublic}
       sortByUpdated={data.filters.sortByUpdated}
       {selectedDate}
     />
@@ -47,7 +49,9 @@
 {:else}
   <NewHome
     memos={data.memos}
+    nextCursor={data.nextCursor}
     activityMemos={data.activityMemos}
+    memoStats={data.memoStats}
     tags={data.tags}
     initialSearch={data.filters.search}
     initialTags={data.filters.tags}

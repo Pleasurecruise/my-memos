@@ -34,10 +34,20 @@
     {selectedDate}
     onDateChange={(d) => (selectedDate = d)}
   >
-    <OldArchive memos={data.memos} initialTags={data.filters.tags} {selectedDate} />
+    <OldArchive
+      memos={data.memos}
+      nextCursor={data.nextCursor}
+      initialTags={data.filters.tags}
+      {selectedDate}
+    />
   </AppShell>
 {:else}
-  <NewArchive memos={data.memos} initialTags={data.filters.tags} {selectedDate} />
+  <NewArchive
+    memos={data.memos}
+    nextCursor={data.nextCursor}
+    initialTags={data.filters.tags}
+    {selectedDate}
+  />
 {/if}
 
 <button

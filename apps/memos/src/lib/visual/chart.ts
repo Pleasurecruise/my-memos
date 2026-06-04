@@ -27,12 +27,16 @@ export const chartSpecSchema = z.object({
     .describe("Height in pixels. Default: 360."),
 });
 
+export const renderChartSchema = chartSpecSchema;
+
+export const partialRenderChartSchema = chartSpecSchema.partial();
+
 export type ChartSpec = z.infer<typeof chartSpecSchema>;
 
-export const renderChartSchema = chartSpecSchema;
-export const partialRenderChartSchema = chartSpecSchema.partial();
 export type RenderChartSpec = ChartSpec;
+
 export type PartialRenderChartSpec = z.infer<typeof partialRenderChartSchema>;
+
 export type RenderChartPayload = ChartSpec | PartialRenderChartSpec | null;
 
 export function parseRenderChartPayload(value: object | null) {

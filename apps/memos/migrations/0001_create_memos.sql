@@ -5,7 +5,7 @@ CREATE TABLE IF NOT EXISTS memos (
   excerpt TEXT NOT NULL DEFAULT '',
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL,
-  visibility TEXT NOT NULL CHECK (visibility IN ('public', 'protected', 'private')),
+  visibility TEXT NOT NULL CHECK (visibility IN ('public', 'private')),
   pinned INTEGER NOT NULL DEFAULT 0 CHECK (pinned IN (0, 1)),
   archived INTEGER NOT NULL DEFAULT 0 CHECK (archived IN (0, 1))
 );

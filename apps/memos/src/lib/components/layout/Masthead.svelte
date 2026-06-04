@@ -26,10 +26,10 @@
   import { signIn, signOut } from "$lib/services/auth";
   import { showToast } from "$lib/state/toast.svelte";
   import { updateQuery } from "$lib/utils";
-  import type { Memo, TagCount } from "$lib/types";
+  import type { MemoStats, TagCount } from "$lib/types";
 
   interface Props {
-    memos?: Memo[];
+    memoStats?: MemoStats;
     tags?: TagCount[];
     viewAsPublic?: boolean;
   }
@@ -42,12 +42,9 @@
     { href: "/chat", label: "Chat", Icon: MessageSquare, requiresAuth: true },
   ] as const;
 
-  let { memos = [], tags = [], viewAsPublic = false }: Props = $props();
+  let { memoStats, tags = [], viewAsPublic = false }: Props = $props();
 
   let isDark = $state(false);
-
-  const todayKey = $derived(new Date().toISOString().slice(0, 10));
-  const todayCount = $derived(memos.filter((m) => m.createdAt.slice(0, 10) === todayKey).length);
 
   onMount(() => {
     const saved = localStorage.getItem(THEME_KEY);
@@ -92,11 +89,11 @@
       <span class="font-serif text-sm text-muted-foreground pb-0.5 hidden lg:inline"
         >私のノート</span
       >
-      {#if memos.length > 0}
+      {#if memoStats && memoStats.total > 0}
         <span class="font-mono text-xs text-muted-foreground pt-0.5 hidden lg:inline">
-          <strong class="text-foreground font-semibold">{memos.length}</strong> entries
-          {#if todayCount > 0}
-            &nbsp;·&nbsp;<strong class="text-foreground font-semibold">{todayCount}</strong> today
+          <strong class="text-foreground font-semibold">{memoStats.total}</strong> entries
+          {#if memoStats.today > 0}
+            &nbsp;·&nbsp;<strong class="text-foreground font-semibold">{memoStats.today}</strong> today
           {/if}
         </span>
       {/if}

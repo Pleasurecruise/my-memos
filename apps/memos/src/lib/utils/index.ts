@@ -1,8 +1,9 @@
 import { goto } from "$app/navigation";
 
-type QueryValue = string | string[] | null;
 const HASH_TAG_RE =
   /(^|\s)#(?=[\p{Letter}\p{Number}_\-/]+(?:\s|$))(?!#)([\p{Letter}\p{Number}_\-/]+)/gu;
+
+type QueryValue = string | string[] | null;
 
 export function updateQuery(params: Record<string, QueryValue>): void {
   const url = new URL(window.location.href);

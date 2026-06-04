@@ -2,6 +2,7 @@
   import { isSameDay, format } from "date-fns";
   import { invalidateAll } from "$app/navigation";
   import { page } from "$app/state";
+  import { untrack } from "svelte";
   import {
     Alert,
     AlertDescription,
@@ -34,7 +35,7 @@
     Clock3,
     ChevronRight,
   } from "@lucide/svelte";
-  import type { Memo, MemoVisibility, TagCount } from "$lib/types";
+  import type { Memo, MemoStats, MemoVisibility, TagCount } from "$lib/types";
   import {
     createDeleteActions,
     createEditActions,
@@ -52,7 +53,9 @@
 
   interface Props {
     memos: Memo[];
+    nextCursor: string | null;
     activityMemos: Memo[];
+    memoStats: MemoStats;
     tags: TagCount[];
     initialSearch: string;
     initialTags: string[];
@@ -69,8 +72,10 @@
   ];
 
   let {
-    memos,
+    memos: initialMemos,
+    nextCursor: initialCursor,
     activityMemos,
+    memoStats,
     tags,
     initialSearch,
     initialTags,
@@ -86,6 +91,12 @@
   let pinnedOpen = $state(false);
   let error = $state("");
   let search = $state<string | undefined>();
+
+  let allMemos = $state(untrack(() => initialMemos));
+  let cursor = $state(untrack(() => initialCursor));
+  let loadingMore = $state(false);
+  let sentinelEl = $state<HTMLDivElement | null>(null);
+  let loadRequestSeq = 0;
 
   const del = createDeleteActions();
   const edit = createEditActions();
@@ -122,6 +133,7 @@
   const activeSearch = $derived(search ?? initialSearch);
   const hasSearch = $derived(Boolean(activeSearch.trim()));
   const showCardResults = $derived(hasSearch || sortByUpdated);
+  const memos = $derived(allMemos);
   const filtered = $derived(
     memos.filter((m) => {
       if (selectedDate && !isSameDay(new Date(m.updatedAt), selectedDate)) return false;
@@ -187,6 +199,57 @@
     search = initialSearch;
   });
 
+  // Reset accumulated memos when initial data changes (e.g. filter applied)
+  $effect(() => {
+    allMemos = initialMemos;
+    cursor = initialCursor;
+    loadingMore = false;
+    loadRequestSeq += 1;
+  });
+
+  // Infinite scroll: observe sentinel to load more
+  $effect(() => {
+    if (!sentinelEl || !cursor) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && cursor && !loadingMore) {
+          loadingMore = true;
+          const requestSeq = loadRequestSeq;
+          const queryParams = new URLSearchParams({ cursor, limit: "25" });
+          if (initialSearch) queryParams.set("search", initialSearch);
+          if (selectedDate) queryParams.set("date", format(selectedDate, "yyyy-MM-dd"));
+          if (initialTags.length > 0) queryParams.set("tags", initialTags.join(","));
+          if (viewAsPublic) queryParams.set("publicOnly", "true");
+          if (sortByUpdated) queryParams.set("sortByUpdated", "true");
+
+          fetch(`/api/memos?${queryParams.toString()}`)
+            .then((response) => {
+              if (!response.ok) throw new Error("Bad response");
+              return response.json();
+            })
+            .then((pageData) => {
+              if (requestSeq !== loadRequestSeq) return;
+              allMemos = [...allMemos, ...pageData.memos];
+              cursor = pageData.nextCursor;
+            })
+            .catch(() => {
+              if (requestSeq !== loadRequestSeq) return;
+              showToast("error", "Failed to load more memos");
+            })
+            .finally(() => {
+              if (requestSeq !== loadRequestSeq) return;
+              loadingMore = false;
+            });
+        }
+      },
+      { rootMargin: "200px" },
+    );
+
+    observer.observe(sentinelEl);
+    return () => observer.disconnect();
+  });
+
   function groupByDay(items: Memo[]) {
     return [...groupBy(items, (m) => format(new Date(m.createdAt), "yyyy-MM-dd")).entries()].sort(
       (a, b) => b[0].localeCompare(a[0]),
@@ -233,27 +296,29 @@
     updateQuery({ search: null });
   }
 
-  async function saveMemo() {
+  function saveMemo() {
     if (!content.trim() || isSaving) return;
     isSaving = true;
     error = "";
-    try {
-      await apiCreateMemo(content, visibility);
-      content = "";
-      composerOpen = false;
-      ac.close();
-      await invalidateAll();
-    } catch (err) {
-      error = err instanceof Error ? err.message : "Failed to save memo.";
-    } finally {
-      isSaving = false;
-    }
+    apiCreateMemo(content, visibility)
+      .then(async () => {
+        content = "";
+        composerOpen = false;
+        ac.close();
+        await invalidateAll();
+      })
+      .catch((err: unknown) => {
+        error = err instanceof Error ? err.message : "Failed to save memo.";
+      })
+      .finally(() => {
+        isSaving = false;
+      });
   }
 </script>
 
 <div class="min-h-screen bg-background text-foreground font-sans">
   <div class="max-w-280 mx-auto px-4 sm:px-8 pb-24 pt-7">
-    <Masthead {memos} {tags} {viewAsPublic} />
+    <Masthead {memoStats} {tags} {viewAsPublic} />
 
     <!-- TAG STRIP -->
     <div class="flex gap-1.5 overflow-x-auto pb-3.5 mb-4 border-b border-border scrollbar-none">
@@ -607,6 +672,22 @@
 
         {#if filtered.length === 0 && !composerOpen}
           <p class="py-20 text-center text-sm text-muted-foreground">No memos found.</p>
+        {/if}
+
+        <!-- sentinel for infinite scroll -->
+        {#if cursor}
+          <div bind:this={sentinelEl} class="h-4">
+            {#if loadingMore}
+              <div
+                class="flex items-center justify-center gap-2 py-4 text-xs text-muted-foreground"
+              >
+                <span
+                  class="inline-block w-3 h-3 border-2 border-accent/30 border-t-accent rounded-full animate-spin"
+                ></span>
+                loading...
+              </div>
+            {/if}
+          </div>
         {/if}
       </div>
 

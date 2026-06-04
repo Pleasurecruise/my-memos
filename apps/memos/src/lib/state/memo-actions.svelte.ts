@@ -3,57 +3,6 @@ import { apiUpdateMemo, apiDeleteMemo } from "$lib/services/memos";
 import { showToast } from "$lib/state/toast.svelte";
 import type { Memo, MemoVisibility } from "$lib/types";
 
-export function createDeleteActions() {
-  let pendingDeleteId = $state<string | null>(null);
-  let showDeleteDialog = $state(false);
-  let isDeleting = $state(false);
-
-  function request(id: string) {
-    pendingDeleteId = id;
-    showDeleteDialog = true;
-  }
-
-  function cancel() {
-    showDeleteDialog = false;
-    pendingDeleteId = null;
-  }
-
-  async function confirm() {
-    if (!pendingDeleteId || isDeleting) return;
-    isDeleting = true;
-    try {
-      await apiDeleteMemo(pendingDeleteId);
-      showDeleteDialog = false;
-      pendingDeleteId = null;
-      await invalidateAll();
-      showToast("success", "Memo deleted");
-    } catch (err) {
-      showToast("error", "Failed to delete memo", err instanceof Error ? err.message : undefined);
-      showDeleteDialog = false;
-    } finally {
-      isDeleting = false;
-    }
-  }
-
-  return {
-    get pendingDeleteId() {
-      return pendingDeleteId;
-    },
-    get showDeleteDialog() {
-      return showDeleteDialog;
-    },
-    set showDeleteDialog(v: boolean) {
-      showDeleteDialog = v;
-    },
-    get isDeleting() {
-      return isDeleting;
-    },
-    request,
-    cancel,
-    confirm,
-  };
-}
-
 export function createEditActions() {
   let editingId = $state<string | null>(null);
   let editContent = $state("");
@@ -71,20 +20,22 @@ export function createEditActions() {
     editContent = "";
   }
 
-  async function save(id: string) {
+  function save(id: string) {
     if (!editContent.trim() || isUpdating) return;
     isUpdating = true;
-    try {
-      await apiUpdateMemo(id, { content: editContent, visibility: editVisibility });
-      editingId = null;
-      editContent = "";
-      await invalidateAll();
-      showToast("success", "Memo updated");
-    } catch (err) {
-      showToast("error", "Failed to update memo", err instanceof Error ? err.message : undefined);
-    } finally {
-      isUpdating = false;
-    }
+    apiUpdateMemo(id, { content: editContent, visibility: editVisibility })
+      .then(async () => {
+        editingId = null;
+        editContent = "";
+        await invalidateAll();
+        showToast("success", "Memo updated");
+      })
+      .catch((err: unknown) => {
+        showToast("error", "Failed to update memo", err instanceof Error ? err.message : undefined);
+      })
+      .finally(() => {
+        isUpdating = false;
+      });
   }
 
   return {
@@ -112,22 +63,77 @@ export function createEditActions() {
   };
 }
 
+export function createDeleteActions() {
+  let pendingDeleteId = $state<string | null>(null);
+  let showDeleteDialog = $state(false);
+  let isDeleting = $state(false);
+
+  function request(id: string) {
+    pendingDeleteId = id;
+    showDeleteDialog = true;
+  }
+
+  function cancel() {
+    showDeleteDialog = false;
+    pendingDeleteId = null;
+  }
+
+  function confirm() {
+    if (!pendingDeleteId || isDeleting) return;
+    isDeleting = true;
+    apiDeleteMemo(pendingDeleteId)
+      .then(async () => {
+        showDeleteDialog = false;
+        pendingDeleteId = null;
+        await invalidateAll();
+        showToast("success", "Memo deleted");
+      })
+      .catch((err: unknown) => {
+        showToast("error", "Failed to delete memo", err instanceof Error ? err.message : undefined);
+        showDeleteDialog = false;
+      })
+      .finally(() => {
+        isDeleting = false;
+      });
+  }
+
+  return {
+    get pendingDeleteId() {
+      return pendingDeleteId;
+    },
+    get showDeleteDialog() {
+      return showDeleteDialog;
+    },
+    set showDeleteDialog(v: boolean) {
+      showDeleteDialog = v;
+    },
+    get isDeleting() {
+      return isDeleting;
+    },
+    request,
+    cancel,
+    confirm,
+  };
+}
+
 export function createPinActions() {
   let pinningId = $state<string | null>(null);
 
-  async function toggle(memo: Memo) {
+  function toggle(memo: Memo) {
     if (pinningId) return;
     pinningId = memo.id;
-    try {
-      const willPin = !memo.pinned;
-      await apiUpdateMemo(memo.id, { pinned: willPin });
-      await invalidateAll();
-      showToast("success", willPin ? "Memo pinned" : "Memo unpinned");
-    } catch (err) {
-      showToast("error", "Failed to update memo", err instanceof Error ? err.message : undefined);
-    } finally {
-      pinningId = null;
-    }
+    const willPin = !memo.pinned;
+    apiUpdateMemo(memo.id, { pinned: willPin })
+      .then(async () => {
+        await invalidateAll();
+        showToast("success", willPin ? "Memo pinned" : "Memo unpinned");
+      })
+      .catch((err: unknown) => {
+        showToast("error", "Failed to update memo", err instanceof Error ? err.message : undefined);
+      })
+      .finally(() => {
+        pinningId = null;
+      });
   }
 
   return {
@@ -141,18 +147,24 @@ export function createPinActions() {
 export function createArchiveActions() {
   let archivingId = $state<string | null>(null);
 
-  async function archive(id: string) {
+  function archive(id: string) {
     if (archivingId) return;
     archivingId = id;
-    try {
-      await apiUpdateMemo(id, { archived: true });
-      await invalidateAll();
-      showToast("success", "Memo archived");
-    } catch (err) {
-      showToast("error", "Failed to archive memo", err instanceof Error ? err.message : undefined);
-    } finally {
-      archivingId = null;
-    }
+    apiUpdateMemo(id, { archived: true })
+      .then(async () => {
+        await invalidateAll();
+        showToast("success", "Memo archived");
+      })
+      .catch((err: unknown) => {
+        showToast(
+          "error",
+          "Failed to archive memo",
+          err instanceof Error ? err.message : undefined,
+        );
+      })
+      .finally(() => {
+        archivingId = null;
+      });
   }
 
   return {
@@ -166,17 +178,23 @@ export function createArchiveActions() {
 export function createRestoreActions() {
   let restoringId = $state<string | null>(null);
 
-  async function restore(id: string) {
+  function restore(id: string) {
     restoringId = id;
-    try {
-      await apiUpdateMemo(id, { archived: false });
-      await invalidateAll();
-      showToast("success", "Memo restored");
-    } catch (err) {
-      showToast("error", "Failed to restore memo", err instanceof Error ? err.message : undefined);
-    } finally {
-      restoringId = null;
-    }
+    apiUpdateMemo(id, { archived: false })
+      .then(async () => {
+        await invalidateAll();
+        showToast("success", "Memo restored");
+      })
+      .catch((err: unknown) => {
+        showToast(
+          "error",
+          "Failed to restore memo",
+          err instanceof Error ? err.message : undefined,
+        );
+      })
+      .finally(() => {
+        restoringId = null;
+      });
   }
 
   return {

@@ -1,9 +1,9 @@
 import { tool } from "ai";
 import { z } from "zod";
-import { and, desc, eq, like, sql } from "drizzle-orm";
+import { and, desc, eq, like } from "drizzle-orm";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
 import { memos } from "$lib/server/db/schema";
-import { listTagCounts } from "$lib/server/memos/repository";
+import { buildMemoDateCondition, buildMemoTagConditions, listTagCounts } from "$lib/server/memos";
 import type { D1Database, KVNamespace, R2Bucket } from "@cloudflare/workers-types";
 
 export interface MemoReadContext {
@@ -11,6 +11,13 @@ export interface MemoReadContext {
   db: DrizzleD1Database;
   bucket: R2Bucket;
   cache: KVNamespace;
+}
+
+function formatMemoRow(
+  row: { id: string; createdAt: string; tagsJson: string[] },
+  body: string,
+): string {
+  return `id: ${row.id}\n[${row.createdAt.slice(0, 10)}] tags: ${row.tagsJson.join(", ") || "none"}\n${body}`;
 }
 
 export function createMemoReadTools(ctx: MemoReadContext) {
@@ -26,15 +33,6 @@ export function createMemoReadTools(ctx: MemoReadContext) {
       return tags.map((t) => `${t.name} (${t.count})`).join(", ");
     },
   });
-
-  const buildDateCondition = (field: typeof memos.createdAt, date: string, op: "<=" | ">=") =>
-    sql`substr(${field}, 1, 10) ${sql.raw(op)} ${date}`;
-
-  const buildTagConditions = (tags: string[]) =>
-    tags.map(
-      (tag) =>
-        sql`EXISTS (SELECT 1 FROM json_each(memos.tags_json) WHERE lower(json_each.value) = lower(${tag}))`,
-    );
 
   const list_memos = tool({
     description:
@@ -65,9 +63,9 @@ export function createMemoReadTools(ctx: MemoReadContext) {
     execute: async ({ from_date, to_date, tags, limit }) => {
       const conditions = [eq(memos.archived, false)];
 
-      if (from_date) conditions.push(buildDateCondition(memos.createdAt, from_date, ">="));
-      if (to_date) conditions.push(buildDateCondition(memos.createdAt, to_date, "<="));
-      if (tags?.length) conditions.push(...buildTagConditions(tags));
+      if (from_date) conditions.push(buildMemoDateCondition(memos.createdAt, from_date, ">="));
+      if (to_date) conditions.push(buildMemoDateCondition(memos.createdAt, to_date, "<="));
+      if (tags?.length) conditions.push(...buildMemoTagConditions(tags));
 
       const rows = await db
         .select({
@@ -83,12 +81,7 @@ export function createMemoReadTools(ctx: MemoReadContext) {
 
       if (!rows.length) return "No memos found.";
 
-      return rows
-        .map(
-          (row) =>
-            `id: ${row.id}\n[${row.createdAt.slice(0, 10)}] tags: ${row.tagsJson.join(", ") || "none"}\n${row.excerpt}`,
-        )
-        .join("\n\n---\n\n");
+      return rows.map((row) => formatMemoRow(row, row.excerpt)).join("\n\n---\n\n");
     },
   });
 
@@ -112,9 +105,9 @@ export function createMemoReadTools(ctx: MemoReadContext) {
     execute: async ({ query, from_date, to_date, tags }) => {
       const conditions = [eq(memos.archived, false), like(memos.excerpt, `%${query}%`)];
 
-      if (from_date) conditions.push(buildDateCondition(memos.createdAt, from_date, ">="));
-      if (to_date) conditions.push(buildDateCondition(memos.createdAt, to_date, "<="));
-      if (tags?.length) conditions.push(...buildTagConditions(tags));
+      if (from_date) conditions.push(buildMemoDateCondition(memos.createdAt, from_date, ">="));
+      if (to_date) conditions.push(buildMemoDateCondition(memos.createdAt, to_date, "<="));
+      if (tags?.length) conditions.push(...buildMemoTagConditions(tags));
 
       const rows = await db
         .select({
@@ -138,12 +131,7 @@ export function createMemoReadTools(ctx: MemoReadContext) {
         }),
       );
 
-      return rows
-        .map(
-          (row, i) =>
-            `id: ${row.id}\n[${row.createdAt.slice(0, 10)}] tags: ${row.tagsJson.join(", ") || "none"}\n${bodies[i]}`,
-        )
-        .join("\n\n---\n\n");
+      return rows.map((row, i) => formatMemoRow(row, bodies[i])).join("\n\n---\n\n");
     },
   });
 

@@ -1,2 +1,3 @@
 export * from "./repository";
-export type { MemoListFilters, CreateMemoInput } from "./types";
+export * from "./query";
+export type { MemoListFilters, MemoPage, MemoStats, CreateMemoInput } from "./types";

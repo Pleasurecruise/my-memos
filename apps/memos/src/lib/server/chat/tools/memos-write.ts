@@ -1,20 +1,16 @@
 import { tool } from "ai";
 import { z } from "zod";
-import { eq } from "drizzle-orm";
-import type { DrizzleD1Database } from "drizzle-orm/d1";
-import { memos } from "$lib/server/db/schema";
-import { createMemoId, buildMemoR2Key, normalizeTags } from "$lib/server/memos/utils";
-import { stripHashtags } from "$lib/utils";
-import type { R2Bucket } from "@cloudflare/workers-types";
+import { createMemo, deleteMemo, updateMemo } from "$lib/server/memos";
+import type { D1Database, KVNamespace, R2Bucket } from "@cloudflare/workers-types";
 
 export interface MemoWriteContext {
-  db: DrizzleD1Database;
+  d1: D1Database;
   bucket: R2Bucket;
-  invalidateCache: () => Promise<void[]>;
+  cache: KVNamespace;
 }
 
 export function createMemoWriteTools(ctx: MemoWriteContext) {
-  const { db, bucket, invalidateCache } = ctx;
+  const { d1, bucket, cache } = ctx;
 
   const create_memo = tool({
     description:
@@ -23,7 +19,7 @@ export function createMemoWriteTools(ctx: MemoWriteContext) {
       content: z.string().describe("Full memo content in markdown"),
       tags: z
         .array(z.string())
-        .optional()
+        .default([])
         .describe("Tags for the memo — auto-extracted from #hashtags if omitted"),
       visibility: z
         .enum(["private", "public"])
@@ -31,30 +27,13 @@ export function createMemoWriteTools(ctx: MemoWriteContext) {
         .describe("Visibility (default: private)"),
     }),
     execute: async ({ content, tags, visibility }) => {
-      const now = new Date();
-      const id = createMemoId(now);
-      const r2Key = buildMemoR2Key(id, now);
-      const trimmed = content.trim();
-      const finalTags = tags?.length ? tags : normalizeTags(trimmed);
-      const nowIso = now.toISOString();
-
-      await bucket.put(r2Key, trimmed, {
-        httpMetadata: { contentType: "text/markdown; charset=utf-8" },
-      });
-      await db.insert(memos).values({
-        id,
-        r2Key,
-        tagsJson: finalTags,
-        excerpt: trimmed,
-        createdAt: nowIso,
-        updatedAt: nowIso,
+      const memo = await createMemo(d1, bucket, cache, {
+        content,
+        tags,
         visibility,
-        pinned: false,
-        archived: false,
       });
-      await invalidateCache();
 
-      return `Memo created. id: ${id}, tags: ${finalTags.join(", ") || "none"}.`;
+      return `Memo created. id: ${memo.id}, tags: ${memo.tags.join(", ") || "none"}.`;
     },
   });
 
@@ -75,48 +54,22 @@ export function createMemoWriteTools(ctx: MemoWriteContext) {
       archived: z.boolean().optional(),
     }),
     execute: async ({ id, content, tags, visibility, pinned, archived }) => {
-      const [existing] = await db.select().from(memos).where(eq(memos.id, id)).limit(1);
-      if (!existing) return `Memo not found: ${id}`;
-
-      const setValues: Partial<typeof memos.$inferInsert> = {};
-
-      if (content !== undefined) {
-        const trimmed = content.trim();
-        await bucket.put(existing.r2Key, trimmed, {
-          httpMetadata: { contentType: "text/markdown; charset=utf-8" },
-        });
-        setValues.excerpt = trimmed;
-        setValues.tagsJson = tags?.length ? tags : normalizeTags(trimmed);
-      } else if (tags !== undefined) {
-        const newTags = tags.length ? tags : [];
-        setValues.tagsJson = newTags;
-
-        const bodyObj = await bucket.get(existing.r2Key);
-        if (bodyObj) {
-          let body = (await bodyObj.text()).trimEnd();
-          body = stripHashtags(body).trimEnd();
-          if (newTags.length > 0) {
-            const tagLine = newTags.map((t) => `#${t}`).join(" ");
-            body = body + "\n\n" + tagLine;
-          }
-          await bucket.put(existing.r2Key, body, {
-            httpMetadata: { contentType: "text/markdown; charset=utf-8" },
-          });
-          setValues.excerpt = body;
-        }
+      if (
+        content === undefined &&
+        tags === undefined &&
+        visibility === undefined &&
+        pinned === undefined &&
+        archived === undefined
+      ) {
+        return "No changes specified.";
       }
 
-      if (visibility !== undefined) setValues.visibility = visibility;
-      if (pinned !== undefined) setValues.pinned = pinned;
-      if (archived !== undefined) setValues.archived = archived;
-
-      if (!Object.keys(setValues).length) return "No changes specified.";
-
-      setValues.updatedAt = new Date().toISOString();
-      await db.update(memos).set(setValues).where(eq(memos.id, id));
-      await invalidateCache();
-
-      return `Memo ${id} updated.`;
+      return updateMemo(d1, bucket, cache, id, { content, tags, visibility, pinned, archived })
+        .then(() => `Memo ${id} updated.`)
+        .catch((err: unknown) => {
+          const message = err instanceof Error ? err.message : `Failed to update memo: ${id}`;
+          return message.includes("not found") ? `Memo not found: ${id}` : message;
+        });
     },
   });
 
@@ -126,19 +79,13 @@ export function createMemoWriteTools(ctx: MemoWriteContext) {
     inputSchema: z.object({
       id: z.string().describe("Memo ID to delete"),
     }),
-    execute: async ({ id }) => {
-      const [existing] = await db
-        .select({ r2Key: memos.r2Key })
-        .from(memos)
-        .where(eq(memos.id, id))
-        .limit(1);
-      if (!existing) return `Memo not found: ${id}`;
-
-      await db.delete(memos).where(eq(memos.id, id));
-      await bucket.delete(existing.r2Key);
-      await invalidateCache();
-
-      return `Memo ${id} deleted.`;
+    execute: ({ id }) => {
+      return deleteMemo(d1, bucket, cache, id)
+        .then(() => `Memo ${id} deleted.`)
+        .catch((err: unknown) => {
+          const message = err instanceof Error ? err.message : `Failed to delete memo: ${id}`;
+          return message.includes("not found") ? `Memo not found: ${id}` : message;
+        });
     },
   });
 
