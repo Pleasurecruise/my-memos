@@ -35,6 +35,8 @@ bucket_name = "cherry-studio"
 remote = true
 
 [observability]
+logpush = true
+
 [observability.logs]
 enabled = true
 invocation_logs = true

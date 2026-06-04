@@ -12,7 +12,7 @@ export const load: PageServerLoad = async ({ platform, url, locals }) => {
   const publicOnly = !locals.user || filters.viewAsPublic;
   const sortByUpdated = filters.sortByUpdated;
 
-  const [memos, activityMemos, tagCounts] = await Promise.all([
+  const [memos, tagCounts] = await Promise.all([
     listMemos(platform.env.DB, platform.env.MEMOS_CACHE, {
       search: filters.search || undefined,
       date: filters.date || undefined,
@@ -20,9 +20,18 @@ export const load: PageServerLoad = async ({ platform, url, locals }) => {
       publicOnly,
       sortByUpdated,
     }),
-    listMemos(platform.env.DB, platform.env.MEMOS_CACHE, { publicOnly }),
     listTagCounts(platform.env.DB, platform.env.MEMOS_CACHE, publicOnly),
   ]);
+
+  const hasActiveFilters = !!(
+    filters.search ||
+    filters.date ||
+    filters.tags.length > 0 ||
+    filters.sortByUpdated
+  );
+  const activityMemos = hasActiveFilters
+    ? await listMemos(platform.env.DB, platform.env.MEMOS_CACHE, { publicOnly })
+    : memos;
 
   return {
     memos,

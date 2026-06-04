@@ -5,6 +5,8 @@ import type { Handle } from "@sveltejs/kit";
 
 const scannerNoisePaths = new Set(["/robots.txt", "/sitemap.xml"]);
 
+let cachedAuth: ReturnType<typeof getAuth> | null = null;
+
 export const handle: Handle = async ({ event, resolve }) => {
   if (scannerNoisePaths.has(event.url.pathname)) {
     return new Response(null, { status: 204 });
@@ -16,7 +18,10 @@ export const handle: Handle = async ({ event, resolve }) => {
 
   if (!event.platform) return resolve(event);
 
-  const auth = getAuth(event.platform.env);
+  if (!cachedAuth) {
+    cachedAuth = getAuth(event.platform.env);
+  }
+  const auth = cachedAuth;
 
   const session = await auth.api.getSession({
     headers: event.request.headers,
