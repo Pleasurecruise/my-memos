@@ -1,19 +1,9 @@
 import type { VisualBlock, VisualBlockType } from "$lib/types";
+import { normalizeMermaidCode } from "$lib/visual/mermaid";
 
 const VISUAL_LANGS = new Set<VisualBlockType>(["svg", "mermaid", "chart", "widget"]);
 
-/** Placeholder HTML inserted where a visual block was extracted. */
-function placeholderHtml(index: number): string {
-  return `<div data-visual-block="${index}"></div>`;
-}
-
-/**
- * Scans markdown source for fenced code blocks with visual languages
- * (svg, mermaid, chart, widget). Extracts them and replaces each with
- * a placeholder <div> that can be targeted by the VisualBlocks component.
- *
- * Returns the modified markdown and the extracted visual blocks.
- */
+/** Extracts visual code blocks from markdown, replacing them with placeholders. */
 export function extractVisualBlocks(source: string): {
   markdown: string;
   blocks: VisualBlock[];
@@ -27,8 +17,9 @@ export function extractVisualBlocks(source: string): {
     const lang = info.toLowerCase();
     if (!VISUAL_LANGS.has(lang as VisualBlockType)) return match;
 
-    blocks.push({ type: lang as VisualBlockType, code: body.trim(), index: index++ });
-    return placeholderHtml(index - 1);
+    const code = lang === "mermaid" ? normalizeMermaidCode(body) : body.trim();
+    blocks.push({ type: lang as VisualBlockType, code, index: index++ });
+    return `<meta data-vb="${index - 1}">`;
   });
 
   return { markdown: processed, blocks };

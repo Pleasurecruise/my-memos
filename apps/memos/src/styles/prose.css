@@ -120,6 +120,8 @@
     background: transparent;
     padding: 0;
     font-size: 0.9em;
+    white-space: pre-wrap;
+    overflow-wrap: break-word;
   }
 
   .md-content :where(table) {
@@ -332,6 +334,8 @@
     font-family: var(--font-mono), "Fira Code", ui-monospace, Menlo, Monaco, Consolas, monospace;
     font-size: 13px;
     line-height: 1.65;
+    white-space: pre-wrap;
+    overflow-wrap: break-word;
   }
 
   .article :not(pre) > code {

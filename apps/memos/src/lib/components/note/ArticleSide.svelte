@@ -1,13 +1,14 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import { ArrowUp, Pencil, Eye } from "@lucide/svelte";
+  import { goto } from "$app/navigation";
+  import { ArrowLeft, ArrowUp, Pencil } from "@lucide/svelte";
+  import { Button } from "@my-memos/ui";
 
   interface Props {
     onedit?: () => void;
-    isEditing?: boolean;
   }
 
-  let { onedit, isEditing = false }: Props = $props();
+  let { onedit }: Props = $props();
 
   let progressCircle = $state<SVGCircleElement | null>(null);
 
@@ -21,7 +22,7 @@
 
   const HEADER_MAX_OFFSET_REM = 2.5;
   const SIDE_WIDTH_PX = 40;
-  const SIDE_GAP_PX = 24;
+  const SIDE_GAP_PX = 32;
   const SIDE_RIGHT_MARGIN_PX = 16;
 
   function updateOffset() {
@@ -86,13 +87,38 @@
   style:left={`${sideLeftPx}px`}
   style:--side-offset={`${sideOffsetRem}rem`}
 >
+  <!-- back to notes list -->
+  <Button
+    size="icon"
+    variant="ghost"
+    class="rounded-full h-auto w-auto p-1.5 text-muted-foreground hover:text-foreground hover:bg-transparent"
+    onclick={() => goto("/note")}
+    aria-label="All notes"
+    title="All notes"
+  >
+    <ArrowLeft size={16} strokeWidth={2} />
+  </Button>
+
+  <!-- edit note -->
+  <Button
+    size="icon"
+    variant="ghost"
+    class="rounded-full h-auto w-auto p-1.5 text-muted-foreground hover:text-foreground hover:bg-transparent"
+    onclick={() => onedit?.()}
+    aria-label="Edit"
+    title="Edit"
+  >
+    <Pencil size={16} strokeWidth={2} />
+  </Button>
+
   <!-- reading progress -->
-  <button
-    type="button"
+  <Button
+    size="icon"
+    variant="ghost"
+    class="group relative rounded-full h-auto w-auto p-1.5 text-muted-foreground hover:text-foreground hover:bg-transparent"
     onclick={scrollToTop}
     aria-label="Back to top"
     title="Back to top"
-    class="group relative flex cursor-pointer items-center justify-center rounded-full p-1.5 text-muted-foreground transition-[color,opacity] duration-150 hover:text-foreground hover:opacity-100"
   >
     <svg width="24" height="24" viewBox="0 0 24 24" class="-rotate-90">
       <title>Reading progress</title>
@@ -126,22 +152,5 @@
     >
       <ArrowUp size={10} strokeWidth={2.25} />
     </span>
-  </button>
-
-  <div class="my-1 h-px w-4 bg-border"></div>
-
-  <!-- edit / preview toggle -->
-  <button
-    type="button"
-    onclick={onedit}
-    aria-label={isEditing ? "Preview" : "Edit"}
-    title={isEditing ? "Preview" : "Edit"}
-    class="cursor-pointer rounded-full p-1.5 text-muted-foreground transition-[color,opacity] duration-150 hover:text-foreground hover:opacity-100"
-  >
-    {#if isEditing}
-      <Eye size={15} strokeWidth={2.25} />
-    {:else}
-      <Pencil size={15} strokeWidth={2.25} />
-    {/if}
-  </button>
+  </Button>
 </aside>

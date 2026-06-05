@@ -194,10 +194,11 @@
     error = "";
     try {
       await apiCreateMemo(content, visibility);
+      await invalidateAll();
       ac.close();
       content = "";
       search = "";
-      await invalidateAll();
+      showToast("success", visibility === "public" ? "Memo published" : "Memo saved");
     } catch (err) {
       error = err instanceof Error ? err.message : "Failed to save memo.";
     } finally {

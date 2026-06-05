@@ -2,13 +2,13 @@ import { unified } from "unified";
 import remarkParse from "remark-parse";
 import remarkGfm from "remark-gfm";
 import remarkRehype from "remark-rehype";
-import rehypeRaw from "rehype-raw";
 import rehypeStringify from "rehype-stringify";
 import rehypeShikiFromHighlighter from "@shikijs/rehype/core";
-import type { Root as MdastRoot, Text } from "mdast";
+import type { Code, InlineCode, Root as MdastRoot, Text } from "mdast";
 import type { Plugin } from "unified";
 import { visit } from "unist-util-visit";
 import type { TocEntry, VisualBlock } from "$lib/types";
+import { decode } from "entities";
 import { extractVisualBlocks } from "./visual-blocks";
 import { getHighlighter } from "./shiki";
 import { rehypeToc } from "./rehype-toc";
@@ -28,12 +28,19 @@ const remarkExcerpt: Plugin<[{ segments: string[] }], MdastRoot> = (options) => 
   });
 };
 
+const remarkDecodeCodeEntities: Plugin<[], MdastRoot> = () => (tree) => {
+  visit(tree, ["code", "inlineCode"], (node) => {
+    const codeNode = node as Code | InlineCode;
+    codeNode.value = decode(codeNode.value).replace(/\n+$/, "");
+  });
+};
+
 function markdownToHast() {
   return unified()
     .use(remarkParse)
     .use(remarkGfm)
-    .use(remarkRehype, { allowDangerousHtml: true })
-    .use(rehypeRaw);
+    .use(remarkDecodeCodeEntities)
+    .use(remarkRehype, { allowDangerousHtml: true });
 }
 
 export async function compileMarkdown(source: string): Promise<CompiledNote> {
@@ -48,9 +55,9 @@ export async function compileMarkdown(source: string): Promise<CompiledNote> {
   const processor = unified()
     .use(remarkParse)
     .use(remarkGfm)
+    .use(remarkDecodeCodeEntities)
     .use(remarkExcerpt, { segments: excerptSegments })
-    .use(remarkRehype, { allowDangerousHtml: true })
-    .use(rehypeRaw);
+    .use(remarkRehype, { allowDangerousHtml: true });
 
   if (shouldHighlight) {
     const highlighter = await getHighlighter();
@@ -75,11 +82,10 @@ export async function compileMarkdown(source: string): Promise<CompiledNote> {
   const result = await processor
     .use(rehypeToc, { toc })
     .use(rehypeTables)
-    .use(rehypeStringify)
+    .use(rehypeStringify, { allowDangerousHtml: true })
     .process(processedSource);
 
-  // Strip placeholder divs used to mark visual block positions.
-  const html = String(result).replace(/<div data-visual-block="\d+"><\/div>/g, "");
+  const html = String(result);
 
   const excerpt = excerptSegments.join(" ").replace(/\s+/g, " ").trim();
 
@@ -87,7 +93,9 @@ export async function compileMarkdown(source: string): Promise<CompiledNote> {
 }
 
 export async function compileEditorHtml(source: string): Promise<string> {
-  const result = await markdownToHast().use(rehypeStringify).process(source);
+  const result = await markdownToHast()
+    .use(rehypeStringify, { allowDangerousHtml: true })
+    .process(source);
 
   return String(result);
 }

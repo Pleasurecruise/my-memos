@@ -1,47 +1,14 @@
 <script lang="ts">
-  import { onMount } from "svelte";
   import DOMPurify from "dompurify";
-  import mermaid from "mermaid";
-  import type { StaticVisualFormat } from "$lib/visual/svg";
 
   interface Props {
-    /** SVG markup (<svg>...</svg>) or Mermaid source. */
     code: string;
-    /** "svg" or "mermaid". */
-    format: StaticVisualFormat;
-    /** Display title. */
     title: string;
-    /** Optional caption below the diagram. */
     caption?: string;
-    /** Additional CSS class on the wrapper. */
     class?: string;
   }
 
-  let { code, format, title, caption, class: extraClass = "" }: Props = $props();
-  let mounted = $state(false);
-  let mermaidSvg = $state("");
-  let mermaidError = $state("");
-  let renderToken = 0;
-
-  onMount(() => {
-    mounted = true;
-    mermaid.initialize({
-      startOnLoad: false,
-      securityLevel: "strict",
-      theme: "base",
-      fontFamily: "var(--font-sans)",
-    });
-  });
-
-  $effect(() => {
-    if (!mounted || format !== "mermaid") {
-      mermaidSvg = "";
-      mermaidError = "";
-      return;
-    }
-    const token = ++renderToken;
-    void renderDiagram(token);
-  });
+  let { code, title, caption, class: extraClass = "" }: Props = $props();
 
   function sanitizeSvg(svgCode: string) {
     return DOMPurify.sanitize(svgCode, {
@@ -68,42 +35,19 @@
     });
   }
 
-  async function renderDiagram(token: number) {
-    mermaidError = "";
-    mermaidSvg = "";
-    const cleaned = code
-      .trim()
-      .replace(/^```mermaid\s*\n?/i, "")
-      .replace(/\n?```\s*$/, "");
-    try {
-      const id = `svg-${token}-${Math.random().toString(36).slice(2)}`;
-      const { svg } = await mermaid.render(id, cleaned);
-      if (token === renderToken) mermaidSvg = svg;
-    } catch (error) {
-      if (token === renderToken)
-        mermaidError = error instanceof Error ? error.message : String(error);
-    }
-  }
-
   function svgContent(): string | null {
-    if (format === "svg") return sanitizeSvg(code);
-    if (mermaidSvg) return mermaidSvg;
-    return null;
+    return sanitizeSvg(code);
   }
 </script>
 
 <div class={extraClass}>
-  {#if format === "svg" || mermaidSvg}
-    <div class="svg-host [&_svg]:max-w-full [&_svg]:h-auto [&_svg]:mx-auto">
-      {@html svgContent()}
-    </div>
-  {:else if mermaidError}
-    <p class="text-xs text-muted-foreground py-8 text-center">{mermaidError}</p>
-  {:else if format === "mermaid"}
-    <p class="text-xs text-muted-foreground py-8 text-center">Rendering diagram…</p>
-  {:else}
-    <p class="text-xs text-muted-foreground py-8 text-center">Invalid visual format.</p>
-  {/if}
+  <div
+    class="svg-host [&_svg]:max-w-full [&_svg]:h-auto [&_svg]:mx-auto"
+    role="img"
+    aria-label={title}
+  >
+    {@html svgContent()}
+  </div>
   {#if caption}
     <p class="text-xs text-muted-foreground mt-2">{caption}</p>
   {/if}

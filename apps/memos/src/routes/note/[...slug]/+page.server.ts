@@ -5,6 +5,7 @@ import {
   DEFAULT_NOTE_CATEGORY,
   compileEditorHtml,
   compileNote,
+  type CompiledNote,
   r2KeyFromSlug,
   readCategoriesKv,
   readNoteKv,
@@ -15,6 +16,16 @@ import {
 } from "$lib/server/blog";
 import { categoryFromSlug } from "$lib/utils/url";
 import type { PageServerLoad } from "./$types";
+
+interface NotePageDataInput {
+  compiled: CompiledNote;
+  source: string;
+  title: string;
+  slug: string;
+  createdAt: string;
+  updatedAt: string;
+  categories: string[];
+}
 
 async function getCategories(bucket: R2Bucket, kv: KVNamespace): Promise<string[]> {
   const cached = await readCategoriesKv(kv);
@@ -45,9 +56,26 @@ async function getCategories(bucket: R2Bucket, kv: KVNamespace): Promise<string[
   return result;
 }
 
-export const load: PageServerLoad = async ({ params, platform, locals, url }) => {
+async function buildNotePageData(input: NotePageDataInput) {
+  return {
+    html: input.compiled.html,
+    toc: input.compiled.toc,
+    visualBlocks: input.compiled.visualBlocks,
+    excerpt: input.compiled.excerpt,
+    title: input.title,
+    slug: input.slug,
+    createdAt: input.createdAt,
+    updatedAt: input.updatedAt,
+    source: input.source,
+    editorHtml: await compileEditorHtml(input.source),
+    categories: input.categories,
+    defaultCategory: DEFAULT_NOTE_CATEGORY,
+  };
+}
+
+export const load: PageServerLoad = async ({ params, platform, locals }) => {
   if (!locals.user) {
-    redirect(302, `/login?redirect=${url.pathname}`);
+    redirect(302, "/");
   }
   if (!platform) {
     error(500, "Cloudflare platform bindings are unavailable.");
@@ -67,21 +95,16 @@ export const load: PageServerLoad = async ({ params, platform, locals, url }) =>
   const categories = await getCategories(bucket, kv);
 
   if (slug === "new") {
-    const source = "";
-    return {
-      html: "",
-      toc: [],
-      visualBlocks: [],
-      excerpt: "",
+    const createdAt = new Date().toISOString();
+    return buildNotePageData({
+      compiled: { html: "", toc: [], visualBlocks: [], excerpt: "" },
+      source: "",
       title: "",
       slug,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      source,
-      editorHtml: await compileEditorHtml(source),
+      createdAt,
+      updatedAt: createdAt,
       categories,
-      defaultCategory: DEFAULT_NOTE_CATEGORY,
-    };
+    });
   }
 
   const object = await bucket.get(r2Key);
@@ -99,36 +122,18 @@ export const load: PageServerLoad = async ({ params, platform, locals, url }) =>
     const title = object.customMetadata?.title ?? slugToTitle(slug);
     if (source !== cached.source) {
       const compiled = await compileNote(source, kv, slug, uploadedAt, title);
-      return {
-        html: compiled.html,
-        toc: compiled.toc,
-        visualBlocks: compiled.visualBlocks,
-        excerpt: compiled.excerpt,
-        title,
-        slug,
-        createdAt,
-        updatedAt,
-        source,
-        editorHtml: await compileEditorHtml(source),
-        categories,
-        defaultCategory: DEFAULT_NOTE_CATEGORY,
-      };
+      return buildNotePageData({ compiled, source, title, slug, createdAt, updatedAt, categories });
     }
 
-    return {
-      html: cached.html,
-      toc: cached.toc,
-      visualBlocks: cached.visualBlocks,
-      excerpt: cached.excerpt,
+    return buildNotePageData({
+      compiled: cached,
+      source,
       title,
       slug,
       createdAt,
       updatedAt,
-      source,
-      editorHtml: await compileEditorHtml(source),
       categories,
-      defaultCategory: DEFAULT_NOTE_CATEGORY,
-    };
+    });
   }
 
   const rawSource = await object.text();
@@ -136,18 +141,5 @@ export const load: PageServerLoad = async ({ params, platform, locals, url }) =>
   const title = object.customMetadata?.title ?? slugToTitle(slug);
   const compiled = await compileNote(source, kv, slug, uploadedAt, title);
 
-  return {
-    html: compiled.html,
-    toc: compiled.toc,
-    visualBlocks: compiled.visualBlocks,
-    excerpt: compiled.excerpt,
-    title,
-    slug,
-    createdAt,
-    updatedAt,
-    source,
-    editorHtml: await compileEditorHtml(source),
-    categories,
-    defaultCategory: DEFAULT_NOTE_CATEGORY,
-  };
+  return buildNotePageData({ compiled, source, title, slug, createdAt, updatedAt, categories });
 };

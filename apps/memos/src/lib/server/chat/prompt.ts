@@ -1,9 +1,9 @@
 /** Generative UI system prompt — mirrors pi-generative-ui's design guidelines. */
 export const GENERATIVE_UI_PROMPT = `<generative_ui>
-You have three visual tools: render_svg, render_chart, and render_widget. Choose exactly one for each visual request. The tool output contains only the visual artifact — write explanations in normal assistant text, never inside the tool.
+You have four visual tools: render_svg, render_mermaid, render_chart, and render_widget. Choose exactly one for each visual request. The tool output contains only the visual artifact — write explanations in normal assistant text, never inside the tool.
 
 ## render_svg — static diagrams (no JS)
-Use for SVG diagrams, flowcharts, structural diagrams, architecture diagrams, ERDs, illustrations, or any visual that does not need JavaScript.
+Use for SVG diagrams, flowcharts, structural diagrams, architecture diagrams, illustrations, or any visual that does not need JavaScript. Do not use render_svg for Mermaid source.
 
 SVG:
 - Start with <svg> tag. Pre-built CSS classes are available:
@@ -15,9 +15,20 @@ SVG:
 - Box subtitles: ≤5 words.
 - No HTML, JavaScript, event handlers, iframes, or external resources.
 
-Mermaid:
-- Provide raw Mermaid source for ERDs, sequence diagrams, class diagrams, Gantt charts.
-- Do NOT wrap in markdown fences (\`\`\`). Quote labels with spaces: A["label"].
+## render_mermaid — Mermaid diagrams
+Use for ERDs, sequence diagrams, class diagrams, state diagrams, Gantt charts, or when the user explicitly asks for Mermaid.
+
+- Provide raw Mermaid source only. Do NOT wrap in markdown fences (\`\`\`).
+- Do not include %%{init}%%, theme directives, markdown, HTML labels, <br>, emojis, images, scripts, iframes, or external resources.
+- Keep the diagram compact enough to render cleanly in a chat card:
+  - Flow/state/class diagrams: ≤10 visible nodes, ≤14 edges, ≤2 subgraphs, ≤4 nodes per subgraph.
+  - Sequence diagrams: ≤5 participants, ≤12 messages.
+  - ER diagrams: ≤6 entities, ≤8 fields per entity.
+  - Gantt charts: ≤8 tasks.
+- Use short stable IDs and short labels. English labels ≤24 characters; Chinese labels ≤12 characters.
+- Quote labels with spaces: A["short label"]. Do not put full explanations inside node labels.
+- Prefer flowchart LR for process/architecture flow. Prefer sequenceDiagram for interactions and erDiagram for data models.
+- If the real content is larger, render a high-level Mermaid overview and explain details in normal assistant text.
 
 ## render_chart — rendered charts (JS rendering, no interaction)
 Use for data visualization: bar charts, line charts, pie charts, scatter plots, heatmaps — any chart rendered with Chart.js, ECharts, D3, or Canvas.
@@ -41,6 +52,7 @@ Use for anything where the user interacts: sliders, filters, calculators, dashbo
 ## General rules
 - Put explanatory text in your response, never inside the tool output.
 - Default to render_svg for static explanatory content.
+- Default to render_mermaid for ERDs, sequence diagrams, class diagrams, state diagrams, Gantt charts, and explicit Mermaid requests.
 - Default to render_chart for data visualization without interaction.
 - Default to render_widget for anything interactive or operable.
 </generative_ui>`;

@@ -16,7 +16,7 @@
     type ToastVariant,
   } from "@my-memos/ui";
   import ButtonGroup from "$lib/components/ButtonGroup.svelte";
-  import { VisualBlocks } from "$lib/components/visual";
+  import { VisualBlock } from "$lib/components/visual";
   import ArticleSide from "$lib/components/note/ArticleSide.svelte";
 
   import { apiCreateNote, apiDeleteNote, apiUpdateNote } from "$lib/services/notes";
@@ -25,6 +25,7 @@
   import ArticleHeader from "$lib/components/note/ArticleHeader.svelte";
   import NoteEditor from "$lib/components/note/NoteEditor.svelte";
   import NoteToc from "$lib/components/note/NoteToc.svelte";
+  import { splitVisualBlockHtml } from "$lib/visual/blocks";
   import type { PageData } from "./$types";
 
   let { data }: { data: PageData } = $props();
@@ -65,6 +66,7 @@
     selectedCategory === NEW_CATEGORY_VALUE ? newCategory.trim() : selectedCategory.trim(),
   );
   const resolvedCategory = $derived(categoryValue || data.defaultCategory);
+  const articleParts = $derived(splitVisualBlockHtml(display.html, display.visualBlocks ?? []));
 
   $effect(() => {
     if (initializedSlug === display.slug) return;
@@ -209,32 +211,34 @@
             <ArticleHeader title={display.title} text={display.excerpt} />
           </div>
 
-          <div class="flex items-center">
-            {#if isEditing}
+          {#if isEditing}
+            <div class="flex items-center">
               <ButtonGroup>
                 {#if !isNew}
-                  <button
-                    type="button"
-                    class="inline-flex h-8 w-8 items-center justify-center border border-border bg-background text-muted-foreground transition-colors hover:text-error disabled:cursor-not-allowed disabled:opacity-60"
+                  <Button
+                    size="icon"
+                    variant="destructive"
+                    class="h-8 w-8"
                     onclick={() => (showDeleteDialog = true)}
                     disabled={isSaving || deleting}
                     aria-label="delete"
                   >
                     <Trash2 class="size-4" />
-                  </button>
+                  </Button>
                 {/if}
-                <button
-                  type="button"
-                  class="inline-flex h-8 w-8 items-center justify-center border border-border bg-background text-muted-foreground transition-colors hover:text-foreground disabled:cursor-not-allowed disabled:opacity-60"
+                <Button
+                  size="icon"
+                  variant="outline"
+                  class="h-8 w-8 text-muted-foreground hover:text-foreground"
                   onclick={cancelEdit}
                   disabled={isSaving}
                   aria-label="cancel"
                 >
                   <X class="size-4" />
-                </button>
-                <button
-                  type="button"
-                  class="inline-flex h-8 w-8 items-center justify-center border border-border bg-foreground text-background transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+                </Button>
+                <Button
+                  size="icon"
+                  class="h-8 w-8 bg-foreground text-background hover:bg-foreground hover:opacity-90"
                   onclick={saveNote}
                   disabled={isSaving || !draftTitle.trim()}
                   aria-label="save"
@@ -244,25 +248,33 @@
                   {:else}
                     <Save class="size-4" />
                   {/if}
-                </button>
+                </Button>
               </ButtonGroup>
-            {:else}
-              <ButtonGroup class="xl:hidden">
-                <button
-                  type="button"
+            </div>
+          {:else}
+            <div class="xl:hidden flex items-center">
+              <ButtonGroup>
+                <Button
+                  size="icon"
+                  variant="outline"
+                  class="h-8 w-8 text-muted-foreground hover:text-foreground"
                   onclick={toggleEdit}
-                  class="inline-flex h-8 w-8 items-center justify-center border border-border bg-background text-muted-foreground transition-colors hover:text-foreground"
-                  aria-label="Edit"><Pencil class="size-4" /></button
+                  aria-label="Edit"
                 >
-                <button
-                  type="button"
+                  <Pencil class="size-4" />
+                </Button>
+                <Button
+                  size="icon"
+                  variant="outline"
+                  class="h-8 w-8 text-muted-foreground hover:text-foreground"
                   onclick={() => goto("/note")}
-                  class="inline-flex h-8 w-8 items-center justify-center border border-border bg-background text-muted-foreground transition-colors hover:text-foreground"
-                  aria-label="All notes"><ArrowLeft class="size-4" /></button
+                  aria-label="All notes"
                 >
+                  <ArrowLeft class="size-4" />
+                </Button>
               </ButtonGroup>
-            {/if}
-          </div>
+            </div>
+          {/if}
         </div>
 
         {#if !isEditing}
@@ -341,17 +353,22 @@
           />
         </div>
       {:else}
-        <article class="article mt-6 sm:mt-8">
-          {@html display.html}
-        </article>
-        {#if display.visualBlocks?.length}
-          <VisualBlocks blocks={display.visualBlocks} />
-        {/if}
+        <div class="mt-6 grid gap-6 sm:mt-8 sm:gap-8 min-w-0">
+          {#each articleParts as part}
+            {#if part.type === "html"}
+              <article class="article min-w-0">
+                {@html part.html}
+              </article>
+            {:else}
+              <VisualBlock block={part.block} />
+            {/if}
+          {/each}
+        </div>
       {/if}
     </section>
 
     {#if !isEditing}
-      <ArticleSide {isEditing} onedit={toggleEdit} />
+      <ArticleSide onedit={toggleEdit} />
     {/if}
   </div>
 </div>

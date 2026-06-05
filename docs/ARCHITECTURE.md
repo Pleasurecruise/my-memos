@@ -205,7 +205,7 @@ Behavior:
 - loads prompt and memory from R2 to build the system context
 - model: DeepSeek V4 Flash via Cloudflare AI Gateway
 - streams AI SDK UI message events for assistant text and tool parts
-- exposes tools: `get_tags`, `list_memos`, `search_memos`, `create_memo`, `update_memo`, `delete_memo`, `web_search`, `render_chart`, `render_svg`, `render_widget`
+- exposes tools: `get_tags`, `list_memos`, `search_memos`, `create_memo`, `update_memo`, `delete_memo`, `web_search`, `render_chart`, `render_svg`, `render_mermaid`, `render_widget`
 - after each completed assistant response, runs auto-dream memory maintenance to decide whether `agent/MEMORY.md` should be updated
 
 ### `/api/chat/consolidate`

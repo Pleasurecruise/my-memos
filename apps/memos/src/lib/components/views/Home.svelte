@@ -301,11 +301,12 @@
     isSaving = true;
     error = "";
     apiCreateMemo(content, visibility)
-      .then(async () => {
+      .then(() => invalidateAll())
+      .then(() => {
         content = "";
         composerOpen = false;
         ac.close();
-        await invalidateAll();
+        showToast("success", visibility === "public" ? "Memo published" : "Memo saved");
       })
       .catch((err: unknown) => {
         error = err instanceof Error ? err.message : "Failed to save memo.";

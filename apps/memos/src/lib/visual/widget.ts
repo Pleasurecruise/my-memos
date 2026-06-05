@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const widgetSpecSchema = z.object({
+export const renderWidgetSchema = z.object({
   title: z
     .string()
     .min(1)
@@ -34,20 +34,4 @@ export const widgetSpecSchema = z.object({
     .describe("Container height in pixels. Default: 500. Auto-resizes if content is taller."),
 });
 
-export const renderWidgetSchema = widgetSpecSchema;
-
-export const partialRenderWidgetSchema = widgetSpecSchema.partial();
-
-export type WidgetSpec = z.infer<typeof widgetSpecSchema>;
-
-export type RenderWidgetSpec = WidgetSpec;
-
-export type PartialRenderWidgetSpec = z.infer<typeof partialRenderWidgetSchema>;
-
-export type RenderWidgetPayload = WidgetSpec | PartialRenderWidgetSpec | null;
-
-export function parseRenderWidgetPayload(value: object | null) {
-  if (value === null) return null;
-  const result = partialRenderWidgetSchema.safeParse(value);
-  return result.success ? result.data : null;
-}
+export type WidgetSpec = z.infer<typeof renderWidgetSchema>;

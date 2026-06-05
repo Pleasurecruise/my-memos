@@ -13,13 +13,10 @@
     CollapsibleTrigger,
   } from "@my-memos/ui";
   import MarkdownContent from "$lib/components/MarkdownContent.svelte";
-  import { parseRenderChartPayload } from "$lib/visual/chart";
-  import { parseRenderSvgPayload } from "$lib/visual/svg";
-  import { parseRenderWidgetPayload } from "$lib/visual/widget";
-  import Chart from "$lib/components/chat/ChatChart.svelte";
-  import Svg from "$lib/components/chat/ChatSvg.svelte";
-  import Widget from "$lib/components/chat/ChatWidget.svelte";
+  import { VisualCard } from "$lib/components/visual";
   import Masthead from "$lib/components/layout/Masthead.svelte";
+
+  const VISUAL_TOOLS = new Set(["render_chart", "render_svg", "render_mermaid", "render_widget"]);
 
   interface Props {
     user: { image?: string | null; name: string } | null;
@@ -87,33 +84,8 @@
                   <div class="flex flex-col gap-2">
                     {#each msg.parts as part, index (index)}
                       {#if isToolUIPart(part)}
-                        {#if getToolName(part) === "render_chart" && part.state !== "output-error"}
-                          {@const payload =
-                            part.state === "output-available" ? part.output : part.input}
-                          <Chart
-                            spec={parseRenderChartPayload(
-                              typeof payload === "object" ? payload : null,
-                            )}
-                            streaming={part.state !== "output-available"}
-                          />
-                        {:else if getToolName(part) === "render_svg" && part.state !== "output-error"}
-                          {@const payload =
-                            part.state === "output-available" ? part.output : part.input}
-                          <Svg
-                            spec={parseRenderSvgPayload(
-                              typeof payload === "object" ? payload : null,
-                            )}
-                            streaming={part.state !== "output-available"}
-                          />
-                        {:else if getToolName(part) === "render_widget" && part.state !== "output-error"}
-                          {@const payload =
-                            part.state === "output-available" ? part.output : part.input}
-                          <Widget
-                            spec={parseRenderWidgetPayload(
-                              typeof payload === "object" ? payload : null,
-                            )}
-                            streaming={part.state !== "output-available"}
-                          />
+                        {#if VISUAL_TOOLS.has(getToolName(part)) && part.state !== "output-error"}
+                          <VisualCard {part} streaming={part.state !== "output-available"} />
                         {:else}
                           <Collapsible>
                             <CollapsibleTrigger
