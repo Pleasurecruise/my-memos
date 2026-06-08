@@ -4,6 +4,8 @@ import { createMemoReadTools } from "./memos-read";
 import { createMemoWriteTools } from "./memos-write";
 import { createWebSearchTool } from "./web-search";
 import { createDefuddleTool } from "./defuddle";
+import { createFetchRawTool } from "./fetch";
+import { createGitHubTool } from "./github";
 import { createContext7Tool } from "./context7";
 
 type Env = NonNullable<App.Platform>["env"];
@@ -18,6 +20,8 @@ export function createChatTools(env: Env) {
     ...createMemoWriteTools({ d1: DB, bucket: MEMOS_BUCKET, cache: MEMOS_CACHE }),
     ...createWebSearchTool(env.TAVILY_API_KEY),
     ...createDefuddleTool(),
+    ...createFetchRawTool(),
+    ...createGitHubTool(),
     ...createContext7Tool(),
   };
 }
