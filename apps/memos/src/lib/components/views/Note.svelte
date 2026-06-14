@@ -137,8 +137,8 @@
       {#each groupedEntries as yearGroup}
         <section class="my-5">
           <h2 class="mb-4 text-sm font-medium text-foreground">
-            {yearGroup.year}本年
-            <span class="ml-1 text-xs text-muted-foreground">{yearGroup.count} 篇</span>
+            {yearGroup.year}
+            <span class="ml-1 text-xs text-muted-foreground">{yearGroup.count} entries</span>
           </h2>
 
           {#each yearGroup.months as monthSection}

@@ -2,7 +2,7 @@
   import { isSameDay, format } from "date-fns";
   import { invalidateAll } from "$app/navigation";
   import { page } from "$app/state";
-  import { untrack } from "svelte";
+  import { untrack, onMount, tick } from "svelte";
   import {
     Alert,
     AlertDescription,
@@ -34,6 +34,7 @@
     Search,
     Clock3,
     ChevronRight,
+    Share2,
   } from "@lucide/svelte";
   import type { Memo, MemoStats, MemoVisibility, TagCount } from "$lib/types";
   import {
@@ -207,41 +208,54 @@
     loadRequestSeq += 1;
   });
 
+  function loadMore(): Promise<boolean> {
+    if (!cursor || loadingMore) return Promise.resolve(false);
+    loadingMore = true;
+    const requestSeq = loadRequestSeq;
+    const queryParams = new URLSearchParams({ cursor, limit: "25" });
+    if (initialSearch) queryParams.set("search", initialSearch);
+    if (selectedDate) queryParams.set("date", format(selectedDate, "yyyy-MM-dd"));
+    if (initialTags.length > 0) queryParams.set("tags", initialTags.join(","));
+    if (viewAsPublic) queryParams.set("publicOnly", "true");
+    if (sortByUpdated) queryParams.set("sortByUpdated", "true");
+
+    return fetch(`/api/memos?${queryParams.toString()}`)
+      .then((response) => {
+        if (!response.ok) throw new Error("Bad response");
+        return response.json();
+      })
+      .then((pageData) => {
+        if (requestSeq !== loadRequestSeq) return false;
+        allMemos = [...allMemos, ...pageData.memos];
+        cursor = pageData.nextCursor;
+        return pageData.memos.length > 0;
+      })
+      .catch(() => {
+        if (requestSeq !== loadRequestSeq) return false;
+        showToast("error", "Failed to load more memos");
+        return false;
+      })
+      .finally(() => {
+        if (requestSeq === loadRequestSeq) loadingMore = false;
+      });
+  }
+
+  function focusMemo(memoId: string): boolean {
+    const el = document.getElementById(`memo-${memoId}`);
+    if (!el) return false;
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+    el.classList.add("memo-highlight");
+    setTimeout(() => el.classList.remove("memo-highlight"), 2500);
+    return true;
+  }
+
   // Infinite scroll: observe sentinel to load more
   $effect(() => {
     if (!sentinelEl || !cursor) return;
 
     const observer = new IntersectionObserver(
       ([entry]) => {
-        if (entry.isIntersecting && cursor && !loadingMore) {
-          loadingMore = true;
-          const requestSeq = loadRequestSeq;
-          const queryParams = new URLSearchParams({ cursor, limit: "25" });
-          if (initialSearch) queryParams.set("search", initialSearch);
-          if (selectedDate) queryParams.set("date", format(selectedDate, "yyyy-MM-dd"));
-          if (initialTags.length > 0) queryParams.set("tags", initialTags.join(","));
-          if (viewAsPublic) queryParams.set("publicOnly", "true");
-          if (sortByUpdated) queryParams.set("sortByUpdated", "true");
-
-          fetch(`/api/memos?${queryParams.toString()}`)
-            .then((response) => {
-              if (!response.ok) throw new Error("Bad response");
-              return response.json();
-            })
-            .then((pageData) => {
-              if (requestSeq !== loadRequestSeq) return;
-              allMemos = [...allMemos, ...pageData.memos];
-              cursor = pageData.nextCursor;
-            })
-            .catch(() => {
-              if (requestSeq !== loadRequestSeq) return;
-              showToast("error", "Failed to load more memos");
-            })
-            .finally(() => {
-              if (requestSeq !== loadRequestSeq) return;
-              loadingMore = false;
-            });
-        }
+        if (entry.isIntersecting && cursor && !loadingMore) loadMore();
       },
       { rootMargin: "200px" },
     );
@@ -315,6 +329,36 @@
         isSaving = false;
       });
   }
+
+  onMount(() => {
+    const hash = window.location.hash;
+    if (!hash || !hash.startsWith("#memo-")) return;
+    const memoId = hash.replace("#memo-", "");
+
+    if (focusMemo(memoId)) return;
+
+    let cancelled = false;
+    (async () => {
+      for (let i = 0; i < 60 && cursor && !cancelled; i++) {
+        const advanced = await loadMore();
+        if (cancelled) return;
+        await tick();
+        await new Promise((r) => requestAnimationFrame(() => r(null)));
+        await tick();
+        if (focusMemo(memoId)) return;
+        if (!advanced) {
+          await new Promise((r) => setTimeout(r, 60));
+          await tick();
+          if (focusMemo(memoId)) return;
+        }
+      }
+      if (!cancelled) showToast("error", "Shared memo could not be found");
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  });
 </script>
 
 <div class="min-h-screen bg-background text-foreground font-sans">
@@ -485,6 +529,8 @@
             </p>
 
             <div
+              id="memo-{memo.id}"
+              data-memo-id={memo.id}
               class="group px-3.5 py-3 rounded-md transition-colors hover:bg-muted border border-transparent hover:border-border"
             >
               {#if memo.pinned && !isEditing}
@@ -591,6 +637,32 @@
                   >
                     <Archive size={12} />{arc.archivingId === memo.id ? "Archiving..." : "Archive"}
                   </Button>
+                  {#if memo.visibility === "public"}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      class="gap-1.5 font-normal text-muted-foreground"
+                      onclick={() => {
+                        const url = `${window.location.origin}${window.location.pathname}#memo-${memo.id}`;
+                        navigator.clipboard
+                          .writeText(url)
+                          .then(() => {
+                            showToast("success", "Link copied to clipboard");
+                          })
+                          .catch(() => {
+                            const textarea = document.createElement("textarea");
+                            textarea.value = url;
+                            document.body.appendChild(textarea);
+                            textarea.select();
+                            document.execCommand("copy");
+                            document.body.removeChild(textarea);
+                            showToast("success", "Link copied to clipboard");
+                          });
+                      }}
+                    >
+                      <Share2 size={12} />Share
+                    </Button>
+                  {/if}
                   <Button
                     variant="destructive"
                     size="sm"

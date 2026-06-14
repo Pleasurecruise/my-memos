@@ -35,6 +35,8 @@
 </script>
 
 <article
+  id="memo-{memo.id}"
+  data-memo-id={memo.id}
   class="group relative bg-background border border-border rounded-lg px-5 py-4 shadow-xs hover:shadow-sm hover:border-border-strong transition-all duration-100"
 >
   <div class="flex items-center gap-2 mb-3 text-xs text-muted-foreground">
@@ -82,3 +84,21 @@
     </div>
   {/if}
 </article>
+
+<style>
+  @keyframes memo-glow {
+    0% {
+      background-color: color-mix(in srgb, var(--color-accent) 10%, transparent);
+    }
+    60% {
+      background-color: color-mix(in srgb, var(--color-accent) 10%, transparent);
+    }
+    100% {
+      background-color: transparent;
+    }
+  }
+
+  :global(.memo-highlight) {
+    animation: memo-glow 2.5s ease-out forwards;
+  }
+</style>

@@ -11,10 +11,10 @@
   let { user }: Props = $props();
 
   const TOOL_LABELS: Record<string, string> = {
-    get_tags: "正在获取标签…",
-    list_memos: "正在浏览备忘录…",
-    search_memos: "正在搜索备忘录…",
-    update_memory: "正在更新记忆…",
+    get_tags: "Fetching tags…",
+    list_memos: "Browsing memos…",
+    search_memos: "Searching memos…",
+    update_memory: "Updating memory…",
   };
 
   interface Message {

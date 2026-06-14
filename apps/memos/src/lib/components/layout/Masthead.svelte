@@ -45,6 +45,7 @@
   let { memoStats, tags = [], viewAsPublic = false }: Props = $props();
 
   let isDark = $state(false);
+  let themeBtnEl = $state<HTMLButtonElement | null>(null);
 
   onMount(() => {
     const saved = localStorage.getItem(THEME_KEY);
@@ -53,13 +54,18 @@
   });
 
   $effect(() => {
-    applyTheme(isDark);
     localStorage.setItem(THEME_KEY, isDark ? "dark" : "light");
   });
 
+  function toggleTheme() {
+    const next = !isDark;
+    applyTheme(next, themeBtnEl);
+    isDark = next;
+  }
+
   function handleNav(href: string, requiresAuth: boolean) {
     if (requiresAuth && !page.data.user) {
-      showToast("error", "请先登录", "需要登录才能访问该页面");
+      showToast("error", "Please sign in", "You need to sign in to access this page");
       return;
     }
     goto(href);
@@ -139,7 +145,8 @@
       <Tooltip content={isDark ? "Light mode" : "Dark mode"} side="top">
         <button
           type="button"
-          onclick={() => (isDark = !isDark)}
+          bind:this={themeBtnEl}
+          onclick={toggleTheme}
           class="flex items-center justify-center h-8 w-8 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
           aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
         >

@@ -43,7 +43,7 @@
     viewAsPublic: boolean;
     isDark: boolean;
     open: boolean;
-    onToggleTheme: () => void;
+    onToggleTheme: (button: HTMLElement) => void;
     onClose: () => void;
     selectedDate: Date | undefined;
     onDateChange: (date: Date | undefined) => void;
@@ -63,7 +63,7 @@
 
   function handleNav(href: string, requiresAuth: boolean) {
     if (requiresAuth && !page.data.user) {
-      showToast("error", "请先登录", "需要登录才能访问该页面");
+      showToast("error", "Please sign in", "You need to sign in to access this page");
       return;
     }
     goto(href);
@@ -201,7 +201,7 @@
     <Tooltip content={isDark ? "Light mode" : "Dark mode"} side="top">
       <button
         type="button"
-        onclick={onToggleTheme}
+        onclick={(e) => onToggleTheme(e.currentTarget as HTMLElement)}
         class="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
         aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
       >

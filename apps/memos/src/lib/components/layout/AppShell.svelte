@@ -35,7 +35,6 @@
   });
 
   $effect(() => {
-    applyTheme(isDark);
     localStorage.setItem(STORAGE_KEY, isDark ? "dark" : "light");
   });
 </script>
@@ -60,7 +59,11 @@
     {viewAsPublic}
     {isDark}
     open={sidebarOpen}
-    onToggleTheme={() => (isDark = !isDark)}
+    onToggleTheme={(btn) => {
+      const next = !isDark;
+      applyTheme(next, btn);
+      isDark = next;
+    }}
     onClose={() => (sidebarOpen = false)}
     {selectedDate}
     {onDateChange}

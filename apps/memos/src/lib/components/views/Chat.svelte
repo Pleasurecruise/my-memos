@@ -26,10 +26,13 @@
 
   const chat = new Chat({
     onFinish: ({ message, messages }) => {
-      console.debug('[Chat] onFinish', { messageParts: message.parts.length, totalMessages: messages.length });
+      console.debug("[Chat] onFinish", {
+        messageParts: message.parts.length,
+        totalMessages: messages.length,
+      });
     },
     onError: (error) => {
-      console.error('[Chat] onError', error);
+      console.error("[Chat] onError", error);
     },
   });
   const isStreaming = $derived(chat.status === "submitted" || chat.status === "streaming");
