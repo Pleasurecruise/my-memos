@@ -60,7 +60,7 @@
       (draftTitle !== display.title || draftMarkdown !== baselineMarkdown),
   );
   const categoryOptions = $derived(
-    [...new Set([data.defaultCategory, ...display.categories])].sort((a, b) => a.localeCompare(b)),
+    [...new Set(display.categories)].sort((a, b) => a.localeCompare(b)),
   );
   const categoryValue = $derived(
     selectedCategory === NEW_CATEGORY_VALUE ? newCategory.trim() : selectedCategory.trim(),
@@ -317,7 +317,8 @@
                   {#each categoryOptions as category (category)}
                     <option value={category}>{category}</option>
                   {/each}
-                  <option value={NEW_CATEGORY_VALUE}>New category...</option>
+                  <option value={data.defaultCategory}>不进行分类</option>
+                  <option value={NEW_CATEGORY_VALUE}>新增类别</option>
                 </Select>
                 {#if selectedCategory === NEW_CATEGORY_VALUE}
                   <Input

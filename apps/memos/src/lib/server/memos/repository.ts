@@ -52,6 +52,21 @@ export function isValidMemoCursor(raw: string): boolean {
   return decodeCursor(raw) !== null;
 }
 
+export async function getMemo(d1: D1Database, bucket: R2Bucket, id: string): Promise<Memo | null> {
+  const db = drizzle(d1);
+  const [row] = await db.select().from(memos).where(eq(memos.id, id)).limit(1);
+  if (!row) return null;
+
+  const memo = rowToMemo(row);
+
+  const obj = await bucket.get(row.r2Key);
+  if (obj) {
+    memo.content = await obj.text();
+  }
+
+  return memo;
+}
+
 export async function listMemos(
   d1: D1Database,
   cache: KVNamespace,

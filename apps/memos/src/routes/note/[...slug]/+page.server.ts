@@ -45,13 +45,15 @@ async function getCategories(bucket: R2Bucket, kv: KVNamespace): Promise<string[
     for (const r2Object of listingResponse.objects) {
       if (r2Object.key.endsWith("/") || !r2Object.key.toLowerCase().endsWith(".md")) continue;
       const category = categoryFromSlug(slugFromR2Key(r2Object.key));
-      if (category) categories.add(category);
+      if (category && category !== DEFAULT_NOTE_CATEGORY) categories.add(category);
     }
 
     cursor = listingResponse.truncated ? listingResponse.cursor : undefined;
   } while (cursor);
 
-  const result = [...categories].sort((a, b) => a.localeCompare(b));
+  const result = [...categories]
+    .filter((c) => c !== DEFAULT_NOTE_CATEGORY)
+    .sort((a, b) => a.localeCompare(b));
   await writeCategoriesKv(kv, result);
   return result;
 }
@@ -122,7 +124,15 @@ export const load: PageServerLoad = async ({ params, platform, locals }) => {
     const title = object.customMetadata?.title ?? slugToTitle(slug);
     if (source !== cached.source) {
       const compiled = await compileNote(source, kv, slug, uploadedAt, title);
-      return buildNotePageData({ compiled, source, title, slug, createdAt, updatedAt, categories });
+      return buildNotePageData({
+        compiled,
+        source,
+        title,
+        slug,
+        createdAt,
+        updatedAt,
+        categories,
+      });
     }
 
     return buildNotePageData({
@@ -141,5 +151,13 @@ export const load: PageServerLoad = async ({ params, platform, locals }) => {
   const title = object.customMetadata?.title ?? slugToTitle(slug);
   const compiled = await compileNote(source, kv, slug, uploadedAt, title);
 
-  return buildNotePageData({ compiled, source, title, slug, createdAt, updatedAt, categories });
+  return buildNotePageData({
+    compiled,
+    source,
+    title,
+    slug,
+    createdAt,
+    updatedAt,
+    categories,
+  });
 };

@@ -20,7 +20,7 @@
     Timeline,
   } from "@my-memos/ui";
   import { Command, CommandList, CommandItem } from "@my-memos/ui";
-  import type { TimelineGroup } from "@my-memos/ui";
+  import type { TimelineGroup, CommandItemData } from "@my-memos/ui";
   import {
     Globe,
     Hash,
@@ -478,7 +478,7 @@
             {#if ac.open && ac.suggestions.length > 0}
               <Command
                 bind:activeIndex={ac.activeIndex}
-                onselect={(item) => {
+                onselect={(item: CommandItemData) => {
                   content = ac.select(item.key) ?? content;
                 }}
               >
@@ -568,110 +568,108 @@
               {/if}
 
               <div
-                class="flex items-center gap-1 mt-2.5 pt-2.5 border-t border-border
+                class="mt-2.5 pt-2.5 border-t border-border overflow-x-auto
                   opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"
               >
-                {#if isEditing}
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    class="gap-1.5 font-normal text-muted-foreground"
-                    onclick={edit.cancel}
-                  >
-                    <X size={12} />Cancel
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    class="gap-1.5 font-normal text-muted-foreground"
-                    onclick={() =>
-                      (edit.editVisibility =
-                        edit.editVisibility === "public" ? "private" : "public")}
-                  >
-                    {#if edit.editVisibility === "public"}<Globe size={11} />{:else}<Lock
-                        size={11}
-                      />{/if}
-                    {edit.editVisibility === "public" ? "Public" : "Private"}
-                  </Button>
-                  <Button
-                    size="sm"
-                    class="gap-1.5 font-normal ml-auto"
-                    disabled={!edit.editContent.trim() || edit.isUpdating}
-                    onclick={() => edit.save(memo.id)}
-                  >
-                    <Check size={12} />{edit.isUpdating ? "Saving..." : "Save"}
-                  </Button>
-                {:else}
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    class="gap-1.5 font-normal {memo.pinned
-                      ? 'text-accent'
-                      : 'text-muted-foreground'}"
-                    disabled={pin.pinningId === memo.id}
-                    onclick={() => pin.toggle(memo)}
-                  >
-                    <Star size={12} fill={memo.pinned ? "currentColor" : "none"} />
-                    {memo.pinned ? "Unpin" : "Pin"}
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    class="gap-1.5 font-normal text-muted-foreground"
-                    onclick={() => edit.start(memo)}
-                  >
-                    <Pencil size={12} />Edit
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    class="gap-1.5 font-normal text-muted-foreground"
-                    disabled={arc.archivingId === memo.id}
-                    onclick={() => {
-                      if (!page.data.user) {
-                        showToast("error", "Please sign in to archive memos");
-                        return;
-                      }
-                      arc.archive(memo.id);
-                    }}
-                  >
-                    <Archive size={12} />{arc.archivingId === memo.id ? "Archiving..." : "Archive"}
-                  </Button>
-                  {#if memo.visibility === "public"}
+                <div class="flex items-center gap-1 min-w-max">
+                  {#if isEditing}
                     <Button
                       variant="ghost"
                       size="sm"
                       class="gap-1.5 font-normal text-muted-foreground"
+                      onclick={edit.cancel}
+                    >
+                      <X size={12} />Cancel
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      class="gap-1.5 font-normal text-muted-foreground"
+                      onclick={() =>
+                        (edit.editVisibility =
+                          edit.editVisibility === "public" ? "private" : "public")}
+                    >
+                      {#if edit.editVisibility === "public"}<Globe size={11} />{:else}<Lock
+                          size={11}
+                        />{/if}
+                      {edit.editVisibility === "public" ? "Public" : "Private"}
+                    </Button>
+                    <Button
+                      size="sm"
+                      class="gap-1.5 font-normal ml-auto"
+                      disabled={!edit.editContent.trim() || edit.isUpdating}
+                      onclick={() => edit.save(memo.id)}
+                    >
+                      <Check size={12} />{edit.isUpdating ? "Saving..." : "Save"}
+                    </Button>
+                  {:else}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      class="gap-1.5 font-normal {memo.pinned
+                        ? 'text-accent'
+                        : 'text-muted-foreground'}"
+                      disabled={pin.pinningId === memo.id}
+                      onclick={() => pin.toggle(memo)}
+                    >
+                      <Star size={12} fill={memo.pinned ? "currentColor" : "none"} />
+                      {memo.pinned ? "Unpin" : "Pin"}
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      class="gap-1.5 font-normal text-muted-foreground"
+                      onclick={() => edit.start(memo)}
+                    >
+                      <Pencil size={12} />Edit
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      class="gap-1.5 font-normal text-muted-foreground"
+                      disabled={arc.archivingId === memo.id}
                       onclick={() => {
-                        const url = `${window.location.origin}${window.location.pathname}#memo-${memo.id}`;
-                        navigator.clipboard
-                          .writeText(url)
-                          .then(() => {
-                            showToast("success", "Link copied to clipboard");
-                          })
-                          .catch(() => {
-                            const textarea = document.createElement("textarea");
-                            textarea.value = url;
-                            document.body.appendChild(textarea);
-                            textarea.select();
-                            document.execCommand("copy");
-                            document.body.removeChild(textarea);
-                            showToast("success", "Link copied to clipboard");
-                          });
+                        if (!page.data.user) {
+                          showToast("error", "Please sign in to archive memos");
+                          return;
+                        }
+                        arc.archive(memo.id);
                       }}
                     >
-                      <Share2 size={12} />Share
+                      <Archive size={12} />{arc.archivingId === memo.id
+                        ? "Archiving..."
+                        : "Archive"}
+                    </Button>
+                    {#if memo.visibility === "public"}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        class="gap-1.5 font-normal text-muted-foreground"
+                        onclick={() => {
+                          const url = `${window.location.origin}/memo/${memo.id}`;
+                          navigator.clipboard
+                            .writeText(url)
+                            .then(() => {
+                              showToast("success", "Link copied to clipboard");
+                            })
+                            .catch(() => {
+                              showToast("error", "Failed to copy link");
+                            });
+                        }}
+                      >
+                        <Share2 size={12} />Share
+                      </Button>
+                    {/if}
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      class="gap-1.5 font-normal ml-auto"
+                      onclick={() => del.request(memo.id)}
+                    >
+                      <Trash2 size={12} />Delete
                     </Button>
                   {/if}
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    class="gap-1.5 font-normal ml-auto"
-                    onclick={() => del.request(memo.id)}
-                  >
-                    <Trash2 size={12} />Delete
-                  </Button>
-                {/if}
+                </div>
               </div>
             </div>
           </div>
@@ -714,7 +712,7 @@
         {#if !showCardResults}
           <div class="hidden sm:block">
             <Timeline groups={timelineContent}>
-              {#snippet children(memo)}
+              {#snippet children(memo: Memo)}
                 {@render renderMemo(memo)}
               {/snippet}
             </Timeline>
