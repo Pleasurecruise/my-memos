@@ -250,9 +250,21 @@
     window.scrollTo({ top: target, behavior });
   }
 
-  function focusMemo(memoId: string): boolean {
+  async function focusMemo(memoId: string, cancelled: () => boolean): Promise<boolean> {
     const el = document.getElementById(`memo-${memoId}`);
     if (!el) return false;
+
+    for (let i = 0; i < 10 && cursor && !cancelled(); i++) {
+      const rect = el.getBoundingClientRect();
+      const desiredTop = rect.top + window.scrollY - (window.innerHeight - rect.height) / 2;
+      const maxTop = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
+      if (desiredTop <= maxTop + 1) break;
+      await loadMore();
+      await tick();
+      await new Promise((r) => requestAnimationFrame(() => r(null)));
+    }
+    if (cancelled()) return true;
+
     centerMemo(el, "smooth");
     const settle = () => centerMemo(el, "auto");
     if ("onscrollend" in window) {
@@ -351,22 +363,16 @@
     if (!hash || !hash.startsWith("#memo-")) return;
     const memoId = hash.replace("#memo-", "");
 
-    if (focusMemo(memoId)) return;
-
     let cancelled = false;
+    const isCancelled = () => cancelled;
     (async () => {
-      for (let i = 0; i < 60 && cursor && !cancelled; i++) {
-        const advanced = await loadMore();
-        if (cancelled) return;
+      for (let i = 0; i < 60 && !cancelled; i++) {
+        if (await focusMemo(memoId, isCancelled)) return;
+        if (!cursor) break;
+        await loadMore();
         await tick();
         await new Promise((r) => requestAnimationFrame(() => r(null)));
         await tick();
-        if (focusMemo(memoId)) return;
-        if (!advanced) {
-          await new Promise((r) => setTimeout(r, 60));
-          await tick();
-          if (focusMemo(memoId)) return;
-        }
       }
       if (!cancelled) showToast("error", "Shared memo could not be found");
     })();
