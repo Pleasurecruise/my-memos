@@ -9,10 +9,11 @@
     "build": "vp build"
   },
   "dependencies": {
-    "@ai-sdk/svelte": "4.0.204",
+    "@ai-sdk/svelte": "4.0.205",
     "@lucide/svelte": "1.18.0",
     "@my-memos/ui": "workspace:*",
     "@octokit/core": "7.0.6",
+    "@resvg/resvg-wasm": "2.6.2",
     "@shikijs/rehype": "4.2.0",
     "@tiptap/core": "3.26.1",
     "@tiptap/extension-placeholder": "3.26.1",
@@ -23,7 +24,7 @@
     "@tiptap/starter-kit": "3.26.1",
     "@tiptap/static-renderer": "3.26.1",
     "@types/turndown": "5.0.6",
-    "ai": "6.0.204",
+    "ai": "6.0.205",
     "ai-gateway-provider": "3.1.3",
     "better-auth": "1.6.18",
     "date-fns": "4.4.0",
@@ -45,7 +46,7 @@
   },
   "devDependencies": {
     "@sveltejs/adapter-cloudflare": "7.2.8",
-    "@sveltejs/kit": "2.65.0",
+    "@sveltejs/kit": "2.65.1",
     "@types/hast": "3.0.4",
     "@types/mdast": "4.0.4"
   }

@@ -14,6 +14,7 @@
 
 <svelte:head>
   <meta property="og:site_name" content={SITE_NAME} />
+  <meta property="og:url" content={$page.url.href} />
   {#if $page.data.meta?.title}
     <title>{$page.data.meta.title} — {SITE_NAME}</title>
     <meta property="og:title" content="{$page.data.meta.title} — {SITE_NAME}" />
@@ -30,11 +31,18 @@
   {/if}
   {#if $page.data.meta?.ogImage}
     <meta property="og:image" content={$page.data.meta.ogImage} />
+    <meta property="og:image:secure_url" content={$page.data.meta.ogImage} />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:alt" content={$page.data.meta?.title ?? SITE_NAME} />
+    <meta name="twitter:image" content={$page.data.meta.ogImage} />
+    <meta name="twitter:image:alt" content={$page.data.meta?.title ?? SITE_NAME} />
   {/if}
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
   <meta property="og:type" content={$page.data.meta?.ogType ?? "website"} />
   <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content={$page.data.meta?.title ?? SITE_NAME} />
+  <meta name="twitter:description" content={$page.data.meta?.description ?? DEFAULT_DESCRIPTION} />
 </svelte:head>
 
 {@render children()}

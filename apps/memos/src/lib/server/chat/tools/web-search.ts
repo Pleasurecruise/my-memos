@@ -2,21 +2,28 @@ import { tool } from "ai";
 import { z } from "zod";
 
 export function createWebSearchTool(tavilyApiKey: string) {
+  let calls = 0;
+
   return {
     web_search: tool({
       description:
-        "Search the web for up-to-date information. Use when the user asks about current events, facts, or anything not likely to be in their memos.",
+        "Search the web for up-to-date information. Use at most once per user request, only when the user asks about current events, facts, or anything not likely to be in their memos.",
       inputSchema: z.object({
         query: z.string().describe("Search query"),
         max_results: z
           .number()
           .int()
           .min(1)
-          .max(10)
+          .max(7)
           .default(5)
           .describe("Number of results to return (default 5)"),
       }),
       execute: async ({ query, max_results }) => {
+        calls += 1;
+        if (calls > 1) {
+          return "Web search skipped: this request has already used its web search allowance.";
+        }
+
         const res = await fetch("https://api.tavily.com/search", {
           method: "POST",
           headers: { "Content-Type": "application/json" },

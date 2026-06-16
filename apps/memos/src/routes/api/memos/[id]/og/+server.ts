@@ -1,6 +1,9 @@
 import { error } from "@sveltejs/kit";
 import { getMemo } from "$lib/server/memos";
-import { renderOgImage, stripMarkdown } from "$lib/server/og";
+import { renderOgImage, renderOgPng, stripMarkdown } from "$lib/server/og";
+import { readOgImageKv, writeOgImageKv } from "$lib/server/og/cache";
+
+const SVG_FORMAT = "svg";
 
 export const GET = async ({
   params,
@@ -39,10 +42,33 @@ export const GET = async ({
     siteName: "My Memos",
   });
 
-  return new Response(svg, {
+  if (url.searchParams.get("format") === SVG_FORMAT) {
+    return new Response(svg, {
+      headers: {
+        "Content-Type": "image/svg+xml",
+        "Cache-Control": "public, max-age=3600, s-maxage=3600",
+      },
+    });
+  }
+
+  const cacheKey = { id, updatedAt: memo.updatedAt, format: "png" as const };
+  const cached = await readOgImageKv(platform.env.MEMOS_CACHE, cacheKey);
+  if (cached) {
+    return new Response(cached, {
+      headers: {
+        "Content-Type": "image/png",
+        "Cache-Control": "public, max-age=86400, s-maxage=86400",
+      },
+    });
+  }
+
+  const png = await renderOgPng(svg, platform.env.MEMOS_CACHE);
+  await writeOgImageKv(platform.env.MEMOS_CACHE, cacheKey, png);
+
+  return new Response(png, {
     headers: {
-      "Content-Type": "image/svg+xml",
-      "Cache-Control": "public, max-age=3600, s-maxage=3600",
+      "Content-Type": "image/png",
+      "Cache-Control": "public, max-age=86400, s-maxage=86400",
     },
   });
 };

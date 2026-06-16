@@ -2,6 +2,26 @@
 @import "./styles/prose.css";
 @import "./styles/editor.css";
 
+html,
+body,
+#svelte {
+  min-height: 100%;
+  background: var(--color-background);
+  color: var(--color-foreground);
+}
+
+html {
+  color-scheme: light;
+}
+
+html.dark {
+  color-scheme: dark;
+}
+
+body {
+  margin: 0;
+}
+
 * {
   scrollbar-width: none;
   -ms-overflow-style: none;

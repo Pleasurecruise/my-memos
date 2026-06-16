@@ -6,6 +6,7 @@ import type { MemoRow } from "../db/schema";
 import { buildMemoDateCondition, buildMemoTagConditions } from "./query";
 import { buildMemoR2Key, createMemoId, normalizeTags } from "./utils";
 import { stripHashtags } from "$lib/utils";
+import { deleteMemoOgImagesKv } from "$lib/server/og/cache";
 import type { CreateMemoInput, UpdateMemoInput, MemoListFilters, MemoPage } from "./types";
 import type { Memo, MemoStats, TagCount } from "$lib/types";
 
@@ -251,6 +252,8 @@ export async function updateMemo(
   const [existing] = await db.select().from(memos).where(eq(memos.id, id)).limit(1);
   if (!existing) throw new Error(`Memo not found: ${id}`);
 
+  await deleteMemoOgImagesKv(cache, id);
+
   const setValues: Partial<typeof memos.$inferInsert> = {};
 
   if (input.content !== undefined) {
@@ -307,6 +310,8 @@ export async function deleteMemo(
     .where(eq(memos.id, id))
     .limit(1);
   if (!existing) throw new Error(`Memo not found: ${id}`);
+
+  await deleteMemoOgImagesKv(cache, id);
 
   await db.delete(memos).where(eq(memos.id, id));
   await bucket.delete(existing.r2Key);
