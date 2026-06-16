@@ -5,6 +5,23 @@ import { readOgImageKv, writeOgImageKv } from "$lib/server/og/cache";
 
 const SVG_FORMAT = "svg";
 
+let logoCache: string | null = null;
+
+async function loadLogo(origin: string): Promise<string | null> {
+  if (logoCache) return logoCache;
+
+  const res = await fetch(`${origin}/favicon.png`);
+  if (!res.ok) return null;
+
+  const bytes = new Uint8Array(await res.arrayBuffer());
+  let binary = "";
+  for (let i = 0; i < bytes.length; i += 0x8000) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+  }
+  logoCache = `data:image/png;base64,${btoa(binary)}`;
+  return logoCache;
+}
+
 export const GET = async ({
   params,
   platform,
@@ -34,16 +51,18 @@ export const GET = async ({
     day: "numeric",
   });
 
-  const svg = renderOgImage({
-    title,
-    tags: memo.tags,
-    date,
-    domain: url.hostname,
-    siteName: "My Memos",
-  });
+  const buildSvg = async () =>
+    renderOgImage({
+      title,
+      tags: memo.tags,
+      date,
+      domain: url.hostname,
+      siteName: "My Memos",
+      logo: await loadLogo(url.origin),
+    });
 
   if (url.searchParams.get("format") === SVG_FORMAT) {
-    return new Response(svg, {
+    return new Response(await buildSvg(), {
       headers: {
         "Content-Type": "image/svg+xml",
         "Cache-Control": "public, max-age=3600, s-maxage=3600",
@@ -62,7 +81,7 @@ export const GET = async ({
     });
   }
 
-  const png = await renderOgPng(svg, platform.env.MEMOS_CACHE);
+  const png = await renderOgPng(await buildSvg(), platform.env.MEMOS_CACHE);
   await writeOgImageKv(platform.env.MEMOS_CACHE, cacheKey, png);
 
   return new Response(png, {

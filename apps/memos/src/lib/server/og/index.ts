@@ -28,6 +28,7 @@ export interface OgImageOptions {
   domain?: string;
   date?: string | null;
   siteName?: string;
+  logo?: string | null;
 }
 
 interface TextOptions {
@@ -63,13 +64,13 @@ export function renderOgImage(options: OgImageOptions): string {
     domain = "my-memos.pages.dev",
     date = null,
     siteName = "My Memos",
+    logo = null,
   } = options;
 
-  const layout = getLayout(wrapText(title, 890, 30, 30, 7), tags.length > 0);
+  const layout = getLayout(wrapText(title, 1000, 44, 44, 6), tags.length > 0);
   const parts = [
-    renderCard(layout),
-    renderIdentity(layout, siteName),
-    renderTitle(layout),
+    renderHeader(layout, siteName, logo),
+    renderHero(layout),
     renderTags(layout, tags),
     renderFooter(layout, domain, date),
   ];
@@ -223,92 +224,78 @@ function textElement(text: string, options: TextOptions): string {
 function renderBackground(): string {
   return `
     <rect width="${OG_WIDTH}" height="${OG_HEIGHT}" fill="${palette.paper}" />
-    <defs>
-      <radialGradient id="glow" cx="85%" cy="15%" r="55%">
-        <stop offset="0%" stop-color="${brand}" stop-opacity="0.06" />
-        <stop offset="100%" stop-color="${palette.paper}" stop-opacity="0" />
-      </radialGradient>
-      <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
-        <path d="M 40 0 L 0 0 0 40" fill="none" stroke="${palette.oat}" stroke-width="0.5" stroke-opacity="0.35" />
-      </pattern>
-    </defs>
-    <rect width="${OG_WIDTH}" height="${OG_HEIGHT}" fill="url(#glow)" />
-    <rect width="${OG_WIDTH}" height="${OG_HEIGHT}" fill="url(#grid)" />
-    <circle cx="1120" cy="560" r="3" fill="${brand}" opacity="0.15" />
-    <circle cx="1136" cy="548" r="2" fill="${brand}" opacity="0.10" />
-    <circle cx="1148" cy="564" r="2.5" fill="${brand}" opacity="0.12" />
-    <rect x="0" y="0" width="180" height="3" fill="${brand}" />
+    <rect width="${OG_WIDTH}" height="6" fill="${brand}" />
   `;
 }
 
 function getLayout(lines: string[], hasTags: boolean) {
-  const cardLeft = 120;
-  const cardRight = 1080;
-  const cardTop = 70;
-  const cardBottom = 560;
-  const idY = 120;
-  const footerY = 542;
-  const footerSeparatorY = 526;
+  const marginX = 100;
+  const rightX = OG_WIDTH - marginX;
 
-  const contentLineHeight = 44;
-  const contentHeight = contentLineHeight * lines.length;
-  const tagHeight = hasTags ? 44 : 0;
-  const blockHeight = contentHeight + tagHeight;
+  const logoR = 20;
+  const logoCenterX = marginX + logoR;
+  const logoCenterY = 100;
+  const headerY = logoCenterY + 9;
 
-  const availableTop = idY + 44;
-  const availableBottom = footerSeparatorY - 16;
-  const availableHeight = availableBottom - availableTop;
+  const heroSize = 44;
+  const heroLineHeight = 60;
+
+  const footerLineY = 556;
+  const footerTextY = 590;
+
+  const heroSpan = heroLineHeight * (lines.length - 1) + heroSize;
+  const tagBlock = hasTags ? 46 : 0;
+  const blockHeight = heroSpan + tagBlock;
+
+  const availableTop = 168;
+  const availableBottom = footerLineY - 36;
+  const firstBaseline =
+    availableTop + Math.max(0, (availableBottom - availableTop - blockHeight) / 2) + heroSize;
+  const heroBottomBaseline = firstBaseline + heroLineHeight * (lines.length - 1);
 
   return {
     lines,
-    cardLeft,
-    cardRight,
-    cardTop,
-    cardBottom,
-    idY,
-    footerY,
-    footerSeparatorY,
-    contentLineHeight,
-    contentHeight,
-    blockY: availableTop + Math.max(0, (availableHeight - blockHeight) / 2),
-    barTop: idY - 28,
-    barHeight: footerSeparatorY - (idY - 28),
+    marginX,
+    rightX,
+    logoR,
+    logoCenterX,
+    logoCenterY,
+    headerY,
+    heroSize,
+    heroLineHeight,
+    firstBaseline,
+    tagY: heroBottomBaseline + 46,
+    footerLineY,
+    footerTextY,
   };
 }
 
-function renderCard(layout: OgLayout): string {
+function renderHeader(layout: OgLayout, siteName: string, logo: string | null): string {
+  const { logoCenterX: cx, logoCenterY: cy, logoR: r } = layout;
+  const mark = logo
+    ? `
+      <defs><clipPath id="logoClip"><circle cx="${cx}" cy="${cy}" r="${r}" /></clipPath></defs>
+      <image x="${cx - r}" y="${cy - r}" width="${r * 2}" height="${r * 2}" href="${logo}" clip-path="url(#logoClip)" preserveAspectRatio="xMidYMid slice" />
+      <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${palette.oat}" />`
+    : `
+      <circle cx="${cx}" cy="${cy}" r="${r}" fill="${brand}" fill-opacity="0.12" stroke="${brand}" stroke-opacity="0.28" />
+      ${textElement("M", { x: cx, y: cy + 6, family: fontFamily.serif, size: 18, weight: 600, fill: brand, anchor: "middle" })}`;
+
   return `
-    <rect x="${layout.cardLeft}" y="${layout.cardTop}" width="${layout.cardRight - layout.cardLeft}" height="${layout.cardBottom - layout.cardTop}" rx="10" fill="${palette.cloud}" stroke="${palette.oat}" stroke-width="1" />
-    <defs>
-      <linearGradient id="bar" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stop-color="${brand}" />
-        <stop offset="100%" stop-color="${brand}" stop-opacity="0.12" />
-      </linearGradient>
-    </defs>
-    <rect x="${layout.cardLeft + 16}" y="${layout.barTop}" width="3" height="${layout.barHeight}" rx="1.5" fill="url(#bar)" />
+    ${mark}
+    ${textElement(siteName, { x: cx + r + 16, y: layout.headerY, family: fontFamily.sans, size: 26, weight: 600, fill: palette.ink })}
   `;
 }
 
-function renderIdentity(layout: OgLayout, siteName: string): string {
-  const iconX = layout.cardLeft + 42;
-  const iconY = layout.idY - 8;
-
-  return `
-    <circle cx="${iconX}" cy="${iconY}" r="14" fill="${brand}" fill-opacity="0.12" stroke="${brand}" stroke-opacity="0.28" />
-    ${textElement("M", { x: iconX, y: layout.idY - 1, family: fontFamily.serif, size: 15, weight: 600, fill: brand, anchor: "middle" })}
-    ${textElement(siteName, { x: layout.cardLeft + 62, y: layout.idY, family: fontFamily.sans, size: 22, weight: 600, fill: palette.ink })}
-  `;
-}
-
-function renderTitle(layout: OgLayout): string {
+function renderHero(layout: OgLayout): string {
   return layout.lines
     .map((line, i) =>
       textElement(line, {
-        x: layout.cardLeft + 30,
-        y: layout.blockY + i * layout.contentLineHeight,
-        family: fontFamily.sans,
-        size: 30,
-        weight: 400,
+        x: layout.marginX,
+        y: layout.firstBaseline + i * layout.heroLineHeight,
+        family: fontFamily.serif,
+        size: layout.heroSize,
+        weight: 500,
         fill: palette.ink,
       }),
     )
@@ -318,37 +305,38 @@ function renderTitle(layout: OgLayout): string {
 function renderTags(layout: OgLayout, tags: string[]): string {
   if (tags.length === 0) return "";
 
-  const tagY = layout.blockY + layout.contentHeight + 24;
-  const maxX = layout.cardRight - 20;
-  let x = layout.cardLeft + 30;
+  let x = layout.marginX;
   const out: string[] = [];
-
   for (const tag of tags.slice(0, 5)) {
-    const label = `# ${tag}`;
-    const width = measureText(label, 13) + 28;
-    if (out.length > 0 && x + width > maxX) break;
-    out.push(`
-      <rect x="${x}" y="${tagY - 18}" width="${width}" height="28" rx="14" fill="${brand}" fill-opacity="0.10" stroke="${brand}" stroke-opacity="0.20" stroke-width="1" />
-      ${textElement(label, { x: x + 14, y: tagY, family: fontFamily.mono, size: 13, weight: 500, fill: brand })}
-    `);
-    x += width + 8;
+    const label = `#${tag}`;
+    const width = measureText(label, 20);
+    if (out.length > 0 && x + width > layout.rightX) break;
+    out.push(
+      textElement(label, {
+        x,
+        y: layout.tagY,
+        family: fontFamily.sans,
+        size: 20,
+        weight: 500,
+        fill: brand,
+      }),
+    );
+    x += width + 24;
   }
-
   return out.join("\n");
 }
 
 function renderFooter(layout: OgLayout, domain: string, date: string | null): string {
   const parts = [
-    `<line x1="${layout.cardLeft + 20}" y1="${layout.footerSeparatorY}" x2="${layout.cardRight}" y2="${layout.footerSeparatorY}" stroke="${palette.oat}" stroke-width="1" />`,
+    `<line x1="${layout.marginX}" y1="${layout.footerLineY}" x2="${layout.rightX}" y2="${layout.footerLineY}" stroke="${palette.oat}" stroke-width="1" />`,
     textElement(domain, {
-      x: layout.cardLeft + 20,
-      y: layout.footerY,
-      family: fontFamily.mono,
-      size: 13,
+      x: layout.marginX,
+      y: layout.footerTextY,
+      family: fontFamily.sans,
+      size: 19,
       weight: 400,
       fill: palette.fog,
-      opacity: 0.6,
-      letterSpacing: "0.05em",
+      letterSpacing: "0.04em",
       transform: "uppercase",
     }),
   ];
@@ -356,13 +344,12 @@ function renderFooter(layout: OgLayout, domain: string, date: string | null): st
   if (date) {
     parts.push(
       textElement(date, {
-        x: layout.cardRight,
-        y: layout.footerY,
-        family: fontFamily.mono,
-        size: 13,
+        x: layout.rightX,
+        y: layout.footerTextY,
+        family: fontFamily.sans,
+        size: 19,
         weight: 400,
         fill: palette.fog,
-        opacity: 0.5,
         anchor: "end",
       }),
     );

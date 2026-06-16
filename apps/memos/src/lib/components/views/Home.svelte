@@ -240,10 +240,26 @@
       });
   }
 
+  function centerMemo(el: HTMLElement, behavior: ScrollBehavior) {
+    const rect = el.getBoundingClientRect();
+    const maxTop = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
+    const target = Math.min(
+      maxTop,
+      Math.max(0, rect.top + window.scrollY - (window.innerHeight - rect.height) / 2),
+    );
+    window.scrollTo({ top: target, behavior });
+  }
+
   function focusMemo(memoId: string): boolean {
     const el = document.getElementById(`memo-${memoId}`);
     if (!el) return false;
-    el.scrollIntoView({ behavior: "smooth", block: "center" });
+    centerMemo(el, "smooth");
+    const settle = () => centerMemo(el, "auto");
+    if ("onscrollend" in window) {
+      window.addEventListener("scrollend", settle, { once: true });
+    } else {
+      setTimeout(settle, 500);
+    }
     el.classList.add("memo-highlight");
     setTimeout(() => el.classList.remove("memo-highlight"), 2500);
     return true;
