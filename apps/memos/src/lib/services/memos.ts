@@ -1,4 +1,26 @@
-import type { MemoVisibility } from "$lib/types";
+import type { Memo, MemoVisibility } from "$lib/types";
+import { z } from "zod";
+
+const memoSchema = z.object({
+  id: z.string(),
+  content: z.string(),
+  tags: z.array(z.string()),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+  visibility: z.enum(["public", "private"]),
+  pinned: z.boolean(),
+  archived: z.boolean(),
+});
+
+const memoPageSchema = z.object({
+  memos: z.array(memoSchema),
+  nextCursor: z.string().nullable(),
+});
+
+export interface MemoPage {
+  memos: Memo[];
+  nextCursor: string | null;
+}
 
 export interface MemoUpdateInput {
   content?: string;
@@ -24,6 +46,12 @@ export async function apiCreateMemo(content: string, visibility: MemoVisibility)
     body: JSON.stringify({ content, visibility }),
   });
   if (!res.ok) throw new Error(await extractError(res));
+}
+
+export async function apiListMemos(url: string): Promise<MemoPage> {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(await extractError(res));
+  return memoPageSchema.parse(await res.json());
 }
 
 export async function apiUpdateMemo(id: string, input: MemoUpdateInput): Promise<void> {

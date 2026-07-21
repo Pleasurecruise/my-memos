@@ -5,28 +5,27 @@
   "type": "module",
   "scripts": {
     "dev": "pnpm --filter @my-memos/app dev",
-    "dev:wrangler": "pnpm build && wrangler dev --remote",
     "dev:storybook": "pnpm --filter @my-memos/ui dev",
     "build": "pnpm --filter @my-memos/app build",
-    "d1:migrate:local": "wrangler d1 migrations apply DB --local --persist-to .wrangler --config wrangler.toml",
-    "d1:migrate:remote": "wrangler d1 migrations apply DB --remote --config wrangler.toml",
-    "check": "vp check && svelte-check --workspace packages/ui --tsconfig tsconfig.json && svelte-check --workspace apps/memos --tsconfig tsconfig.check.json && tsgo --noEmit",
+    "d1:migrate:local": "wrangler d1 migrations apply DB --local --persist-to apps/memos/.wrangler/state --config apps/memos/wrangler.jsonc",
+    "d1:migrate:remote": "wrangler d1 migrations apply DB --remote --config apps/memos/wrangler.jsonc",
+    "deploy": "pnpm --filter @my-memos/app exec void deploy",
+    "check": "pnpm --filter @my-memos/app prepare && vp check && svelte-check --workspace packages/ui --tsconfig tsconfig.json && svelte-check --workspace apps/memos --tsconfig tsconfig.check.json && tsgo --noEmit",
     "lint": "vp lint",
     "format": "vp fmt"
   },
   "devDependencies": {
-    "@cloudflare/vite-plugin": "1.40.2",
     "@cloudflare/workers-types": "latest",
-    "@sveltejs/vite-plugin-svelte": "7.1.2",
-    "@tailwindcss/vite": "4.3.1",
-    "@types/node": "25.9.3",
+    "@sveltejs/vite-plugin-svelte": "7.2.0",
+    "@tailwindcss/vite": "4.3.3",
+    "@types/node": "26.1.1",
     "@typescript/native-preview": "beta",
-    "svelte": "5.56.3",
-    "svelte-check": "4.6.0",
-    "tailwindcss": "4.3.1",
+    "svelte": "5.56.6",
+    "svelte-check": "4.7.3",
+    "tailwindcss": "4.3.3",
     "typescript": "6.0.3",
-    "vite-plus": "0.1.24",
-    "wrangler": "4.100.0"
+    "vite-plus": "0.2.5",
+    "wrangler": "4.112.0"
   },
-  "packageManager": "pnpm@11.6.0"
+  "packageManager": "pnpm@11.15.0"
 }

@@ -6,7 +6,7 @@ on:
 
 jobs:
   check:
-    name: Lint & Type Check
+    name: Check & Build
     runs-on: ubuntu-latest
 
     steps:
@@ -14,7 +14,7 @@ jobs:
 
       - uses: pnpm/action-setup@v4
         with:
-          version: 11.6.0
+          version: 11.15.0
 
       - uses: actions/setup-node@v4
         with:
@@ -29,3 +29,6 @@ jobs:
 
       - name: Type check
         run: pnpm check
+
+      - name: Production build
+        run: pnpm build

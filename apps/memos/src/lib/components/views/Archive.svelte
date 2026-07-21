@@ -15,6 +15,7 @@
   import type { Memo } from "$lib/types";
   import { createDeleteActions, createRestoreActions } from "$lib/state/memo-actions.svelte";
   import { showToast } from "$lib/state/toast.svelte";
+  import { apiListMemos } from "$lib/services/memos";
   import MarkdownContent from "$lib/components/MarkdownContent.svelte";
 
   import Masthead from "$lib/components/layout/Masthead.svelte";
@@ -63,11 +64,7 @@
           if (selectedDate) queryParams.set("date", format(selectedDate, "yyyy-MM-dd"));
           if (initialTags.length > 0) queryParams.set("tags", initialTags.join(","));
 
-          fetch(`/api/memos?${queryParams.toString()}`)
-            .then((response) => {
-              if (!response.ok) throw new Error("Bad response");
-              return response.json();
-            })
+          apiListMemos(`/api/memos?${queryParams.toString()}`)
             .then((pageData) => {
               if (requestSeq !== loadRequestSeq) return;
               allMemos = [...allMemos, ...pageData.memos];

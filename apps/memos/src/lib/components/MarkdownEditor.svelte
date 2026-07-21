@@ -38,5 +38,4 @@
   oninput={handleInput}
   onkeydown={handleKeydown}
   {onblur}
-  class={cn("md-editor", extraClass)}
-></textarea>
+  class={cn("md-editor", extraClass)}></textarea>

@@ -64,8 +64,7 @@
     class="chat-textarea"
     aria-label={placeholder}
     oninput={resize}
-    onkeydown={handleKeydown}
-  ></textarea>
+    onkeydown={handleKeydown}></textarea>
   <Button
     size="icon"
     variant={canSend ? "default" : "ghost"}

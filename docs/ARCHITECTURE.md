@@ -4,12 +4,12 @@ This repository is a `pnpm` workspace with one deployable app and one shared UI 
 
 ## Repository Layout
 
-| Path                                                                 | Role                                                          |
-| -------------------------------------------------------------------- | ------------------------------------------------------------- |
-| [apps/memos](/Users/pleasure1234/Github/my-memos/apps/memos)         | Main SvelteKit application deployed to Cloudflare Workers     |
-| [packages/ui](/Users/pleasure1234/Github/my-memos/packages/ui)       | Shared Svelte UI components, theme tokens, and local demo app |
-| [docs](/Users/pleasure1234/Github/my-memos/docs)                     | Maintainer-facing documentation                               |
-| [wrangler.toml](/Users/pleasure1234/Github/my-memos/wrangler.toml:1) | Cloudflare Worker entrypoint and bindings                     |
+| Path                                                                                         | Role                                                          |
+| -------------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
+| [apps/memos](/Users/pleasure1234/Github/my-memos/apps/memos)                                 | Main SvelteKit application deployed to Cloudflare Workers     |
+| [packages/ui](/Users/pleasure1234/Github/my-memos/packages/ui)                               | Shared Svelte UI components, theme tokens, and local demo app |
+| [docs](/Users/pleasure1234/Github/my-memos/docs)                                             | Maintainer-facing documentation                               |
+| [apps/memos/wrangler.jsonc](/Users/pleasure1234/Github/my-memos/apps/memos/wrangler.jsonc:1) | Cloudflare Worker entrypoint and bindings                     |
 
 ## High-Level System
 
@@ -29,6 +29,8 @@ Browser
 ### App: `apps/memos`
 
 The deployable application is the `@my-memos/app` workspace package defined in [apps/memos/package.json](/Users/pleasure1234/Github/my-memos/apps/memos/package.json:1).
+
+Void is configured at [apps/memos/void.json](/Users/pleasure1234/Github/my-memos/apps/memos/void.json:1), beside the SvelteKit package it prepares and deploys. The repository-root scripts delegate Void commands to this workspace package. D1 remains owned by the existing Wrangler migrations and `App.Platform` contract; the app does not opt into Void's `void/db` schema or migration layer.
 
 Key areas:
 
@@ -107,7 +109,7 @@ Current auth characteristics:
 - database-backed sessions in D1
 - Google OAuth configured as the social provider
 - secure cookies enabled automatically when `BETTER_AUTH_URL` is `https`
-- optional single-user gating through `ALLOWED_EMAIL`
+- required single-user gating through `ALLOWED_EMAIL`
 
 Request bootstrapping happens in [apps/memos/src/hooks.server.ts](/Users/pleasure1234/Github/my-memos/apps/memos/src/hooks.server.ts:1), which:
 
@@ -146,6 +148,8 @@ R2 stores:
 - full memo markdown body
 - chat support files such as `agent/PROMPT.md` and `agent/MEMORY.md`
 - long-form notes under `blog/` prefix, with custom metadata (title, timestamps) and KV-compiled caches
+
+During `pnpm dev`, this binding uses Wrangler's app-local simulated R2 state. Remote storage is accessed only through an explicit remote development or deployment command.
 
 ### KV
 
@@ -231,7 +235,7 @@ File: [apps/memos/src/routes/api/notes/[...slug]/+server.ts](/Users/pleasure1234
 
 The runtime contract for Cloudflare bindings is declared in [apps/memos/src/app.d.ts](/Users/pleasure1234/Github/my-memos/apps/memos/src/app.d.ts:1). Keep this file in sync with:
 
-- `wrangler.toml`
+- `apps/memos/wrangler.jsonc`
 - any new secrets or bindings
 - any platform-dependent server code
 
@@ -239,7 +243,7 @@ If these drift, the app may still compile but fail at runtime.
 
 ## Known Inconsistencies To Watch
 
-- Root `wrangler.toml` is effectively production-shaped rather than environment-sliced.
-- Schema changes should be made as Wrangler SQL migrations first, then mirrored in the Drizzle schema. Do not mix Drizzle-generated migrations with Wrangler-applied SQL files.
+- `apps/memos/wrangler.jsonc` is production-shaped rather than environment-sliced.
+- Schema changes should be made as Wrangler SQL migrations first, then mirrored in the Drizzle schema. Do not mix Void- or Drizzle-generated migrations with Wrangler-applied SQL files.
 
 These are not blockers for documentation, but they matter if you change behavior later.

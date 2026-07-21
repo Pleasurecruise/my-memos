@@ -43,7 +43,7 @@
     createPinActions,
     createArchiveActions,
   } from "$lib/state/memo-actions.svelte";
-  import { apiCreateMemo } from "$lib/services/memos";
+  import { apiCreateMemo, apiListMemos } from "$lib/services/memos";
   import { showToast } from "$lib/state/toast.svelte";
   import { getCaretScreenPosition, updateQuery, groupBy } from "$lib/utils";
   import { createTagAutocomplete } from "$lib/state/tag-autocomplete.svelte";
@@ -219,11 +219,7 @@
     if (viewAsPublic) queryParams.set("publicOnly", "true");
     if (sortByUpdated) queryParams.set("sortByUpdated", "true");
 
-    return fetch(`/api/memos?${queryParams.toString()}`)
-      .then((response) => {
-        if (!response.ok) throw new Error("Bad response");
-        return response.json();
-      })
+    return apiListMemos(`/api/memos?${queryParams.toString()}`)
       .then((pageData) => {
         if (requestSeq !== loadRequestSeq) return false;
         allMemos = [...allMemos, ...pageData.memos];

@@ -4,7 +4,7 @@
   import { page } from "$app/state";
   import { untrack, onMount, tick } from "svelte";
   import { updateQuery } from "$lib/utils";
-  import { apiCreateMemo } from "$lib/services/memos";
+  import { apiCreateMemo, apiListMemos } from "$lib/services/memos";
   import { showToast } from "$lib/state/toast.svelte";
   import {
     Button,
@@ -137,11 +137,7 @@
     if (viewAsPublic) queryParams.set("publicOnly", "true");
     if (sortByUpdated) queryParams.set("sortByUpdated", "true");
 
-    return fetch(`/api/memos?${queryParams.toString()}`)
-      .then((response) => {
-        if (!response.ok) throw new Error("Bad response");
-        return response.json();
-      })
+    return apiListMemos(`/api/memos?${queryParams.toString()}`)
       .then((pageData) => {
         if (requestSeq !== loadRequestSeq) return false;
         allMemos = [...allMemos, ...pageData.memos];

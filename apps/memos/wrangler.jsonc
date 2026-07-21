@@ -1,0 +1,52 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "my-memos",
+  "main": ".svelte-kit/cloudflare/_sveltekit.js",
+  "compatibility_date": "2026-05-24",
+  "compatibility_flags": ["nodejs_compat", "nodejs_als"],
+  "upload_source_maps": true,
+  "workers_dev": false,
+  "routes": [
+    {
+      "pattern": "memos.you-find.me",
+      "custom_domain": true,
+    },
+  ],
+  "vars": {
+    "AI_GATEWAY_PROVIDER_SLUG": "siliconflow",
+    "BETTER_AUTH_URL": "https://memos.you-find.me",
+    "CF_ACCOUNT_ID": "fb71c4eceaf623ae1b19b8b37d7a38cf",
+    "CF_GATEWAY_NAME": "default",
+  },
+  "assets": {
+    "directory": ".svelte-kit/cloudflare",
+    "binding": "ASSETS",
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "my-memos",
+      "database_id": "02a94452-aeeb-4c5e-8846-6750347f6cad",
+      "migrations_dir": "migrations",
+    },
+  ],
+  "kv_namespaces": [
+    {
+      "binding": "MEMOS_CACHE",
+      "id": "5f04d490f46b4459b32d8e735f95dfd5",
+    },
+  ],
+  "r2_buckets": [
+    {
+      "binding": "MEMOS_BUCKET",
+      "bucket_name": "cherry-studio",
+    },
+  ],
+  "observability": {
+    "enabled": true,
+    "logs": {
+      "enabled": true,
+      "invocation_logs": true,
+    },
+  },
+}

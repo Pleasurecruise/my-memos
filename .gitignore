@@ -11,6 +11,7 @@ coverage/
 
 # Tool caches
 .wrangler/
+.void/
 apps/memos/drizzle/
 .parcel-cache/
 .cache/
@@ -28,7 +29,6 @@ lerna-debug.log*
 
 # Local environment files
 .dev.vars*
-!.dev.vars.example
 .env*
 !.env.example
 

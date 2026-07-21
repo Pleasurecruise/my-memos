@@ -51,5 +51,4 @@
     if (autoresize) resize();
     userOninput?.(e as Event & { currentTarget: HTMLTextAreaElement });
   }}
-  {...rest}
-></textarea>
+  {...rest}></textarea>
