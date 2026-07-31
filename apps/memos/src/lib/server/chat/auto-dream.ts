@@ -1,4 +1,3 @@
-import type { R2Bucket } from "@cloudflare/workers-types";
 import { generateText, getToolName, isToolUIPart, type LanguageModel, type UIMessage } from "ai";
 
 const MEMORY_KEY = "agent/MEMORY.md";

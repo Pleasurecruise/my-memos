@@ -1,5 +1,3 @@
-import type { KVNamespace } from "@cloudflare/workers-types";
-
 const KV_PREFIX = "memo-og:";
 const PNG_TTL = 60 * 60 * 24 * 30;
 

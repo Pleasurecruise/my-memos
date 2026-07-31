@@ -1,6 +1,5 @@
 import { json } from "@sveltejs/kit";
 import type { RequestHandler } from "./$types";
-import type { R2Bucket } from "@cloudflare/workers-types";
 import { convertToModelMessages, streamText, stepCountIs, type UIMessage } from "ai";
 import { createProvider } from "$lib/server/chat/provider";
 import { createChatTools } from "$lib/server/chat/tools";

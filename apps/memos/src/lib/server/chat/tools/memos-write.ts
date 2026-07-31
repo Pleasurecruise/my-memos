@@ -1,7 +1,6 @@
 import { tool } from "ai";
 import { z } from "zod";
 import { createMemo, deleteMemo, updateMemo } from "$lib/server/memos";
-import type { D1Database, KVNamespace, R2Bucket } from "@cloudflare/workers-types";
 
 export interface MemoWriteContext {
   d1: D1Database;

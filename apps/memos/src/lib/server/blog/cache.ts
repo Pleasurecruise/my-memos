@@ -1,4 +1,3 @@
-import type { KVNamespace } from "@cloudflare/workers-types";
 import type { TocEntry, VisualBlock } from "$lib/types";
 import { compileMarkdown, type CompiledNote } from "./compiler";
 

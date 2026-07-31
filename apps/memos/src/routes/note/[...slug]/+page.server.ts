@@ -1,5 +1,4 @@
 import { error, redirect } from "@sveltejs/kit";
-import type { KVNamespace, R2Bucket, R2ListOptions } from "@cloudflare/workers-types";
 import {
   BLOG_PREFIX,
   DEFAULT_NOTE_CATEGORY,

@@ -15,17 +15,16 @@
     "format": "vp fmt"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "latest",
     "@sveltejs/vite-plugin-svelte": "7.2.0",
     "@tailwindcss/vite": "4.3.3",
-    "@types/node": "26.1.1",
+    "@types/node": "26.1.2",
     "@typescript/native-preview": "beta",
-    "svelte": "5.56.6",
-    "svelte-check": "4.7.3",
+    "svelte": "5.56.8",
+    "svelte-check": "4.7.4",
     "tailwindcss": "4.3.3",
     "typescript": "6.0.3",
-    "vite-plus": "0.2.5",
-    "wrangler": "4.112.0"
+    "vite-plus": "0.2.6",
+    "wrangler": "4.116.0"
   },
-  "packageManager": "pnpm@11.15.0"
+  "packageManager": "pnpm@11.18.0"
 }

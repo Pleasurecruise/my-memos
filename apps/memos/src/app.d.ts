@@ -1,4 +1,3 @@
-import type { D1Database, KVNamespace, R2Bucket } from "@cloudflare/workers-types";
 import type { User, Session } from "better-auth";
 
 declare global {

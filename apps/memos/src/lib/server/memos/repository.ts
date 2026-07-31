@@ -1,4 +1,3 @@
-import type { D1Database, KVNamespace, R2Bucket } from "@cloudflare/workers-types";
 import { drizzle } from "drizzle-orm/d1";
 import { and, desc, eq, gte, like, or, sql } from "drizzle-orm";
 import { memos } from "../db/schema";

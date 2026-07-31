@@ -1,5 +1,4 @@
 import { Resvg, initWasm } from "@resvg/resvg-wasm";
-import type { KVNamespace } from "@cloudflare/workers-types";
 import { OG_FONT_FAMILIES, loadOgFonts } from "./fonts";
 
 const OG_WIDTH = 1200;

@@ -4,7 +4,6 @@ import { and, desc, eq, like } from "drizzle-orm";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
 import { memos } from "$lib/server/db/schema";
 import { buildMemoDateCondition, buildMemoTagConditions, listTagCounts } from "$lib/server/memos";
-import type { D1Database, KVNamespace, R2Bucket } from "@cloudflare/workers-types";
 
 export interface MemoReadContext {
   d1: D1Database;

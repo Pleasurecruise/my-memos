@@ -1,5 +1,4 @@
 import { error, redirect } from "@sveltejs/kit";
-import type { R2ListOptions } from "@cloudflare/workers-types";
 import { BLOG_PREFIX, slugFromR2Key, slugToTitle } from "$lib/server/blog";
 import type { PageServerLoad } from "./$types";
 
