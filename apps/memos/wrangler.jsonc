@@ -3,7 +3,7 @@
   "name": "my-memos",
   "main": ".svelte-kit/cloudflare/_sveltekit.js",
   "compatibility_date": "2026-05-24",
-  "compatibility_flags": ["nodejs_compat", "nodejs_als"],
+  "compatibility_flags": ["nodejs_compat", "nodejs_als", "global_fetch_strictly_public"],
   "upload_source_maps": true,
   "workers_dev": false,
   "routes": [
@@ -13,10 +13,19 @@
     },
   ],
   "vars": {
-    "AI_GATEWAY_PROVIDER_SLUG": "siliconflow",
     "BETTER_AUTH_URL": "https://memos.you-find.me",
     "CF_ACCOUNT_ID": "fb71c4eceaf623ae1b19b8b37d7a38cf",
-    "CF_GATEWAY_NAME": "default",
+  },
+  "secrets": {
+    "required": [
+      "ALLOWED_EMAIL",
+      "BETTER_AUTH_SECRET",
+      "CF_AIG_TOKEN",
+      "GOOGLE_CLIENT_ID",
+      "GOOGLE_CLIENT_SECRET",
+      "MCP_API_KEY",
+      "TAVILY_API_KEY",
+    ],
   },
   "assets": {
     "directory": ".svelte-kit/cloudflare",
@@ -43,10 +52,12 @@
     },
   ],
   "observability": {
-    "enabled": true,
     "logs": {
       "enabled": true,
       "invocation_logs": true,
+    },
+    "traces": {
+      "enabled": false,
     },
   },
 }

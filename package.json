@@ -10,6 +10,7 @@
     "d1:migrate:local": "wrangler d1 migrations apply DB --local --persist-to apps/memos/.wrangler/state --config apps/memos/wrangler.jsonc",
     "d1:migrate:remote": "wrangler d1 migrations apply DB --remote --config apps/memos/wrangler.jsonc",
     "deploy": "pnpm --filter @my-memos/app exec void deploy",
+    "test": "vitest run",
     "check": "pnpm --filter @my-memos/app prepare && vp check && svelte-check --workspace packages/ui --tsconfig tsconfig.json && svelte-check --workspace apps/memos --tsconfig tsconfig.check.json && tsgo --noEmit",
     "lint": "vp lint",
     "format": "vp fmt"
@@ -24,6 +25,7 @@
     "tailwindcss": "4.3.3",
     "typescript": "6.0.3",
     "vite-plus": "0.2.6",
+    "vitest": "4.1.10",
     "wrangler": "4.116.0"
   },
   "packageManager": "pnpm@11.18.0"

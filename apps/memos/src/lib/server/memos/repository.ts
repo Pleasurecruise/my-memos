@@ -4,7 +4,7 @@ import { memos } from "../db/schema";
 import type { MemoRow } from "../db/schema";
 import { buildMemoDateCondition, buildMemoTagConditions } from "./query";
 import { buildMemoR2Key, createMemoId, normalizeTags } from "./utils";
-import { stripHashtags } from "$lib/utils";
+import { stripHashtags } from "$lib/utils/tags";
 import { deleteMemoOgImagesKv } from "$lib/server/og/cache";
 import type { CreateMemoInput, UpdateMemoInput, MemoListFilters, MemoPage } from "./types";
 import type { Memo, MemoStats, TagCount } from "$lib/types";

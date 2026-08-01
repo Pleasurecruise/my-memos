@@ -1,292 +1,67 @@
-# Agent Runtime Refactor
+# Minimal Agent Runtime Refactor
 
-## Purpose
+## Current design
 
-The current chat implementation is a small agent adapter built directly on Vercel AI SDK.
-It combines the model, prompt, memory, tools, loop limit, and UI stream in one SvelteKit route.
-
-This refactor has three goals:
-
-- extract a reusable `@my-memos/ai-core` monorepo package;
-- replace the custom loop with pi-agent-core;
-- expose the existing tools through an authenticated MCP server using protocol revision `2026-07-28`.
-
-The project exists for personal learning and practice. The original lightweight implementation is therefore recorded at the end of this document instead of being erased from the architectural story.
-
-## Architecture
+The production chat runtime is intentionally stateless and has three boundaries:
 
 ```text
-Browser / @ai-sdk/svelte Chat
-  |
-  v
-SvelteKit application (@my-memos/app)
-  |- authentication and browser stream adapter
-  |- /api/mcp endpoint
-  |- my-memos MCP server
-  |- Cloudflare service implementations
-  `- ChatThread Durable Object binding
-          |
-          v
-    @my-memos/ai-core
-      |- pi Agent lifecycle
-      |- model interface
-      |- MCP client
-      |- MCP-tool-to-pi adapter
-      |- context and run budgets
-      `- runtime event stream
-          |
-          v
-    Cloudflare AI Gateway -> DeepSeek V4 Flash
-
-ChatThreadDO SQLite -> canonical transcript and run checkpoints
-D1                  -> memo metadata, auth, optional thread index
-R2                  -> memo bodies, PROMPT.md, MEMORY.md
-KV                  -> derived memo caches only
+browser Svelte Chat store (page memory only)
+  -> POST /api/chat (complete current-page messages)
+  -> typed NDJSON agent events
+  -> @my-memos/ai-core / pi Agent
+  -> MCP 2026-07-28
+  -> app domain operations
 ```
 
-The design follows one important idea from [camelAI](https://github.com/qaml-ai/camelAI): each chat thread has a Durable Object that owns its agent execution and persistent state. It does not copy camelAI's coding workspace, filesystem, sandbox containers, build system, or publishing platform.
+`@my-memos/ai-core` owns pi Agent construction, the OpenAI-compatible model contract, MCP discovery, MCP-to-pi tool adaptation, cancellation, and runtime events. It does not import application or Cloudflare types. `@earendil-works/pi-agent-core` and `@earendil-works/pi-ai` are pinned together at `0.83.0`.
 
-Only the AI core becomes a new package. The MCP server remains inside the application.
+The application owns authentication, a small typed NDJSON chat bridge, R2 prompt/memory loading, the MCP server, and concrete D1/R2/KV operations. One browser assistant turn keeps the ordered pi steps around tool execution, which produces one visible message without losing protocol order. pi is the only server-side loop owner. Production has no Vercel AI SDK dependency.
 
-That distinction is deliberate:
+## Deliberate omissions
 
-- AI core is independent of memos, SvelteKit, and Cloudflare storage, so it has a real reuse boundary.
-- The MCP server exposes my-memos capabilities and depends on its authentication, repositories, bindings, and policies.
-- Moving the MCP server into `packages/` would mostly relocate application code and introduce dependency injection without meaningful reuse.
-- The protocol already provides the external boundary. Code does not also need a package boundary merely because it has an HTTP boundary.
+There are no application limits for turns, tokens, tool calls, writes, provider cost, or elapsed runtime. A run ends when the model ends naturally, the request is cancelled, an upstream fails, or Cloudflare terminates execution.
 
-The MCP server can be extracted later if a second application needs to host the same capabilities. Until then, keeping it near the domain follows the project's preference for small, concrete abstractions.
+There is also no Durable Object, thread ID, transcript store, snapshot, checkpoint, history API, resume, retry, or regenerate flow. Refreshing or leaving `/chat` discards the browser's current `Chat` instance. The server never persists input, output, or run state.
 
-## Monorepo AI core
+## Model
 
-Create `packages/ai-core` with package name `@my-memos/ai-core`.
-
-It owns:
-
-- construction and operation of a pi `Agent`;
-- canonical runtime events and run results;
-- model/provider interfaces;
-- MCP client connections and tool discovery;
-- conversion of MCP tools into pi `AgentTool` objects;
-- context transformation, cancellation, and run budgets;
-- serializable runtime snapshots used by the Cloudflare host.
-
-It must not import:
-
-- SvelteKit or `App.Platform`;
-- D1, R2, KV, or Durable Object bindings;
-- Better Auth or memo repositories;
-- Svelte components;
-- Vercel AI SDK `UIMessage` types;
-- pi coding-agent, TUI, filesystem tools, or Node SQLite adapters.
-
-Suggested structure:
+The model is `deepseek-chat` with pi's `openai-completions` API, sent to Cloudflare AI Gateway's provider-native DeepSeek base URL:
 
 ```text
-packages/ai-core/
-  package.json
-  src/
-    index.ts
-    runtime.ts
-    types.ts
-    model.ts
-    events.ts
-    context.ts
-    budget.ts
-    mcp-client.ts
-    mcp-tool-adapter.ts
+https://gateway.ai.cloudflare.com/v1/{account}/default/deepseek
 ```
 
-Its public API should accept thread identity, system context, canonical messages, a model, MCP tool sources, run budgets, and cancellation. It should expose an async runtime event stream, abort and idle controls, and a serializable snapshot. Concrete Cloudflare types must stay outside this contract.
+`CF_AIG_TOKEN` authenticates the Gateway through `cf-aig-authorization`. The app deliberately omits upstream `Authorization` and `x-api-key` headers so Cloudflare injects the provider key stored under AI Gateway BYOK. Provider-native and custom-provider routes remain supported; the deprecated `/compat/chat/completions` endpoint and Cloudflare Unified Billing REST endpoint are not used.
 
-Use pi's high-level `Agent` first. It already provides event subscriptions, tool execution, abort, idle barriers, context transformation, steering, follow-up queues, and tool hooks. Use the lower-level `agentLoop()` only if a measured checkpoint requirement cannot be implemented through `Agent`.
+## MCP
 
-Both `@earendil-works/pi-agent-core` and `@earendil-works/pi-ai` must be pinned to the same exact version. Upgrade them together in isolated changes.
+`POST /api/mcp` is a single stateless endpoint created with the official v2 TypeScript SDK and `legacy: "reject"`. The in-product client pins `2026-07-28`; it never falls back to a 2025 handshake. Session headers are rejected.
 
-Conceptually, the package creates the runtime like this:
+External clients send `Authorization: Bearer <MCP_API_KEY>`. The server hashes both the supplied and configured values with Web Crypto and compares the fixed-length digests. This one manually rotated key has access to every remotely exposed domain tool. There are no token CRUD routes, token tables, or scopes.
 
-```ts
-const tools = await discoverMcpTools(toolSources);
+The in-product Agent uses the same handler through an in-process `fetch`, with a trusted in-product principal derived from Better Auth state. It does not expose or read the external key.
 
-const agent = new Agent({
-  initialState: {
-    systemPrompt,
-    model,
-    messages,
-    tools: tools.map(toPiAgentTool),
-  },
-  streamFn,
-  transformContext,
-  beforeToolCall: enforceRunPolicy,
-  afterToolCall: recordToolOutcome,
-  sessionId: threadId,
-  toolExecution: "parallel",
-});
-```
+Externally exposed tool names are stable:
 
-The MCP adapter propagates cancellation and deadlines, preserves tool-call IDs, converts structured results, maps progress to pi updates, redacts transport details, and marks mutation tools as sequential.
+- `get_tags`, `list_memos`, `search_memos`
+- `create_memo`, `update_memo`, `delete_memo`
+- `web_search`, `fetch_raw`, `fetch_url`, `github_read`, `lookup_docs`
 
-Replacing `stepCountIs(20)` must not remove the safety limit. The core needs explicit budgets for turns, tool calls, mutations, tokens, tool-result bytes, wall-clock duration, and provider cost.
+The in-product Agent additionally receives `render_chart`, `render_svg`, `render_mermaid`, and `render_widget` through its trusted Better Auth principal. Those tools describe page UI and are deliberately omitted from discovery and invocation for external API-key clients.
 
-## MCP server
+Domain operations contain the implementation and parse their schemas at their own boundary, even when invoked outside MCP. The MCP layer owns principal-based exposure, invocation, structured results, and structured error mapping. Mutation tools are sequential; read and in-product render tools may run in parallel. URL-reading tools reject non-public targets before fetching.
 
-Keep the server in the application:
+## Prompt and memory
 
-```text
-apps/memos/src/lib/server/mcp/
-  server.ts
-  auth.ts
-  errors.ts
-  tools/
-    memos-read.ts
-    memos-write.ts
-    web-search.ts
-    fetch.ts
-    defuddle.ts
-    github.ts
-    context7.ts
-    visual.ts
+`agent/PROMPT.md` and `agent/MEMORY.md` remain in R2. Reads use a 30-second cache with ETag revalidation instead of a never-invalidated process cache.
 
-apps/memos/src/routes/api/mcp/+server.ts
-```
+After a successful chat, the server passes only the newest user message and newly generated assistant text to `platform.ctx.waitUntil()`. A no-tool model call returns `{ changed, memory }`. It may keep explicit durable identity, preferences, work habits, long-running projects, corrections, and remember/forget instructions. It must exclude transient tasks, ordinary chat, raw tool output, unconfirmed assistant inferences, credentials, secrets, and sensitive data.
 
-The server owns tool names, descriptions, JSON Schemas, structured results, authorization policy, and mapping to existing domain operations. Concrete D1/R2/KV services remain in `apps/memos/src/lib/server`.
-
-The pi runtime must call tools through an MCP client boundary. It must not import MCP tool implementations directly. The same capabilities can then be called by:
-
-- the in-product pi agent;
-- an external authorized MCP client;
-- protocol conformance tests;
-- future development or automation clients.
-
-For the in-product agent, use an in-process `fetch` transport backed by the same MCP handler factory. This avoids a public network round trip while still exercising the actual MCP wire contract. A deployed HTTP contract test remains necessary because in-process tests cannot validate Cloudflare routing, headers, auth, or streaming.
-
-The endpoint is:
-
-```text
-POST /api/mcp
-```
-
-The SvelteKit route authenticates the Better Auth session or a scoped machine token, derives the principal from trusted server state, validates the requested protocol version, and passes a request context to a fresh MCP handler.
-
-The server explicitly targets MCP `2026-07-28`:
-
-- the HTTP protocol core is stateless;
-- modern connections do not use `initialize`, `notifications/initialized`, or `Mcp-Session-Id`;
-- clients use `server/discover` for capability discovery;
-- protocol and client information travel with each request;
-- routing uses standard headers such as `MCP-Protocol-Version`, `Mcp-Method`, and `Mcp-Name`;
-- cancellation closes the request stream;
-- tool schemas use full JSON Schema 2020-12;
-- `structuredContent` may be any JSON value;
-- multi-round-trip results replace stateful server-to-client request flows.
-
-Use the official TypeScript SDK v2 client/server packages and explicitly opt into the modern protocol era. Package versions alone do not prove compliance: tests must assert the negotiated or pinned revision and fail if the implementation silently falls back to a 2025 protocol.
-
-References:
-
-- [MCP 2026-07-28 release overview](https://blog.modelcontextprotocol.io/posts/2026-07-28-release-candidate/)
-- [Official TypeScript SDK migration guide](https://github.com/modelcontextprotocol/typescript-sdk/blob/main/docs/migration/support-2026-07-28.md)
-- [Official TypeScript SDK](https://github.com/modelcontextprotocol/typescript-sdk)
-
-MCP is stateless, but the application is not. MCP request state belongs to one tool flow; chat state belongs to `ChatThreadDO`; personal memory belongs to R2; memo data belongs to D1 and R2. An MCP session identifier must never be repurposed as a chat thread identifier.
-
-The existing capabilities retain their names during migration:
-
-| Tools                                                           | Policy                                                  |
-| --------------------------------------------------------------- | ------------------------------------------------------- |
-| `get_tags`, `list_memos`, `search_memos`                        | `memos:read`; parallel and bounded                      |
-| `create_memo`, `update_memo`                                    | `memos:write`; sequential and idempotent                |
-| `delete_memo`                                                   | `memos:delete`; independently authorized                |
-| `web_search`, `fetch`, `defuddle`                               | `network:read`; URL, timeout, redirect, and size limits |
-| `github`, `context7`                                            | `network:read`; credential and output redaction         |
-| `render_chart`, `render_svg`, `render_mermaid`, `render_widget` | `visual:render`; structured and size-limited            |
-
-Tool declarations should wrap typed domain operations rather than contain repository logic:
-
-```text
-domain operation
-  -> typed input and injected dependencies
-  -> typed domain result
-
-MCP adapter
-  -> authorization and JSON Schema validation
-  -> domain call
-  -> content and structuredContent
-```
-
-MCP becomes the sole agent-facing registry after cutover. Do not maintain both AI SDK and MCP declarations for the same operation.
-
-The current tools sometimes return failure text as successful output. The MCP server should distinguish invalid input, not found, forbidden, conflict, timeout, upstream failure, and internal failure. Sensitive upstream errors stay in redacted server logs.
-
-Authentication is not enough for private mutation tools. The server uses scopes, owner derivation, audit events, deadlines, bounded output, and idempotency keys derived from run and tool-call IDs. A prompt instruction to confirm deletion is useful behavior, but it is not a security boundary.
-
-## Cloudflare host and state
-
-Use one SQLite-backed `ChatThreadDO` per chat thread, not one per user. Even though the application is currently single-user, a thread boundary is needed for history, retries, parallel tabs, and future branching.
-
-The Durable Object owns:
-
-- serialization of runs for one thread;
-- canonical pi messages;
-- run metadata and checkpoints;
-- idempotent input acceptance;
-- retry, abort, history, and status operations;
-- construction of `@my-memos/ai-core` for each run.
-
-It does not own MCP sessions because the 2026-07-28 HTTP protocol is stateless. It also does not treat an in-memory `Agent` instance as durable; the agent is reconstructed from stored state after eviction.
-
-Its SQLite schema needs a sequenced `messages` table and a `runs` table containing a
-unique idempotency key, status, timestamps, and a safe error code. Add checkpoints only
-when recovery tests demonstrate that message-level persistence is insufficient.
-
-The browser may continue using `@ai-sdk/svelte` as a UI and streaming client while pi is the
-only server-side agent runtime. The application converts pi runtime events into the existing
-UI message stream. This bridge stays in the app because `@my-memos/ai-core` must not know
-about `UIMessage`.
-
-The model adapter should configure pi-ai for Cloudflare AI Gateway's OpenAI-compatible endpoint and `deepseek/deepseek-v4-flash`. Credentials are injected by the app. If streamed tool-call deltas are incompatible, implement a narrow pi `streamFn`; do not hide AI SDK `streamText()` inside it and create two loop owners.
-
-Keep the existing data responsibilities:
-
-- `agent/PROMPT.md` in R2 is the system persona;
-- `agent/MEMORY.md` in R2 is long-term personal memory;
-- thread transcripts belong to the DO;
-- memo bodies remain in R2 with metadata in D1;
-- KV remains derived cache only.
-
-Replace the never-invalidated process cache with ETag/TTL-aware prompt loading. Run memory consolidation only after the transcript is committed. Consolidation failure must not fail a completed chat response, and concurrent global memory writes need conditional R2 updates or a coordinator DO.
-
-Implementation requires synchronized changes to `wrangler.jsonc`, `app.d.ts`, `worker.ts`, `ARCHITECTURE.md`, and `DEPLOYMENT.md`. The Worker bundle must export `ChatThreadDO` in addition to the generated SvelteKit handler. The new namespace uses SQLite storage; confirm whether the current Wrangler/Void combination supports declarative `exports` before choosing it over legacy DO migrations.
-
-## Migration
-
-1. Preserve representative old-runtime conversations and metrics.
-2. Create `packages/ai-core` with package tests and enforced dependency boundaries.
-3. Build a minimal MCP 2026-07-28 compatibility spike with fake read and mutation tools.
-4. Verify discovery, calls, cancellation, auth, structured output, Cloudflare builds, and real HTTP headers.
-5. Extract domain operations from current AI SDK tools and expose every tool through `/api/mcp`.
-6. Build and test the pi model and MCP-client adapters outside the production route.
-7. Add `ChatThreadDO`, persistence, retry, abort, and history around the pi runtime.
-8. Compare text, tool, error, visual, latency, and usage behavior against preserved fixtures.
-9. Replace the production chat route with the pi-backed Durable Object implementation.
-10. Move memory consolidation to the committed-run lifecycle.
-11. Delete the executable legacy runtime after the pi route passes its acceptance tests.
-
-Required tests cover MCP revision pinning, discovery, calls, schemas, auth, and errors;
-pi event and result mapping; cancellation, budgets, and mutation serialization; Better Auth
-principal mapping; DeepSeek streaming through AI Gateway; idempotent single-thread runs;
-DO reconstruction; visual UI compatibility; and memory update conflicts.
-
-The legacy runtime is not retained as a production fallback or feature-flagged mode. Its design
-survives only in the historical section below and in git history. Before switching the route,
-the pi implementation must pass the acceptance tests in an isolated test endpoint or worker.
-After cutover, operational rollback means reverting the deployment, not maintaining two live
-agent implementations. Keep transcript formats versioned and MCP tool names stable.
+Unchanged memory is not written. Changed memory uses an R2 `onlyIf` ETag condition. On conflict the updater reads current memory and recomputes once; a second conflict or any background failure is logged without affecting chat. KV stores only a short-lived message-ID status marker for deduplication. The only durable chat-derived content is the consolidated `MEMORY.md`.
 
 ## Historical lightweight adapter
 
-The following snapshot records the core implementation before refactoring on 2026-07-31.
+The following snapshot records the core implementation before refactoring on 2026-07-31. It is a technical archive, not a production fallback, and must remain in this document after the executable adapter is removed.
 
 The original design was valuable because the complete loop was visible in one route, tools were ordinary functions with schemas, prompt and memory were Markdown in R2, and the browser used a mature UI stream. Its limitations came from growth: the browser owned the transcript, the route accumulated responsibilities, and tools were coupled to one SDK.
 
@@ -375,19 +150,8 @@ await bucket.put("agent/MEMORY.md", text.trim(), {
 });
 ```
 
-The refactor should preserve this clarity where possible. A mature runtime and a standard protocol are useful only if the resulting boundaries remain understandable.
+The browser called a separate `/api/chat/consolidate` route when navigating away, and the toolbar exposed AI SDK regeneration. The implementation remains here because its compact adapter logic is useful technical context. Production does not keep a dual runtime or feature flag.
 
-## Completion
+## Verification boundary
 
-The refactor is complete when:
-
-- `@my-memos/ai-core` is reusable and has no app/platform imports;
-- pi is the sole owner of the primary agent loop;
-- every existing tool is available through authenticated MCP `2026-07-28`;
-- pi discovers and invokes tools through MCP;
-- external authorized MCP clients can call `/api/mcp`;
-- each thread is serialized and persisted by a SQLite-backed Durable Object;
-- Cloudflare AI Gateway, DeepSeek, prompt, memory, and visual behavior remain verified;
-- budgets, authorization, idempotency, observability, and failure recovery are tested;
-- architecture, deployment, bindings, and runtime types are synchronized;
-- this historical record remains after the original adapter is removed.
+Local acceptance requires `pnpm check`, `pnpm test`, `pnpm build`, MCP discovery/call/auth/revision tests, cancellation tests, UI-stream tool card checks, and memory conflict/dedupe tests. Deployment acceptance additionally requires a real streamed tool-call against Cloudflare and an HTTP contract test against `/api/mcp`; those checks require deployed bindings and secrets and cannot be truthfully replaced by local mocks.

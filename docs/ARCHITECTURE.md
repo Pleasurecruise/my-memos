@@ -1,6 +1,6 @@
 # Architecture
 
-This repository is a `pnpm` workspace with one deployable app and one shared UI package.
+This repository is a `pnpm` workspace with one deployable app and two reusable packages.
 
 ## Repository Layout
 
@@ -8,16 +8,19 @@ This repository is a `pnpm` workspace with one deployable app and one shared UI 
 | -------------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
 | [apps/memos](/Users/pleasure1234/Github/my-memos/apps/memos)                                 | Main SvelteKit application deployed to Cloudflare Workers     |
 | [packages/ui](/Users/pleasure1234/Github/my-memos/packages/ui)                               | Shared Svelte UI components, theme tokens, and local demo app |
+| `packages/ai-core`                                                                           | Platform-neutral pi Agent runtime and MCP client adapter      |
 | [docs](/Users/pleasure1234/Github/my-memos/docs)                                             | Maintainer-facing documentation                               |
 | [apps/memos/wrangler.jsonc](/Users/pleasure1234/Github/my-memos/apps/memos/wrangler.jsonc:1) | Cloudflare Worker entrypoint and bindings                     |
 
 ## High-Level System
 
 ```text
-Browser
-  -> SvelteKit routes in apps/memos/src/routes
-  -> server load functions and API handlers
-  -> repository/auth helpers in apps/memos/src/lib/server
+Browser (in-memory Svelte Chat store)
+  -> SvelteKit POST /api/chat with the complete current-page transcript
+  -> typed NDJSON agent events
+  -> @my-memos/ai-core / pi Agent
+  -> in-process MCP 2026-07-28 client -> /api/mcp handler
+  -> typed domain operations in apps/memos/src/lib/server
   -> Cloudflare bindings
      - D1: structured memo metadata + auth tables
      - R2: full memo markdown + agent memory files
@@ -40,8 +43,8 @@ Key areas:
   Server-only auth, filters, and memo persistence helpers.
   - [apps/memos/src/lib/server/db/schema.ts](/Users/pleasure1234/Github/my-memos/apps/memos/src/lib/server/db/schema.ts)
     Drizzle ORM schema for the `memos` table; exports `MemoRow` inferred type.
-  - [apps/memos/src/lib/server/chat/tools](/Users/pleasure1234/Github/my-memos/apps/memos/src/lib/server/chat/tools)
-    Chat agent tool definitions, modularised by domain: `visual`, `memos-read`, `memos-write`, `web-search`.
+  - `apps/memos/src/lib/server/mcp`
+    MCP server, authentication, schemas, structured errors, typed domain operations, and MCP-only utilities. Shared contracts live in `types.ts`; implementation files import them instead of redeclaring local aliases.
 - [apps/memos/src/lib/components](/Users/pleasure1234/Github/my-memos/apps/memos/src/lib/components)
   App-specific Svelte UI not exported as reusable package components.
   Contains two layout generations:
@@ -62,6 +65,14 @@ The shared package `@my-memos/ui` exports:
 - CSS entrypoints exposed in [packages/ui/package.json](/Users/pleasure1234/Github/my-memos/packages/ui/package.json:1)
 
 It also contains a local demo surface in [packages/ui/dev](/Users/pleasure1234/Github/my-memos/packages/ui/dev) for component iteration.
+
+### Package: `packages/ai-core`
+
+`@my-memos/ai-core` pins `@earendil-works/pi-agent-core` and `@earendil-works/pi-ai` to the same exact version. It owns pi Agent construction, OpenAI-compatible model descriptors, MCP `2026-07-28` discovery, MCP-to-pi tool adaptation, cancellation, and runtime events. It has no application tool names, SvelteKit, Better Auth, D1, R2, KV, or Cloudflare imports. Mutation sequencing is derived from standard MCP tool annotations. It deliberately has no budgets, snapshots, persistence, thread IDs, retry, or regeneration API.
+
+Its public contracts are collected in `packages/ai-core/src/types.ts`; small pure conversion helpers live in `utils.ts`. Tests are isolated under each package or app's `src/__tests__` directory. Server code imports hashtag parsing directly from `apps/memos/src/lib/utils/tags.ts`, so it never loads the browser navigation utilities.
+
+The app uses a small local chat protocol under `apps/memos/src/lib/chat`: shared message/event types, Zod validation at the HTTP boundary, and a page-local Svelte store. One assistant UI turn contains the ordered pi steps around tool execution, so the page renders one message/avatar while transcript conversion still restores `assistant -> toolResult -> assistant` ordering. It does not depend on the Vercel AI SDK. TypeBox remains an implementation dependency of pi itself, but `ai-core` consumes its schema types through `@earendil-works/pi-ai` instead of declaring TypeBox directly.
 
 ## Request Model
 
@@ -85,7 +96,9 @@ Route loader: [apps/memos/src/routes/archive/+page.server.ts](/Users/pleasure123
 ### Chat Page
 
 - `/chat` is authenticated only.
-- Uses an SSE API route for model output streaming.
+- Uses an NDJSON API route for model output streaming.
+- Chat messages exist only in the current page's `Chat` instance. Refreshing or leaving the page discards them.
+- Every request sends the full page transcript; the server performs one stateless pi Agent run.
 
 Route loader: [apps/memos/src/routes/chat/+page.server.ts](/Users/pleasure1234/Github/my-memos/apps/memos/src/routes/chat/+page.server.ts:1)
 
@@ -157,6 +170,7 @@ KV stores derived cache entries only:
 
 - `memo:tags`
 - `memo:tags:public`
+- short-lived `agent:memory-update:<message-id>` dedupe/status entries; never chat content
 
 Memo lists are **not** cached in KV — full-list JSON blobs caused KV size/corruption issues and CPU rate limits on Workers. Instead, lists are paginated via cursor-based `limit=25` queries directly against D1 indexes.
 
@@ -177,7 +191,7 @@ Responsibilities:
 
 The Drizzle schema (`apps/memos/src/lib/server/db/schema.ts`) is the authoritative source for the `memos` table shape and exports `MemoRow` via `typeof memos.$inferSelect`, eliminating hand-written row types.
 
-Chat agent tools are defined in [apps/memos/src/lib/server/chat/tools](/Users/pleasure1234/Github/my-memos/apps/memos/src/lib/server/chat/tools/index.ts:1) and imported by the `/api/chat` route.
+Agent tools are defined once as MCP tools in `apps/memos/src/lib/server/mcp`. The in-product Agent discovers them over an in-process modern MCP transport; it never imports implementations directly.
 
 ## API Surface
 
@@ -207,16 +221,28 @@ Behavior:
 
 - requires authentication
 - loads prompt and memory from R2 to build the system context
-- model: DeepSeek V4 Flash via Cloudflare AI Gateway
-- streams AI SDK UI message events for assistant text and tool parts
-- exposes tools: `get_tags`, `list_memos`, `search_memos`, `create_memo`, `update_memo`, `delete_memo`, `web_search`, `render_chart`, `render_svg`, `render_mermaid`, `render_widget`
-- after each completed assistant response, runs auto-dream memory maintenance to decide whether `agent/MEMORY.md` should be updated
+- model: `deepseek-chat` through Cloudflare AI Gateway's provider-native DeepSeek endpoint; the Gateway injects the configured BYOK provider key
+- pi `Agent` is the sole server-side loop owner and runs until natural completion, cancellation, upstream failure, or platform termination
+- streams newline-delimited, typed JSON events for assistant text and tool parts
+- forwards pi tool-call argument deltas so in-product `render_*` cards can update while the model is still generating their input
+- request cancellation propagates to pi, the model request, and MCP tool calls
+- after success, `platform.ctx.waitUntil()` updates memory from only the latest user turn and newly generated assistant reply
 
-### `/api/chat/consolidate`
+### `/api/mcp`
 
-File: [apps/memos/src/routes/api/chat/consolidate/+server.ts](/Users/pleasure1234/Github/my-memos/apps/memos/src/routes/api/chat/consolidate/+server.ts:1)
+File: `apps/memos/src/routes/api/mcp/+server.ts`
 
-- `POST` triggers auto-dream memory consolidation on demand (authenticated).
+- single stateless `POST` endpoint, pinned to MCP `2026-07-28`; 2025 handshakes and session headers are rejected
+- external clients authenticate with `Authorization: Bearer <MCP_API_KEY>`
+- the fixed key has all remotely exposed tool permissions; no token table, token-management API, or scope store exists
+- external tools: `get_tags`, `list_memos`, `search_memos`, `create_memo`, `update_memo`, `delete_memo`, `web_search`, `fetch_raw`, `fetch_url`, `github_read`, `lookup_docs`
+- in-product-only tools: `render_chart`, `render_svg`, `render_mermaid`, `render_widget`; these are UI rendering instructions and are never registered for API-key principals
+- write tools execute sequentially; read and render tools may execute in parallel
+- URL-reading tools accept only public HTTP(S) targets without embedded credentials, reject localhost/private/link-local address literals, and refuse redirects; Workers also enables `global_fetch_strictly_public` as a runtime-level egress boundary
+
+## Memory Update Lifecycle
+
+`agent/PROMPT.md` and `agent/MEMORY.md` are loaded from R2 with a short TTL and ETag validation. A successful chat schedules a no-tool model call in the background. Only durable, explicit user facts are eligible. Unchanged output is not written. Changed memory uses conditional R2 writes; one ETag conflict triggers a fresh read and one recomputation. A second conflict or model failure is logged without changing the completed chat response. Raw transcripts are never persisted.
 
 ### `/api/notes`
 
@@ -246,4 +272,4 @@ If these drift, the app may still compile but fail at runtime.
 - `apps/memos/wrangler.jsonc` is production-shaped rather than environment-sliced.
 - Schema changes should be made as Wrangler SQL migrations first, then mirrored in the Drizzle schema. Do not mix Void- or Drizzle-generated migrations with Wrangler-applied SQL files.
 
-These are not blockers for documentation, but they matter if you change behavior later.
+These do not block the current runtime, but they matter when changing deployment or storage behavior.

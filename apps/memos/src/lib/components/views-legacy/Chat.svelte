@@ -1,8 +1,9 @@
 <script lang="ts">
   import { ChatThread, ChatMessage, ChatInput } from "@my-memos/ui";
-  import { beforeNavigate } from "$app/navigation";
+  import { Chat } from "$lib/chat/chat.svelte";
   import AppShell from "$lib/components/layout/AppShell.svelte";
   import MarkdownContent from "$lib/components/MarkdownContent.svelte";
+  import { VisualCard } from "$lib/components/visual";
 
   interface Props {
     user: { image?: string | null | undefined; name: string } | null;
@@ -10,142 +11,87 @@
 
   let { user }: Props = $props();
 
+  const VISUAL_TOOLS = new Set(["render_chart", "render_svg", "render_mermaid", "render_widget"]);
   const TOOL_LABELS: Record<string, string> = {
     get_tags: "Fetching tags…",
     list_memos: "Browsing memos…",
     search_memos: "Searching memos…",
-    update_memory: "Updating memory…",
+    create_memo: "Creating memo…",
+    update_memo: "Updating memo…",
+    delete_memo: "Deleting memo…",
+    web_search: "Searching the web…",
+    fetch_raw: "Fetching content…",
+    fetch_url: "Reading page…",
+    github_read: "Reading GitHub…",
+    lookup_docs: "Looking up docs…",
   };
 
-  interface Message {
-    role: "user" | "assistant";
-    content: string;
-    thinking: boolean;
-    toolStatus?: string;
-  }
-
-  let messages = $state<Message[]>([]);
-  let isStreaming = $state(false);
-
-  beforeNavigate((nav) => {
-    if (nav.from?.route?.id === "/chat" && messages.length > 0) {
-      fetch("/api/chat/consolidate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          messages: messages.map((m) => ({
-            id: crypto.randomUUID(),
-            role: m.role,
-            parts: [{ type: "text", text: m.content }],
-          })),
-        }),
-      });
-    }
-  });
+  const chat = new Chat();
+  const isStreaming = $derived(chat.status === "submitted" || chat.status === "streaming");
 
   async function handleSend(text: string) {
     if (isStreaming) return;
-
-    messages.push({ role: "user", content: text, thinking: false });
-
-    const outgoing = messages.map((m) => ({ role: m.role, content: m.content }));
-
-    isStreaming = true;
-    messages.push({ role: "assistant", content: "", thinking: true });
-    const assistantIdx = messages.length - 1;
-
-    try {
-      const res = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: outgoing }),
-      });
-
-      if (!res.ok || !res.body) {
-        messages[assistantIdx].thinking = false;
-        messages[assistantIdx].content = "Error: failed to connect.";
-        return;
-      }
-
-      const reader = res.body.getReader();
-      const dec = new TextDecoder();
-      let buf = "";
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buf += dec.decode(value, { stream: true });
-
-        const lines = buf.split("\n\n");
-        buf = lines.pop()!;
-
-        let finished = false;
-        for (const line of lines) {
-          if (!line.startsWith("data: ")) continue;
-          const payload = line.slice(6);
-          if (payload === "[DONE]") {
-            finished = true;
-            break;
-          }
-          const parsed = JSON.parse(payload) as {
-            text?: string;
-            error?: string;
-            tool_call?: string;
-          };
-          if (typeof parsed.error === "string") {
-            messages[assistantIdx].thinking = false;
-            messages[assistantIdx].toolStatus = undefined;
-            messages[assistantIdx].content = `Error: ${parsed.error}`;
-            finished = true;
-            break;
-          }
-          if (typeof parsed.tool_call === "string") {
-            messages[assistantIdx].toolStatus = TOOL_LABELS[parsed.tool_call];
-          }
-          if (typeof parsed.text === "string") {
-            messages[assistantIdx].thinking = false;
-            messages[assistantIdx].toolStatus = undefined;
-            messages[assistantIdx].content += parsed.text;
-          }
-        }
-        if (finished) break;
-      }
-    } finally {
-      messages[assistantIdx].thinking = false;
-      isStreaming = false;
-    }
+    await chat.sendMessage(text);
   }
 </script>
 
 <AppShell>
   <div class="chat-outer">
     <div class="chat-layout">
-      {#if messages.length === 0}
+      {#if chat.messages.length === 0}
         <div class="chat-welcome">
           <p class="chat-welcome-text">喵？今天过的怎么样</p>
           <ChatInput class="chat-welcome-input" onsend={handleSend} />
         </div>
       {:else}
         <ChatThread class="chat-thread pt-8">
-          {#each messages as msg (msg)}
+          {#each chat.messages as msg (msg.id)}
             {#if msg.role === "assistant"}
-              <ChatMessage role="assistant" avatarSrc="/favicon.png" typing={msg.thinking}>
-                {#if msg.toolStatus}
-                  <p class="tool-status">{msg.toolStatus}</p>
-                {:else if !msg.thinking}
-                  <MarkdownContent content={msg.content} class="bubble-md" />
-                {/if}
+              <ChatMessage
+                role="assistant"
+                avatarSrc="/favicon.png"
+                typing={isStreaming &&
+                  msg === chat.messages[chat.messages.length - 1] &&
+                  !msg.steps.at(-1)?.parts.length}
+              >
+                {#each msg.steps as step, stepIndex (stepIndex)}
+                  {#each step.parts as part, partIndex (partIndex)}
+                    {#if part.type === "text" && part.text.trim()}
+                      <MarkdownContent content={part.text} class="bubble-md" />
+                    {:else if part.type === "tool"}
+                      {@const toolName = part.toolName}
+                      {#if VISUAL_TOOLS.has(toolName) && part.state !== "output-error"}
+                        <VisualCard {part} streaming={part.state !== "output-available"} />
+                      {:else if part.state !== "output-available"}
+                        <p class="tool-status">
+                          {part.state === "output-error"
+                            ? `${toolName}: ${part.errorText}`
+                            : (TOOL_LABELS[toolName] ?? `${toolName}…`)}
+                        </p>
+                      {/if}
+                    {/if}
+                  {/each}
+                {/each}
               </ChatMessage>
             {:else}
-              <ChatMessage
-                role="user"
-                content={msg.content}
-                avatarSrc={user?.image}
-                avatarFallback={user?.name}
-              />
+              <ChatMessage role="user" avatarSrc={user?.image} avatarFallback={user?.name}>
+                {#each msg.parts as part, index (index)}
+                  {#if part.type === "text"}
+                    <span class="user-text">{part.text}</span>
+                  {/if}
+                {/each}
+              </ChatMessage>
             {/if}
           {/each}
+          {#if isStreaming && chat.messages[chat.messages.length - 1]?.role !== "assistant"}
+            <ChatMessage role="assistant" avatarSrc="/favicon.png" typing />
+          {/if}
         </ChatThread>
+
+        {#if chat.error}
+          <p class="chat-error">Error: {chat.error.message}</p>
+        {/if}
+
         <div class="chat-input-wrap">
           <ChatInput onsend={handleSend} disabled={isStreaming} />
         </div>
@@ -194,9 +140,13 @@
     padding: 1rem 0;
     flex-shrink: 0;
   }
-  .tool-status {
+  .tool-status,
+  .chat-error {
     font-size: 0.875rem;
     color: var(--color-muted-foreground);
     margin: 0;
+  }
+  .user-text {
+    white-space: pre-wrap;
   }
 </style>

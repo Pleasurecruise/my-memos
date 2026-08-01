@@ -5,10 +5,10 @@
   import { renderMermaidSchema } from "$lib/visual/mermaid";
   import { renderSvgSchema } from "$lib/visual/svg";
   import { renderWidgetSchema } from "$lib/visual/widget";
-  import { type DynamicToolUIPart, getToolName, type ToolUIPart } from "ai";
+  import type { ToolPart } from "$lib/chat/types";
 
   interface Props {
-    part: ToolUIPart | DynamicToolUIPart;
+    part: ToolPart;
     streaming: boolean;
   }
 
@@ -53,7 +53,7 @@
 
   let { part, streaming }: Props = $props();
 
-  const toolName = $derived(getToolName(part));
+  const toolName = $derived(part.toolName);
   const rawSpec = $derived(part.state === "output-available" ? part.output : part.input);
   const parsed = $derived(parseVisualSpec(toolName, rawSpec, streaming));
   const title = $derived(parsed.value?.title);
@@ -65,10 +65,9 @@
     loading: boolean,
     cfg: ParseConfig,
   ): ParseResult {
-    if (loading) return { value: null, message: `${cfg.label}...` };
-
     const result = cfg.schema.safeParse(value);
     if (!result.success) {
+      if (loading) return { value: null, message: `${cfg.label}...` };
       const msg = result.error?.issues?.[0]?.message || `Invalid ${name} spec.`;
       return { value: null, message: msg };
     }
@@ -94,11 +93,9 @@
   }
 
   function parseVisualSpec(name: string, value: unknown, streaming: boolean): ParseResult {
-    const loading = streaming && (value === null || value === undefined);
-
     switch (name) {
       case "render_chart":
-        return parseGeneric(name, value, loading, {
+        return parseGeneric(name, value, streaming, {
           schema: renderChartSchema,
           label: "Generating chart...",
           type: "chart",
@@ -107,7 +104,7 @@
         });
 
       case "render_svg":
-        return parseGeneric(name, value, loading, {
+        return parseGeneric(name, value, streaming, {
           schema: renderSvgSchema,
           label: "Generating visual...",
           type: "svg",
@@ -119,7 +116,7 @@
         });
 
       case "render_mermaid":
-        return parseGeneric(name, value, loading, {
+        return parseGeneric(name, value, streaming, {
           schema: renderMermaidSchema,
           label: "Generating diagram...",
           type: "mermaid",
@@ -128,7 +125,7 @@
         });
 
       case "render_widget":
-        return parseGeneric(name, value, loading, {
+        return parseGeneric(name, value, streaming, {
           schema: renderWidgetSchema,
           label: "Generating widget...",
           type: "widget",

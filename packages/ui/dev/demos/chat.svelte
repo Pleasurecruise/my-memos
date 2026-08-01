@@ -125,10 +125,7 @@
         avatarFallback="AI"
       />
       <div class="toolbar-row">
-        <ChatToolbar
-          content="试试鼠标悬停在这条消息上，会出现复制和重试按钮。"
-          onretry={() => alert("Retry clicked!")}
-        />
+        <ChatToolbar content="试试鼠标悬停在这条消息上，会出现复制按钮。" />
       </div>
     </div>
   </section>

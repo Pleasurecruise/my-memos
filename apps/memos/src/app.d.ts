@@ -7,6 +7,7 @@ declare global {
       session: Session | null;
     }
     interface Platform {
+      ctx: ExecutionContext;
       env: {
         DB: D1Database;
         MEMOS_BUCKET: R2Bucket;
@@ -17,10 +18,8 @@ declare global {
         GOOGLE_CLIENT_SECRET: string;
         ALLOWED_EMAIL: string;
         CF_ACCOUNT_ID: string;
-        CF_GATEWAY_NAME: string;
-        AI_GATEWAY_PROVIDER_SLUG: string;
-        OPENAI_API_KEY: string;
         CF_AIG_TOKEN: string;
+        MCP_API_KEY: string;
         TAVILY_API_KEY: string;
       };
     }

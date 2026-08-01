@@ -14,4 +14,10 @@ export default defineConfig(({ command }) => ({
       external: [/\.wasm$/],
     },
   },
+  ssr: {
+    target: "webworker",
+    resolve: {
+      conditions: ["workerd", "node"],
+    },
+  },
 }));

@@ -9,8 +9,9 @@
     "build": "vp build"
   },
   "dependencies": {
-    "@ai-sdk/svelte": "5.0.42",
     "@lucide/svelte": "1.28.0",
+    "@modelcontextprotocol/server": "2.0.0",
+    "@my-memos/ai-core": "workspace:*",
     "@my-memos/ui": "workspace:*",
     "@octokit/core": "7.0.6",
     "@resvg/resvg-wasm": "2.6.2",
@@ -24,8 +25,6 @@
     "@tiptap/starter-kit": "3.29.2",
     "@tiptap/static-renderer": "3.29.2",
     "@types/turndown": "5.0.6",
-    "ai": "7.0.42",
-    "ai-gateway-provider": "4.0.0",
     "better-auth": "1.6.25",
     "date-fns": "4.4.0",
     "defuddle": "0.19.2",

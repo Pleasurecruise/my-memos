@@ -7,7 +7,7 @@ const PAGE_LIMIT = 25;
 
 export const load: PageServerLoad = async ({ platform, url, locals }) => {
   if (!locals.user) {
-    redirect(302, `/login?redirect=${url.pathname}`);
+    redirect(302, "/");
   }
   if (!platform) {
     error(500, "Cloudflare platform bindings are unavailable.");

@@ -3,14 +3,13 @@
   import type { HTMLAttributes } from "svelte/elements";
   import { cn } from "../../lib/utils";
   import Button from "../Button.svelte";
-  import { Copy, Check, RotateCw } from "@lucide/svelte";
+  import { Copy, Check } from "@lucide/svelte";
 
   export interface ChatToolbarProps extends HTMLAttributes<HTMLDivElement> {
     content: string;
-    onretry: () => void;
   }
 
-  let { content, onretry, class: extraClass = "", ...rest }: ChatToolbarProps = $props();
+  let { content, class: extraClass = "", ...rest }: ChatToolbarProps = $props();
 
   let copied = $state(false);
   let copyTimer: ReturnType<typeof setTimeout> | null = null;
@@ -44,12 +43,6 @@
       <Copy size={14} />
     {/if}
   </Button>
-
-  {#if onretry}
-    <Button variant="ghost" size="icon" class="toolbar-btn" aria-label="Retry" onclick={onretry}>
-      <RotateCw size={14} />
-    </Button>
-  {/if}
 </div>
 
 <style>

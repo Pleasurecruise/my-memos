@@ -12,3 +12,8 @@ See [`docs/`](docs/) for architecture, deployment, and design system details.
 ## License
 
 AGPL-3.0
+
+## References
+
+- [camelAI](https://github.com/qaml-ai/camelAI) — Cloudflare deployment and application/runtime boundaries
+- [oh-my-pi](https://github.com/can1357/oh-my-pi) — pi package boundaries, streaming events, and tool harness design

@@ -1,8 +1,5 @@
 <script lang="ts">
   import ChevronRight from "@lucide/svelte/icons/chevron-right";
-  import { Chat } from "@ai-sdk/svelte";
-  import { getToolName, isToolUIPart } from "ai";
-  import { beforeNavigate } from "$app/navigation";
   import {
     ChatThread,
     ChatMessage,
@@ -15,6 +12,7 @@
   import MarkdownContent from "$lib/components/MarkdownContent.svelte";
   import { VisualCard } from "$lib/components/visual";
   import Masthead from "$lib/components/layout/Masthead.svelte";
+  import { Chat } from "$lib/chat/chat.svelte";
 
   const VISUAL_TOOLS = new Set(["render_chart", "render_svg", "render_mermaid", "render_widget"]);
 
@@ -24,32 +22,12 @@
 
   let { user }: Props = $props();
 
-  const chat = new Chat({
-    onFinish: ({ message, messages }) => {
-      console.debug("[Chat] onFinish", {
-        messageParts: message.parts.length,
-        totalMessages: messages.length,
-      });
-    },
-    onError: (error) => {
-      console.error("[Chat] onError", error);
-    },
-  });
+  const chat = new Chat();
   const isStreaming = $derived(chat.status === "submitted" || chat.status === "streaming");
-
-  beforeNavigate((nav) => {
-    if (nav.from?.route?.id === "/chat" && chat.messages.length > 0) {
-      fetch("/api/chat/consolidate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: chat.messages }),
-      });
-    }
-  });
 
   async function handleSend(text: string) {
     if (isStreaming) return;
-    await chat.sendMessage({ text });
+    await chat.sendMessage(text);
   }
 </script>
 
@@ -78,9 +56,10 @@
         <ChatThread class="flex-1 min-h-0 overflow-y-auto pt-4">
           {#each chat.messages as msg (msg.id)}
             {#if msg.role === "assistant"}
-              {@const msgText = msg.parts
-                .filter((p): p is { type: "text"; text: string } => p.type === "text")
-                .map((p) => p.text)
+              {@const msgText = msg.steps
+                .flatMap((step) =>
+                  step.parts.flatMap((part) => (part.type === "text" ? [part.text] : [])),
+                )
                 .join("\n")
                 .trim()}
               <ChatMessage
@@ -88,67 +67,67 @@
                 avatarSrc="/favicon.png"
                 typing={isStreaming &&
                   msg === chat.messages[chat.messages.length - 1] &&
-                  !msg.parts.length}
+                  !msg.steps.at(-1)?.parts.length}
               >
-                {#if msg.parts.length}
+                {#if msg.steps.length}
                   <div class="flex flex-col gap-2">
-                    {#each msg.parts as part, index (index)}
-                      {#if isToolUIPart(part)}
-                        {#if VISUAL_TOOLS.has(getToolName(part)) && part.state !== "output-error"}
-                          <VisualCard {part} streaming={part.state !== "output-available"} />
-                        {:else}
-                          <Collapsible>
-                            <CollapsibleTrigger
-                              class="tool-trigger w-fit max-w-full rounded px-0.5 py-px font-mono text-xs leading-5 text-muted-foreground hover:bg-muted hover:text-foreground"
-                              aria-label={`Toggle ${getToolName(part)} tool details`}
-                            >
-                              <ChevronRight
-                                size={14}
-                                class="tool-chevron shrink-0 transition-transform duration-150"
-                              />
-                              <code class="text-foreground">{getToolName(part)}</code>
-                              <span class="min-w-0 truncate">{part.state.replaceAll("-", " ")}</span
+                    {#each msg.steps as step, stepIndex (stepIndex)}
+                      {#each step.parts as part, partIndex (partIndex)}
+                        {#if part.type === "tool"}
+                          {#if VISUAL_TOOLS.has(part.toolName) && part.state !== "output-error"}
+                            <VisualCard {part} streaming={part.state !== "output-available"} />
+                          {:else}
+                            <Collapsible>
+                              <CollapsibleTrigger
+                                class="tool-trigger w-fit max-w-full rounded px-0.5 py-px font-mono text-xs leading-5 text-muted-foreground hover:bg-muted hover:text-foreground"
+                                aria-label={`Toggle ${part.toolName} tool details`}
                               >
-                            </CollapsibleTrigger>
+                                <ChevronRight
+                                  size={14}
+                                  class="tool-chevron shrink-0 transition-transform duration-150"
+                                />
+                                <code class="text-foreground">{part.toolName}</code>
+                                <span class="min-w-0 truncate"
+                                  >{part.state.replaceAll("-", " ")}</span
+                                >
+                              </CollapsibleTrigger>
 
-                            <CollapsibleContent class="ml-5 mt-1 border-l border-border pl-3">
-                              <div class="flex flex-col gap-2 pb-1">
-                                {#if part.input && typeof part.input === "object" && !Array.isArray(part.input) && Object.keys(part.input).length}
-                                  <div class="tool-detail">
-                                    <span>arguments</span>
-                                    <pre>{JSON.stringify(part.input, null, 2)}</pre>
-                                  </div>
-                                {/if}
-                                {#if part.state === "output-available"}
-                                  <div class="tool-detail">
-                                    <span>result</span>
-                                    <pre>{typeof part.output === "string"
-                                        ? part.output
-                                        : JSON.stringify(part.output, null, 2)}</pre>
-                                  </div>
-                                {:else if part.state === "output-error"}
-                                  <div class="tool-detail">
-                                    <span>error</span>
-                                    <pre>{part.errorText}</pre>
-                                  </div>
-                                {/if}
-                              </div>
-                            </CollapsibleContent>
-                          </Collapsible>
+                              <CollapsibleContent class="ml-5 mt-1 border-l border-border pl-3">
+                                <div class="flex flex-col gap-2 pb-1">
+                                  {#if part.input && typeof part.input === "object" && !Array.isArray(part.input) && Object.keys(part.input).length}
+                                    <div class="tool-detail">
+                                      <span>arguments</span>
+                                      <pre>{JSON.stringify(part.input, null, 2)}</pre>
+                                    </div>
+                                  {/if}
+                                  {#if part.state === "output-available"}
+                                    <div class="tool-detail">
+                                      <span>result</span>
+                                      <pre>{typeof part.output === "string"
+                                          ? part.output
+                                          : JSON.stringify(part.output, null, 2)}</pre>
+                                    </div>
+                                  {:else if part.state === "output-error"}
+                                    <div class="tool-detail">
+                                      <span>error</span>
+                                      <pre>{part.errorText}</pre>
+                                    </div>
+                                  {/if}
+                                </div>
+                              </CollapsibleContent>
+                            </Collapsible>
+                          {/if}
+                        {:else if part.text.trim()}
+                          <MarkdownContent content={part.text} class="bubble-md" />
                         {/if}
-                      {:else if part.type === "text" && part.text.trim()}
-                        <MarkdownContent content={part.text} class="bubble-md" />
-                      {/if}
+                      {/each}
                     {/each}
                   </div>
                 {/if}
               </ChatMessage>
               {#if msgText && !isStreaming}
                 <div class="toolbar-row">
-                  <ChatToolbar
-                    content={msgText}
-                    onretry={() => chat.regenerate({ messageId: msg.id })}
-                  />
+                  <ChatToolbar content={msgText} />
                 </div>
               {/if}
             {:else}

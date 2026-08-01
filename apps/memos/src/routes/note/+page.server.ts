@@ -2,9 +2,9 @@ import { error, redirect } from "@sveltejs/kit";
 import { BLOG_PREFIX, slugFromR2Key, slugToTitle } from "$lib/server/blog";
 import type { PageServerLoad } from "./$types";
 
-export const load: PageServerLoad = async ({ platform, locals, url }) => {
+export const load: PageServerLoad = async ({ platform, locals }) => {
   if (!locals.user) {
-    redirect(302, `/login?redirect=${url.pathname}`);
+    redirect(302, "/");
   }
   if (!platform) {
     error(500, "Cloudflare platform bindings are unavailable.");

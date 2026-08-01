@@ -34,19 +34,17 @@ Current binding names and IDs live in [apps/memos/wrangler.jsonc](/Users/pleasur
 
 `App.Platform.env` is declared in [apps/memos/src/app.d.ts](/Users/pleasure1234/Github/my-memos/apps/memos/src/app.d.ts:1). In practice, this app needs:
 
-| Variable                   | Required     | Purpose                                      |
-| -------------------------- | ------------ | -------------------------------------------- |
-| `BETTER_AUTH_URL`          | yes          | Public base URL used by Better Auth          |
-| `BETTER_AUTH_SECRET`       | yes          | Better Auth signing secret                   |
-| `GOOGLE_CLIENT_ID`         | yes          | Google OAuth client ID                       |
-| `GOOGLE_CLIENT_SECRET`     | yes          | Google OAuth client secret                   |
-| `ALLOWED_EMAIL`            | yes          | Limits account creation to one allowed email |
-| `CF_AIG_TOKEN`             | yes for chat | Cloudflare AI Gateway auth token             |
-| `CF_ACCOUNT_ID`            | yes for chat | Cloudflare account ID for AI Gateway         |
-| `CF_GATEWAY_NAME`          | yes for chat | Cloudflare AI Gateway name                   |
-| `TAVILY_API_KEY`           | yes for chat | Tavily API key for web search                |
-| `OPENAI_API_KEY`           | unused       | Declared but not read at runtime             |
-| `AI_GATEWAY_PROVIDER_SLUG` | unused       | Declared but not read at runtime             |
+| Variable               | Required     | Purpose                                             |
+| ---------------------- | ------------ | --------------------------------------------------- |
+| `BETTER_AUTH_URL`      | yes          | Public base URL used by Better Auth                 |
+| `BETTER_AUTH_SECRET`   | yes          | Better Auth signing secret                          |
+| `GOOGLE_CLIENT_ID`     | yes          | Google OAuth client ID                              |
+| `GOOGLE_CLIENT_SECRET` | yes          | Google OAuth client secret                          |
+| `ALLOWED_EMAIL`        | yes          | Limits account creation to one allowed email        |
+| `CF_ACCOUNT_ID`        | yes for chat | Cloudflare account containing the AI Gateway        |
+| `CF_AIG_TOKEN`         | yes for chat | Authenticates the Gateway; it is not a provider key |
+| `MCP_API_KEY`          | yes for MCP  | Fixed Bearer key for external MCP clients           |
+| `TAVILY_API_KEY`       | yes for chat | Tavily API key for web search                       |
 
 Local development uses [apps/memos/.env.example](/Users/pleasure1234/Github/my-memos/apps/memos/.env.example:1) as the template. Copy it to `apps/memos/.env.local`; Void and Vite load it from the application package during development. Production builds switch Vite's `envDir` to `.void/build-env`, so local secrets are not copied into Worker vars. Production secrets should be managed with Wrangler secrets and environment vars, not committed files.
 
@@ -56,6 +54,8 @@ From repository root:
 
 ```bash
 pnpm install
+pnpm check
+pnpm test
 pnpm build
 pnpm d1:migrate:remote
 pnpm deploy
@@ -70,22 +70,25 @@ What each step does:
 - `pnpm deploy`
   Runs `void deploy` from the `@my-memos/app` workspace, builds the SvelteKit framework target, and uploads its Worker and assets using the app-local configuration.
 
+Secret changes are a separate operation, not part of every code deployment. `wrangler secret put <NAME>` creates and immediately deploys a new Worker version. To prepare a secret without changing live traffic, use `wrangler versions secret put <NAME>` and deploy that version later with the code/configuration version you intend to release. `apps/memos/wrangler.jsonc` is the source of truth for non-secret bindings and required secret names.
+
+Chat uses the provider-native `gateway.ai.cloudflare.com/v1/{account}/default/deepseek` endpoint with `deepseek-chat`. Configure the DeepSeek API key under the `default` Gateway's Provider Keys with the `default` alias. The Worker sends only `cf-aig-authorization`; Cloudflare injects the stored provider key, so these calls use provider BYOK rather than Unified Billing. The deprecated `/compat/chat/completions` endpoint and the Unified Billing REST endpoint are not used.
+
+`apps/memos/vite.config.ts` targets `webworker` for SSR and resolves `workerd` before the `node` fallback. This selects the MCP client's Worker-specific validator shim while preserving Node-only export fallbacks used by transitive dependencies. Removing `workerd` makes Rolldown select the MCP Node validator and emit a top-level `createRequire`, which Cloudflare rejects during version validation; adding `browser` selects browser code that reads `window` when the Worker loads.
+
 ## Local Development
 
 Useful commands from repo root:
 
 ```bash
 pnpm dev
-pnpm dev:wrangler
 pnpm d1:migrate:local
 pnpm lint
 pnpm check
 ```
 
 - `pnpm dev`
-  Starts the app workspace with `vp dev`; `voidPlugin()` provides local D1, KV, and R2 bindings. It does not access production storage.
-- `pnpm dev:wrangler`
-  Builds first, then runs `wrangler dev --remote` with `apps/memos/wrangler.jsonc`. Use this only when deliberately testing against the remote Cloudflare resources.
+  Starts the app workspace with `vp dev`; `voidPlugin()` provides local D1, KV, and R2 bindings. It does not access production storage, so a production-only `agent/MEMORY.md` is expected to load as empty locally.
 - `pnpm d1:migrate:local`
   Applies D1 migrations to the app-local `apps/memos/.wrangler/state` used by Void's Cloudflare development runtime.
 - `pnpm lint`
@@ -128,7 +131,7 @@ Verify these paths after deployment:
 - `/`
   Public memo list should render.
 - `/archive`
-  Should redirect unauthenticated users to login.
+  Redirects unauthenticated users to `/`; there is no standalone `/login` route.
 - `/chat`
   Requires an authenticated session and working AI bindings.
 - `/note`
@@ -136,17 +139,38 @@ Verify these paths after deployment:
 - `/api/memos`
   Create memo endpoint; requires auth.
 - `/api/chat`
-  SSE endpoint backed by AI Gateway, D1, and R2.
-- `/api/chat/consolidate`
-  POST triggers memory consolidation (authenticated).
+  Stateless pi Agent NDJSON stream backed by Cloudflare AI Gateway, MCP, D1, and R2.
+- `/api/mcp`
+  Send a modern `server/discover` request with MCP `2026-07-28`, then list and call tools with the fixed Bearer key. External discovery must not contain the four in-product `render_*` tools. Old `initialize` handshakes and `Mcp-Session-Id` are rejected.
 - `/api/notes`
   POST creates a note (authenticated).
+
+### Remote MCP client
+
+Use Streamable HTTP with one stateless endpoint and no session ID:
+
+```json
+{
+  "mcpServers": {
+    "my-memos": {
+      "type": "streamable-http",
+      "url": "https://memos.you-find.me/api/mcp",
+      "headers": {
+        "Authorization": "Bearer ${MCP_API_KEY}"
+      }
+    }
+  }
+}
+```
+
+Some clients name the transport `http` instead of `streamable-http`; the URL and header are unchanged. The client must support MCP `2026-07-28` version negotiation. Do not send `Mcp-Session-Id`, and do not use a legacy-only client that always starts with the 2025 `initialize` handshake.
 
 ## Operational Notes
 
 - Memo bodies are stored in both `R2` (canonical) and D1's `excerpt` field. Memo lists are paginated from D1; KV is cache only for derived data such as tag counts. Deleting KV entries should not lose source data.
 - The chat route reads `agent/PROMPT.md` and `agent/MEMORY.md` from `MEMOS_BUCKET`. Missing files degrade gracefully, but chat behavior will change.
-- Auto-dream memory maintenance may update `agent/MEMORY.md` after completed chat responses.
+- Successful chats schedule memory maintenance with `waitUntil`; failures and R2 ETag conflicts never fail the already completed chat response.
+- A live MCP key rotation with `wrangler secret put MCP_API_KEY` immediately creates and deploys a Worker version; use `wrangler versions secret put MCP_API_KEY` when preparing an undeployed version. There are no token-management routes or D1 token records.
 - Long-form notes live in R2 under `blog/` prefix, with KV caches for compiled HTML. The note editor (`/note/[...slug]`) reads and updates R2 directly; the API endpoints (`/api/notes`) manage creation and deletion.
-- Local development keeps D1, KV, and R2 state under `apps/memos/.wrangler/state`. The production bucket name remains in Wrangler configuration, while `pnpm dev:wrangler` is the explicit opt-in path for remote storage access.
+- Local development keeps D1, KV, and R2 state under `apps/memos/.wrangler/state`. The production bucket name remains in Wrangler configuration, but local development does not connect to it.
 - `apps/memos/wrangler.jsonc` currently includes concrete IDs and a production URL. Keep it aligned with `apps/memos/void.json` and `apps/memos/src/app.d.ts`, and avoid mixing environments in one config unless you add explicit environment sections.
