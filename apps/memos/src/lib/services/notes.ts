@@ -1,19 +1,23 @@
-import type { TocEntry } from "$lib/types";
+import { z } from "zod";
 import { encodeSlug } from "$lib/utils/url";
 
-export interface NoteUpdateResponse {
-  note: {
-    html: string;
-    toc: TocEntry[];
-    excerpt: string;
-    title: string;
-    slug: string;
-    createdAt: string;
-    updatedAt: string;
-    source: string;
-    editorHtml: string;
-  };
-}
+const noteUpdateResponseSchema = z.object({
+  note: z.object({
+    html: z.string(),
+    toc: z.array(z.object({ depth: z.number(), text: z.string(), id: z.string() })),
+    excerpt: z.string(),
+    title: z.string(),
+    slug: z.string(),
+    createdAt: z.string(),
+    updatedAt: z.string(),
+    source: z.string(),
+    editorHtml: z.string(),
+  }),
+});
+
+const errorResponseSchema = z.object({ error: z.string().min(1) });
+
+export type NoteUpdateResponse = z.infer<typeof noteUpdateResponseSchema>;
 
 interface NoteInput {
   body: string;
@@ -23,14 +27,17 @@ interface NoteInput {
 
 async function extractError(res: Response): Promise<string> {
   try {
-    const raw: unknown = await res.json();
-    if (raw && typeof raw === "object" && "error" in raw) {
-      return String((raw as Record<string, unknown>).error) || "Request failed.";
-    }
-    return "Request failed.";
+    const result = errorResponseSchema.safeParse(await res.json());
+    return result.success ? result.data.error : "Request failed.";
   } catch {
     return "Request failed.";
   }
+}
+
+async function parseNoteResponse(res: Response): Promise<NoteUpdateResponse> {
+  const result = noteUpdateResponseSchema.safeParse(await res.json());
+  if (!result.success) throw new Error("Invalid API response.");
+  return result.data;
 }
 
 export async function apiCreateNote(input: NoteInput): Promise<NoteUpdateResponse> {
@@ -42,11 +49,7 @@ export async function apiCreateNote(input: NoteInput): Promise<NoteUpdateRespons
 
   if (!res.ok) throw new Error(await extractError(res));
 
-  const raw: unknown = await res.json();
-  if (!raw || typeof raw !== "object" || !("note" in raw)) {
-    throw new Error("Invalid API response.");
-  }
-  return raw as NoteUpdateResponse;
+  return parseNoteResponse(res);
 }
 
 export async function apiUpdateNote(slug: string, input: NoteInput): Promise<NoteUpdateResponse> {
@@ -58,11 +61,7 @@ export async function apiUpdateNote(slug: string, input: NoteInput): Promise<Not
 
   if (!res.ok) throw new Error(await extractError(res));
 
-  const raw: unknown = await res.json();
-  if (!raw || typeof raw !== "object" || !("note" in raw)) {
-    throw new Error("Invalid API response.");
-  }
-  return raw as NoteUpdateResponse;
+  return parseNoteResponse(res);
 }
 
 export async function apiDeleteNote(slug: string): Promise<void> {

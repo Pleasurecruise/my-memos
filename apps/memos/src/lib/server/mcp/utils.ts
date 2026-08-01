@@ -1,7 +1,14 @@
-import { Octokit } from "@octokit/core";
 import { z } from "zod";
 import { DomainError } from "./errors";
 import type { DomainOperation, DomainOperationDefinition } from "./types";
+
+export const MAX_EXTERNAL_RESPONSE_BYTES = 1_000_000;
+
+const githubFileSchema = z.object({
+  type: z.literal("file"),
+  encoding: z.literal("base64"),
+  content: z.string(),
+});
 
 export function defineOperation<TSchema extends z.ZodType>(
   definition: DomainOperationDefinition<TSchema>,
@@ -59,6 +66,46 @@ export function requireOk(response: Response, source: string) {
   }
 }
 
+export async function readLimitedText(
+  response: Response,
+  source: string,
+  maxBytes = MAX_EXTERNAL_RESPONSE_BYTES,
+): Promise<string> {
+  const declaredLength = Number(response.headers.get("content-length"));
+  if (Number.isFinite(declaredLength) && declaredLength > maxBytes) {
+    await response.body?.cancel();
+    throw new DomainError(
+      "upstream_failure",
+      `${source} response exceeds the ${maxBytes}-byte limit.`,
+    );
+  }
+  if (!response.body) return "";
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let byteLength = 0;
+  let text = "";
+
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      byteLength += value.byteLength;
+      if (byteLength > maxBytes) {
+        await reader.cancel();
+        throw new DomainError(
+          "upstream_failure",
+          `${source} response exceeds the ${maxBytes}-byte limit.`,
+        );
+      }
+      text += decoder.decode(value, { stream: true });
+    }
+    return text + decoder.decode();
+  } finally {
+    reader.releaseLock();
+  }
+}
+
 export function cleanMarkdown(markdown: string) {
   const clean = markdown
     .replace(/\n{3,}/g, "\n\n")
@@ -79,44 +126,40 @@ export async function githubRead(inputUrl: string, signal: AbortSignal) {
     throw new DomainError("invalid_input", "GitHub URL is missing owner or repository.");
   }
 
-  const octokit = new Octokit({ request: { signal } });
-  let data: unknown;
+  const repoPath = `/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}`;
+  let endpoint: string;
   if (!type) {
-    ({ data } = await octokit.request("GET /repos/{owner}/{repo}", {
-      owner,
-      repo,
-      request: { signal },
-    }));
+    endpoint = repoPath;
   } else if (type === "commit" && ref) {
-    ({ data } = await octokit.request("GET /repos/{owner}/{repo}/commits/{ref}", {
-      owner,
-      repo,
-      ref,
-      request: { signal },
-    }));
-  } else if (type === "pull" && ref) {
-    ({ data } = await octokit.request("GET /repos/{owner}/{repo}/pulls/{pull_number}", {
-      owner,
-      repo,
-      pull_number: Number(ref),
-      request: { signal },
-    }));
-  } else if (type === "issues" && ref) {
-    ({ data } = await octokit.request("GET /repos/{owner}/{repo}/issues/{issue_number}", {
-      owner,
-      repo,
-      issue_number: Number(ref),
-      request: { signal },
-    }));
+    endpoint = `${repoPath}/commits/${encodeURIComponent(ref)}`;
+  } else if (type === "pull" && ref && /^\d+$/.test(ref)) {
+    endpoint = `${repoPath}/pulls/${ref}`;
+  } else if (type === "issues" && ref && /^\d+$/.test(ref)) {
+    endpoint = `${repoPath}/issues/${ref}`;
   } else if ((type === "blob" || type === "tree") && ref) {
-    ({ data } = await octokit.request("GET /repos/{owner}/{repo}/contents/{path}", {
-      owner,
-      repo,
-      path: [ref, ...rest].join("/"),
-      request: { signal },
-    }));
+    const contentPath = rest.map(encodeURIComponent).join("/");
+    endpoint = `${repoPath}/contents${contentPath ? `/${contentPath}` : ""}?ref=${encodeURIComponent(ref)}`;
   } else {
     throw new DomainError("invalid_input", "Unsupported GitHub URL.");
+  }
+
+  const response = await fetch(`https://api.github.com${endpoint}`, {
+    headers: {
+      Accept: "application/vnd.github+json",
+      "User-Agent": "my-memos/1.0",
+    },
+    signal,
+  });
+  requireOk(response, "GitHub");
+  const data: unknown = JSON.parse(await readLimitedText(response, "GitHub"));
+
+  const githubFile = githubFileSchema.safeParse(data);
+  if (githubFile.success) {
+    const bytes = Uint8Array.from(atob(githubFile.data.content.replace(/\s/g, "")), (char) =>
+      char.charCodeAt(0),
+    );
+    const decoded = new TextDecoder().decode(bytes);
+    return cleanMarkdown(decoded);
   }
 
   const json = JSON.stringify(data, null, 2);

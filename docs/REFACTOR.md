@@ -9,7 +9,7 @@ browser Svelte Chat store (page memory only)
   -> POST /api/chat (complete current-page messages)
   -> typed NDJSON agent events
   -> @my-memos/ai-core / pi Agent
-  -> MCP 2026-07-28
+  -> automatically negotiated stateless MCP
   -> app domain operations
 ```
 
@@ -35,7 +35,7 @@ https://gateway.ai.cloudflare.com/v1/{account}/default/deepseek
 
 ## MCP
 
-`POST /api/mcp` is a single stateless endpoint created with the official v2 TypeScript SDK and `legacy: "reject"`. The in-product client pins `2026-07-28`; it never falls back to a 2025 handshake. Session headers are rejected.
+`POST /api/mcp` is a single stateless endpoint created with the official v2 TypeScript SDK and `legacy: "stateless"`. The in-product client uses automatic version negotiation: it prefers the modern discovery flow and can fall back to the stateless `2025-11-25` initialize handshake. Session headers are rejected.
 
 External clients send `Authorization: Bearer <MCP_API_KEY>`. The server hashes both the supplied and configured values with Web Crypto and compares the fixed-length digests. This one manually rotated key has access to every remotely exposed domain tool. There are no token CRUD routes, token tables, or scopes.
 

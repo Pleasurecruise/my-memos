@@ -1,20 +1,32 @@
-import type { TocEntry, VisualBlock } from "$lib/types";
+import { z } from "zod";
 import { compileMarkdown, type CompiledNote } from "./compiler";
 
 const KV_PREFIX = "blog-note:";
 const CATEGORIES_KEY = "blog-categories";
 const CATEGORIES_TTL = 300; // 5 minutes
 
-interface CachedNote {
-  title: string;
-  html: string;
-  toc: TocEntry[];
-  visualBlocks: VisualBlock[];
-  excerpt: string;
-  source: string;
-  uploadedAt: string;
-  compiledAt: number;
-}
+const cachedNoteSchema = z.object({
+  title: z.string(),
+  html: z.string(),
+  toc: z.array(z.object({ depth: z.number(), text: z.string(), id: z.string() })),
+  visualBlocks: z
+    .array(
+      z.object({
+        type: z.enum(["svg", "mermaid", "chart", "widget"]),
+        code: z.string(),
+        index: z.number(),
+      }),
+    )
+    .default([]),
+  excerpt: z.string(),
+  source: z.string(),
+  uploadedAt: z.string(),
+  compiledAt: z.number().default(0),
+});
+
+const categoriesSchema = z.array(z.string());
+
+type CachedNote = z.infer<typeof cachedNoteSchema>;
 
 export async function readNoteKv(
   kv: KVNamespace,
@@ -22,29 +34,9 @@ export async function readNoteKv(
   uploadedAt: string,
 ): Promise<CachedNote | null> {
   const raw = await kv.get(`${KV_PREFIX}${slug}`, "json");
-  if (!raw || typeof raw !== "object") return null;
-  const data = raw as Record<string, unknown>;
-  if (
-    typeof data.title !== "string" ||
-    typeof data.html !== "string" ||
-    !Array.isArray(data.toc) ||
-    typeof data.excerpt !== "string" ||
-    typeof data.source !== "string" ||
-    data.uploadedAt !== uploadedAt
-  ) {
-    return null;
-  }
-
-  return {
-    title: data.title,
-    html: data.html,
-    toc: data.toc as TocEntry[],
-    visualBlocks: Array.isArray(data.visualBlocks) ? (data.visualBlocks as VisualBlock[]) : [],
-    excerpt: data.excerpt,
-    source: data.source,
-    uploadedAt,
-    compiledAt: typeof data.compiledAt === "number" ? data.compiledAt : 0,
-  };
+  const result = cachedNoteSchema.safeParse(raw);
+  if (!result.success || result.data.uploadedAt !== uploadedAt) return null;
+  return result.data;
 }
 
 export async function writeNoteKv(
@@ -98,10 +90,10 @@ export async function compileNote(
   return promise;
 }
 
-export async function readCategoriesKv(kv: KVNamespace): Promise<string[]> {
+export async function readCategoriesKv(kv: KVNamespace): Promise<string[] | null> {
   const raw = await kv.get(CATEGORIES_KEY, "json");
-  if (Array.isArray(raw) && raw.every((v) => typeof v === "string")) return raw;
-  return [];
+  const result = categoriesSchema.safeParse(raw);
+  return result.success ? result.data : null;
 }
 
 export async function writeCategoriesKv(kv: KVNamespace, categories: string[]): Promise<void> {

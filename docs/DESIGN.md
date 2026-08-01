@@ -5,17 +5,17 @@ Warm earth light, warm charcoal dark. One theme, two modes, no brand noise.
 ## Architecture
 
 ```
-Physical (external)
-  Tailwind built-ins or bare CSS named colors — untouchable
+Physical (external or standalone rendering)
+  Tailwind built-ins, official brand colors, OG/visual-sandbox colors
       ↓
 Palette  packages/ui/src/styles/palette.css
-  Every hex literal the project owns, named by mode and role
+  Application-shell palette values, named by mode and role
       ↓
 Semantic  packages/ui/src/styles/tokens.css
   --color-*, --font-*, --radius-*, --shadow-*, --duration-* vars that code uses
 ```
 
-**Rule:** project code references semantic tokens only. Never write a raw hex or a `--palette-*` var outside of `tokens.css`.
+**Rule:** application UI and reusable components reference semantic tokens only. Standalone rendering surfaces that cannot inherit application CSS—generated OG images, sandboxed visual documents, canvas instructions—and official brand artwork may use explicit colors local to that boundary. Never reference a `--palette-*` variable outside `tokens.css`.
 
 ## Palette
 
@@ -116,11 +116,11 @@ Shadows are nearly flat — depth is implied by border and background contrast, 
 
 ## Typography
 
-| Token          | Stack                                                  | Use for                      |
-| -------------- | ------------------------------------------------------ | ---------------------------- |
-| `--font-sans`  | Geist → Inter → system-ui → PingFang SC → Noto Sans SC | body, UI labels              |
-| `--font-serif` | Lora → Noto Serif SC → Georgia                         | long-form prose, pull quotes |
-| `--font-mono`  | Geist Mono → JetBrains Mono → Fira Code                | code, numerics               |
+| Token          | Stack                                                                    | Use for                      |
+| -------------- | ------------------------------------------------------------------------ | ---------------------------- |
+| `--font-sans`  | Geist → Inter → system-ui → PingFang SC → Noto Sans SC → Microsoft YaHei | body, UI labels              |
+| `--font-serif` | Lora → Noto Serif SC → Source Han Serif SC → Georgia                     | long-form prose, pull quotes |
+| `--font-mono`  | Geist Mono → JetBrains Mono → Fira Code → Consolas → Monaco              | code, numerics               |
 
 **Weight rules:**
 
@@ -142,7 +142,7 @@ Easing: prefer `ease-out` for entrances, `ease-in` for exits. Never use linear f
 
 Dark mode is triggered by a `.dark` class on `<html>`. Use `applyTheme(dark)` from `@my-memos/ui` to toggle it — it suppresses transitions during the switch to avoid a flash.
 
-`app.html` contains a small inline script that applies the correct theme before first paint, based on `localStorage` preference or system preference. `Masthead` owns the user-facing toggle and persists the choice to `localStorage`.
+`app.html` contains a small inline script that applies the correct theme before first paint, based on `localStorage` preference or system preference. `Masthead` owns the toggle in the default views; `AppShell` and `Sidebar` own it in the classic views. Both persist the same `my-memos:theme` preference.
 
 ## Usage
 
@@ -169,7 +169,7 @@ Dark mode is triggered by a `.dark` class on `<html>`. Use `applyTheme(dark)` fr
 ## Principles
 
 1. **Warm light, warm dark** — both modes use warm palettes; the accent is the only element with strong chromatic identity.
-2. **Semantic tokens only in code** — never bare hex, never `--palette-*` in component files.
+2. **Semantic tokens in application UI** — standalone renderers and official brand artwork are explicit boundary exceptions; component files never use `--palette-*` directly.
 3. **Accent is restrained** — covers ≤ 5 % of visible area. CTA buttons, focus rings, links only.
 4. **Low saturation always** — if a new color feels vivid, it is wrong for this system.
 5. **Breathing room** — generous whitespace is a feature, not a gap to fill.

@@ -6,7 +6,7 @@ export default {
   preprocess: vitePreprocess(),
   kit: {
     adapter: adapter({
-      config: "./wrangler.jsonc",
+      config: "./wrangler.json",
     }),
     typescript: {
       config: withVoidTSConfig(),

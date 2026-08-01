@@ -2,19 +2,19 @@
   "$schema": "../../node_modules/wrangler/config-schema.json",
   "name": "my-memos",
   "main": ".svelte-kit/cloudflare/_sveltekit.js",
-  "compatibility_date": "2026-05-24",
+  "compatibility_date": "2026-08-01",
   "compatibility_flags": ["nodejs_compat", "nodejs_als", "global_fetch_strictly_public"],
   "upload_source_maps": true,
   "workers_dev": false,
   "routes": [
     {
       "pattern": "memos.you-find.me",
-      "custom_domain": true,
-    },
+      "custom_domain": true
+    }
   ],
   "vars": {
     "BETTER_AUTH_URL": "https://memos.you-find.me",
-    "CF_ACCOUNT_ID": "fb71c4eceaf623ae1b19b8b37d7a38cf",
+    "CF_ACCOUNT_ID": "fb71c4eceaf623ae1b19b8b37d7a38cf"
   },
   "secrets": {
     "required": [
@@ -24,12 +24,12 @@
       "GOOGLE_CLIENT_ID",
       "GOOGLE_CLIENT_SECRET",
       "MCP_API_KEY",
-      "TAVILY_API_KEY",
-    ],
+      "TAVILY_API_KEY"
+    ]
   },
   "assets": {
     "directory": ".svelte-kit/cloudflare",
-    "binding": "ASSETS",
+    "binding": "ASSETS"
   },
   "d1_databases": [
     {
@@ -37,27 +37,30 @@
       "database_name": "my-memos",
       "database_id": "02a94452-aeeb-4c5e-8846-6750347f6cad",
       "migrations_dir": "migrations",
-    },
+      "remote": true
+    }
   ],
   "kv_namespaces": [
     {
       "binding": "MEMOS_CACHE",
       "id": "5f04d490f46b4459b32d8e735f95dfd5",
-    },
+      "remote": true
+    }
   ],
   "r2_buckets": [
     {
       "binding": "MEMOS_BUCKET",
       "bucket_name": "cherry-studio",
-    },
+      "remote": true
+    }
   ],
   "observability": {
     "logs": {
       "enabled": true,
-      "invocation_logs": true,
+      "invocation_logs": true
     },
     "traces": {
-      "enabled": false,
-    },
-  },
+      "enabled": true
+    }
+  }
 }

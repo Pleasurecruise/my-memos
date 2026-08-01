@@ -1,4 +1,10 @@
-import { createMemo, isValidMemoCursor, listMemos } from "$lib/server/memos";
+import {
+  createMemo,
+  isValidMemoCursor,
+  listMemos,
+  memoDateSchema,
+  memoSearchSchema,
+} from "$lib/server/memos";
 import { json } from "@sveltejs/kit";
 import { z } from "zod";
 import type { RequestHandler } from "./$types";
@@ -12,8 +18,8 @@ const createMemoSchema = z.object({
 const listQuerySchema = z.object({
   cursor: z.string().optional(),
   limit: z.coerce.number().int().min(1).max(100).optional(),
-  search: z.string().optional(),
-  date: z.string().optional(),
+  search: memoSearchSchema.optional(),
+  date: memoDateSchema.optional(),
   tags: z.string().optional(),
   publicOnly: z
     .string()
@@ -55,7 +61,7 @@ export const GET: RequestHandler = async ({ url, platform, locals }) => {
     .map((t) => t.trim())
     .filter(Boolean);
 
-  const memoPage = await listMemos(platform.env.DB, platform.env.MEMOS_CACHE, {
+  const memoPage = await listMemos(platform.env.DB, {
     cursor,
     limit,
     search,

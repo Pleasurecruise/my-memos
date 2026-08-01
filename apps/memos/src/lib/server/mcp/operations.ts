@@ -10,6 +10,8 @@ import {
   createMemo,
   deleteMemo,
   listTagCounts,
+  memoDateSchema,
+  memoSearchSchema,
   updateMemo,
 } from "$lib/server/memos";
 import { renderChartSchema } from "$lib/visual/chart";
@@ -25,10 +27,10 @@ import {
   formatMemo,
   githubRead,
   publicHttpUrl,
+  readLimitedText,
   requireOk,
 } from "./utils";
 
-const date = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 export function createDomainOperations(env: AppEnv): DomainOperation[] {
   const db = drizzle(env.DB);
   const turndown = new TurndownService({ headingStyle: "atx", codeBlockStyle: "fenced" });
@@ -46,8 +48,8 @@ export function createDomainOperations(env: AppEnv): DomainOperation[] {
       name: "list_memos",
       description: "Browse memos by date range and tags without requiring keywords.",
       schema: z.object({
-        from_date: date.optional(),
-        to_date: date.optional(),
+        from_date: memoDateSchema.optional(),
+        to_date: memoDateSchema.optional(),
         tags: z.array(z.string()).optional(),
         limit: z.number().int().min(1).max(20).default(10),
       }),
@@ -76,9 +78,9 @@ export function createDomainOperations(env: AppEnv): DomainOperation[] {
       name: "search_memos",
       description: "Search memo contents by keyword, optionally constrained by dates and tags.",
       schema: z.object({
-        query: z.string().min(1),
-        from_date: date.optional(),
-        to_date: date.optional(),
+        query: memoSearchSchema.refine((value) => value.length > 0, "Search cannot be empty."),
+        from_date: memoDateSchema.optional(),
+        to_date: memoDateSchema.optional(),
         tags: z.array(z.string()).optional(),
       }),
       execute: async ({ query, from_date, to_date, tags }) => {
@@ -166,7 +168,7 @@ export function createDomainOperations(env: AppEnv): DomainOperation[] {
           signal,
         });
         requireOk(response, "Tavily");
-        return response.json();
+        return JSON.parse(await readLimitedText(response, "Tavily"));
       },
     }),
     defineOperation({
@@ -180,7 +182,7 @@ export function createDomainOperations(env: AppEnv): DomainOperation[] {
           signal,
         });
         requireOk(response, "URL");
-        const body = await response.text();
+        const body = await readLimitedText(response, "URL");
         const type = response.headers.get("content-type") ?? "";
         if (type.includes("application/json")) return JSON.parse(body);
         return type.includes("text/html")
@@ -199,7 +201,9 @@ export function createDomainOperations(env: AppEnv): DomainOperation[] {
           signal,
         });
         requireOk(response, "URL");
-        const result = await Defuddle(await response.text(), url, { markdown: true });
+        const result = await Defuddle(await readLimitedText(response, "URL"), url, {
+          markdown: true,
+        });
         const content = result.contentMarkdown || result.content;
         if (!content)
           throw new DomainError("upstream_failure", "No readable page content was found.");
@@ -231,7 +235,7 @@ export function createDomainOperations(env: AppEnv): DomainOperation[] {
           { headers: { "User-Agent": "c7-cli/1.0.3" }, signal },
         );
         requireOk(response, "Context7");
-        return response.text();
+        return readLimitedText(response, "Context7");
       },
     }),
     defineOperation({

@@ -2,7 +2,7 @@
 
 A personal memo app built with SvelteKit, deployed as a Cloudflare Worker.
 
-- **Storage** — D1 for memo metadata, R2 for full markdown content, KV for derived caches
+- **Storage** — D1 for memo indexes and searchable body mirrors, R2 for canonical markdown, KV for disposable caches
 - **Auth** — Google OAuth via Better Auth; optional single-user gating with `ALLOWED_EMAIL`
 - **AI chat** — Cloudflare AI Gateway with memo-aware tools (list, search, create, update, delete)
 - **Stack** — SvelteKit · Drizzle ORM · pnpm workspace · adapter-cloudflare
@@ -35,5 +35,6 @@ AGPL-3.0
 
 ## References
 
+- [Memos](https://github.com/usememos/memos) — Timeline-first product direction, Markdown-native capture, and deliberately simple note workflows
 - [camelAI](https://github.com/qaml-ai/camelAI) — Cloudflare deployment and application/runtime boundaries
 - [oh-my-pi](https://github.com/can1357/oh-my-pi) — pi package boundaries, streaming events, and tool harness design

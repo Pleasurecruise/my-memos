@@ -24,11 +24,6 @@ export async function writeOgImageKv(
   await kv.put(cacheKeyValue, image, { expirationTtl: PNG_TTL });
 }
 
-export async function deleteOgImageKv(kv: KVNamespace, cacheKey: OgCacheKey): Promise<void> {
-  const cacheKeyValue = `${KV_PREFIX}${cacheKey.id}:${cacheKey.updatedAt}:${cacheKey.format}`;
-  await kv.delete(cacheKeyValue);
-}
-
 export async function deleteMemoOgImagesKv(kv: KVNamespace, id: string): Promise<void> {
   let cursor: string | undefined;
 

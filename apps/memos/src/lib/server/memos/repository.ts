@@ -67,11 +67,7 @@ export async function getMemo(d1: D1Database, bucket: R2Bucket, id: string): Pro
   return memo;
 }
 
-export async function listMemos(
-  d1: D1Database,
-  cache: KVNamespace,
-  filters: MemoListFilters = {},
-): Promise<MemoPage> {
+export async function listMemos(d1: D1Database, filters: MemoListFilters = {}): Promise<MemoPage> {
   const sortColumn = filters.sortByUpdated ? memos.updatedAt : memos.createdAt;
   const limit = filters.limit ?? DEFAULT_LIMIT;
 

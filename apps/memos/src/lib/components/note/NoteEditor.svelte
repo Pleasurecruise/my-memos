@@ -2,10 +2,7 @@
   import { onDestroy, onMount } from "svelte";
   import { Editor, type JSONContent } from "@tiptap/core";
   import Placeholder from "@tiptap/extension-placeholder";
-  import { Table } from "@tiptap/extension-table";
-  import TableCell from "@tiptap/extension-table-cell";
-  import TableHeader from "@tiptap/extension-table-header";
-  import TableRow from "@tiptap/extension-table-row";
+  import { TableKit } from "@tiptap/extension-table";
   import StarterKit from "@tiptap/starter-kit";
   import { renderToMarkdown } from "@tiptap/static-renderer/pm/markdown";
   import NoteToolbar from "./NoteToolbar.svelte";
@@ -29,10 +26,7 @@
   const extensions = [
     StarterKit,
     Placeholder.configure({ placeholder: "Write your note..." }),
-    Table.configure({ resizable: false }),
-    TableRow,
-    TableHeader,
-    TableCell,
+    TableKit.configure({ table: { resizable: false } }),
   ];
 
   const filteredSlashCommands = $derived.by(() => {

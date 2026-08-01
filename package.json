@@ -7,8 +7,8 @@
     "dev": "pnpm --filter @my-memos/app dev",
     "dev:storybook": "pnpm --filter @my-memos/ui dev",
     "build": "pnpm --filter @my-memos/app build",
-    "d1:migrate:local": "wrangler d1 migrations apply DB --local --persist-to apps/memos/.wrangler/state --config apps/memos/wrangler.jsonc",
-    "d1:migrate:remote": "wrangler d1 migrations apply DB --remote --config apps/memos/wrangler.jsonc",
+    "d1:migrate:local": "wrangler d1 migrations apply DB --local --persist-to apps/memos/.wrangler/state --config apps/memos/wrangler.json",
+    "d1:migrate:remote": "wrangler d1 migrations apply DB --remote --config apps/memos/wrangler.json",
     "deploy": "pnpm --filter @my-memos/app exec void deploy",
     "test": "vitest run",
     "check": "pnpm --filter @my-memos/app prepare && vp check && svelte-check --workspace packages/ui --tsconfig tsconfig.json && svelte-check --workspace apps/memos --tsconfig tsconfig.check.json && tsgo --noEmit",
@@ -24,9 +24,9 @@
     "svelte-check": "4.7.4",
     "tailwindcss": "4.3.3",
     "typescript": "6.0.3",
-    "vite-plus": "0.2.6",
+    "vite-plus": "0.2.7",
     "vitest": "4.1.10",
-    "wrangler": "4.116.0"
+    "wrangler": "4.118.0"
   },
   "packageManager": "pnpm@11.18.0"
 }

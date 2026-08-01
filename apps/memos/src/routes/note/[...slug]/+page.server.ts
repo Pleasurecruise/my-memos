@@ -28,7 +28,7 @@ interface NotePageDataInput {
 
 async function getCategories(bucket: R2Bucket, kv: KVNamespace): Promise<string[]> {
   const cached = await readCategoriesKv(kv);
-  if (cached.length > 0) return cached;
+  if (cached) return cached;
 
   const categories = new Set<string>();
   let cursor: string | undefined;
