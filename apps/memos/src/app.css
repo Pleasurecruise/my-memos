@@ -31,6 +31,32 @@ body {
   display: none;
 }
 
+@media (hover: hover) and (pointer: fine) and (min-width: 40rem) {
+  .group .memo-hover-actions {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .group:hover .memo-hover-actions,
+  .group:focus-within .memo-hover-actions {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+
+@media (hover: hover) and (pointer: fine) and (min-width: 48rem) {
+  .group .memo-hover-actions-md {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .group:hover .memo-hover-actions-md,
+  .group:focus-within .memo-hover-actions-md {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+
 ::view-transition-old(root),
 ::view-transition-new(root) {
   animation: none;

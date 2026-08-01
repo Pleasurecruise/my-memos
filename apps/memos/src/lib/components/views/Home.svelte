@@ -587,7 +587,7 @@
 
               <div
                 class="mt-2.5 pt-2.5 border-t border-border overflow-x-auto
-                  opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"
+                  memo-hover-actions transition-opacity"
               >
                 <div class="flex items-center gap-1 min-w-max">
                   {#if isEditing}

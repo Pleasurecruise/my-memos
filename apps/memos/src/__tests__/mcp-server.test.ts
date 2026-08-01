@@ -44,7 +44,7 @@ function fakeEnv(): AppEnv {
   };
 }
 
-describe("MCP 2026-07-28 contract", () => {
+describe("MCP dual-era contract", () => {
   const handlers: McpHttpHandler[] = [];
   afterEach(async () => Promise.all(handlers.splice(0).map((handler) => handler.close())));
 
@@ -57,6 +57,7 @@ describe("MCP 2026-07-28 contract", () => {
     });
 
     expect(connection.client.getProtocolEra()).toBe("modern");
+    expect(connection.client.getNegotiatedProtocolVersion()).toBe(MCP_PROTOCOL_VERSION);
     expect(connection.client.getServerVersion()?.name).toBe("my-memos");
     expect(connection.tools.map((tool) => tool.name).sort()).toEqual(IN_PRODUCT_TOOLS);
     expect(
@@ -77,26 +78,24 @@ describe("MCP 2026-07-28 contract", () => {
     await connection.close();
   });
 
-  it("rejects a legacy initialize handshake", async () => {
+  it("falls back to the 2025-11-25 handshake for a legacy-only endpoint", async () => {
     const handler = createMemosMcpHandler(fakeEnv(), "api-key");
     handlers.push(handler);
-    const response = await handler.fetch(
-      new Request("https://mcp.test/api/mcp", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          jsonrpc: "2.0",
-          id: 1,
-          method: "initialize",
-          params: {
-            protocolVersion: "2025-11-25",
-            capabilities: {},
-            clientInfo: { name: "old", version: "1" },
-          },
-        }),
-      }),
-    );
-    expect(await response.text()).toContain(MCP_PROTOCOL_VERSION);
+    const connection = await connectMcp({
+      url: "https://mcp.test/api/mcp",
+      fetch: (input, init) => {
+        const request = new Request(input, init);
+        if (request.headers.get("mcp-method") === "server/discover") {
+          return Promise.resolve(new Response("Not found", { status: 404 }));
+        }
+        return handler.fetch(request);
+      },
+    });
+
+    expect(connection.client.getProtocolEra()).toBe("legacy");
+    expect(connection.client.getNegotiatedProtocolVersion()).toBe("2025-11-25");
+    expect(connection.tools.map((tool) => tool.name).sort()).toEqual(EXTERNAL_TOOLS);
+    await connection.close();
   });
 
   it("rejects private-network URLs before a fetch tool can run", async () => {

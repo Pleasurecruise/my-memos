@@ -86,21 +86,6 @@ export class AgentChatStreamBridge {
         this.assistantText += update.delta;
         this.writeEvent({ type: "text-delta", delta: update.delta });
       }
-      if (
-        update.type === "toolcall_start" ||
-        update.type === "toolcall_delta" ||
-        update.type === "toolcall_end"
-      ) {
-        const call = update.partial.content[update.contentIndex];
-        if (call?.type === "toolCall" && call.id && call.name) {
-          this.writeEvent({
-            type: "tool-input",
-            toolCallId: call.id,
-            toolName: call.name,
-            input: call.arguments,
-          });
-        }
-      }
     }
 
     if (event.type === "tool_execution_start") {

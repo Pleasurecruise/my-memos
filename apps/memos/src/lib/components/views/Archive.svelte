@@ -193,7 +193,7 @@
                 <!-- Hover actions -->
                 <div
                   class="flex items-center gap-1.5 mt-2.5 pt-2.5 border-t border-border
-                    opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"
+                    memo-hover-actions transition-opacity"
                 >
                   <Button
                     variant="outline"

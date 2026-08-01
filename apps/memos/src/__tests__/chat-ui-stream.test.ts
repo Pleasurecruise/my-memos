@@ -75,6 +75,8 @@ describe("pi to UI message stream bridge", () => {
         partial: toolMessage,
       },
     });
+    expect(write).not.toHaveBeenCalled();
+
     bridge.write({
       type: "tool_execution_start",
       toolCallId: "call-1",
@@ -101,19 +103,15 @@ describe("pi to UI message stream bridge", () => {
       expect.objectContaining({
         type: "tool-input",
         toolName: "render_chart",
-        input: { title: "Chart", code: "<div>" },
+        input: { title: "Chart" },
       }),
     );
     expect(write).toHaveBeenNthCalledWith(
       2,
-      expect.objectContaining({ type: "tool-input", toolName: "render_chart" }),
-    );
-    expect(write).toHaveBeenNthCalledWith(
-      3,
       expect.objectContaining({ type: "tool-output", output: { title: "Chart" } }),
     );
     expect(write).toHaveBeenNthCalledWith(
-      4,
+      3,
       expect.objectContaining({ type: "tool-error", errorText: "timeout" }),
     );
   });

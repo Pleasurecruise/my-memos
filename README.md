@@ -9,6 +9,26 @@ A personal memo app built with SvelteKit, deployed as a Cloudflare Worker.
 
 See [`docs/`](docs/) for architecture, deployment, and design system details.
 
+## MCP client
+
+Connect a Streamable HTTP MCP client to the public endpoint with the fixed API key:
+
+```json
+{
+  "mcpServers": {
+    "my-memos": {
+      "type": "streamable-http",
+      "url": "https://memos.you-find.me/api/mcp",
+      "headers": {
+        "Authorization": "Bearer ${MCP_API_KEY}"
+      }
+    }
+  }
+}
+```
+
+Replace `${MCP_API_KEY}` with the configured secret, or use the client's environment-variable expansion when supported. The endpoint supports MCP `2026-07-28` and stateless `2025-11-25` clients. It does not issue an `Mcp-Session-Id`.
+
 ## License
 
 AGPL-3.0

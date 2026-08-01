@@ -77,7 +77,7 @@
   {#if actions}
     <div
       class="flex flex-wrap items-center gap-1.5 mt-4 pt-3 border-t border-border {hoverActions
-        ? 'opacity-100 md:opacity-0 md:group-hover:opacity-100'
+        ? 'memo-hover-actions-md'
         : ''} transition-opacity duration-100"
     >
       {@render actions()}

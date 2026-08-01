@@ -14,7 +14,7 @@ export const renderChartSchema = z.object({
       "HTML fragment containing the chart. Structure: <style> (short) → chart container (<canvas>/<div>/<svg>) → <script> last. " +
         "Load libraries via CDN (cdnjs.cloudflare.com, esm.sh, cdn.jsdelivr.net, unpkg.com). " +
         "Supported libraries: Chart.js, ECharts, D3, Canvas, or any CDN-hosted library. " +
-        "For Chart.js: wrap <canvas> in a <div> with explicit height. Load UMD build, use onload+fallback pattern. " +
+        "For Chart.js: wrap <canvas> in a div with an explicit height. Load the UMD build before the inline script, then define and call initChart exactly once without an onload/fallback pair. Keep labels inside the canvas with responsive layout padding. " +
         "No DOCTYPE, <html>, <head>, or <body>. Keep style block under ~15 lines.",
     ),
   width: z.number().int().min(200).max(1200).optional().describe("Width in pixels. Default: 720."),

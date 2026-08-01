@@ -68,6 +68,6 @@ export function createMemosMcpHandler(env: AppEnv, principal: McpPrincipal): Mcp
       }
       return server;
     },
-    { legacy: "reject", responseMode: "auto" },
+    { legacy: "stateless", responseMode: "auto" },
   );
 }

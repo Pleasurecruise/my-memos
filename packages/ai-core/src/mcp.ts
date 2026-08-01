@@ -40,7 +40,7 @@ export async function connectMcp({
 }: ConnectMcpOptions): Promise<McpConnection> {
   const client = new Client(
     { name: "ai-core", version: "1.0.0" },
-    { versionNegotiation: { mode: { pin: MCP_PROTOCOL_VERSION } } },
+    { versionNegotiation: { mode: "auto" } },
   );
   const transport = new StreamableHTTPClientTransport(new URL(url), {
     fetch,
@@ -49,10 +49,6 @@ export async function connectMcp({
 
   try {
     await client.connect(transport);
-    if (client.getProtocolEra() !== "modern") {
-      throw new Error(`MCP server did not negotiate ${MCP_PROTOCOL_VERSION}.`);
-    }
-
     const { tools } = await client.listTools();
     return {
       client,

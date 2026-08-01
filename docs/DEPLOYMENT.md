@@ -141,7 +141,7 @@ Verify these paths after deployment:
 - `/api/chat`
   Stateless pi Agent NDJSON stream backed by Cloudflare AI Gateway, MCP, D1, and R2.
 - `/api/mcp`
-  Send a modern `server/discover` request with MCP `2026-07-28`, then list and call tools with the fixed Bearer key. External discovery must not contain the four in-product `render_*` tools. Old `initialize` handshakes and `Mcp-Session-Id` are rejected.
+  Send either a modern `server/discover` request with MCP `2026-07-28` or a legacy `2025-11-25` `initialize` request, then list and call tools with the fixed Bearer key. External discovery must not contain the four in-product `render_*` tools. The legacy path is stateless: it does not issue `Mcp-Session-Id`, and supplied session IDs are rejected.
 - `/api/notes`
   POST creates a note (authenticated).
 
@@ -163,7 +163,7 @@ Use Streamable HTTP with one stateless endpoint and no session ID:
 }
 ```
 
-Some clients name the transport `http` instead of `streamable-http`; the URL and header are unchanged. The client must support MCP `2026-07-28` version negotiation. Do not send `Mcp-Session-Id`, and do not use a legacy-only client that always starts with the 2025 `initialize` handshake.
+Some clients name the transport `http` instead of `streamable-http`; the URL and header are unchanged. Clients may negotiate MCP `2026-07-28` through `server/discover` or use the `2025-11-25` `initialize` handshake. The endpoint does not issue protocol sessions, so clients must not invent or persist an `Mcp-Session-Id` when none was returned.
 
 ## Operational Notes
 

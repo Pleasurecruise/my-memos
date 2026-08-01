@@ -19,7 +19,7 @@ Browser (in-memory Svelte Chat store)
   -> SvelteKit POST /api/chat with the complete current-page transcript
   -> typed NDJSON agent events
   -> @my-memos/ai-core / pi Agent
-  -> in-process MCP 2026-07-28 client -> /api/mcp handler
+  -> in-process dual-era MCP client (prefers 2026-07-28, falls back to 2025-11-25) -> /api/mcp handler
   -> typed domain operations in apps/memos/src/lib/server
   -> Cloudflare bindings
      - D1: structured memo metadata + auth tables
@@ -68,7 +68,7 @@ It also contains a local demo surface in [packages/ui/dev](/Users/pleasure1234/G
 
 ### Package: `packages/ai-core`
 
-`@my-memos/ai-core` pins `@earendil-works/pi-agent-core` and `@earendil-works/pi-ai` to the same exact version. It owns pi Agent construction, OpenAI-compatible model descriptors, MCP `2026-07-28` discovery, MCP-to-pi tool adaptation, cancellation, and runtime events. It has no application tool names, SvelteKit, Better Auth, D1, R2, KV, or Cloudflare imports. Mutation sequencing is derived from standard MCP tool annotations. It deliberately has no budgets, snapshots, persistence, thread IDs, retry, or regeneration API.
+`@my-memos/ai-core` pins `@earendil-works/pi-agent-core` and `@earendil-works/pi-ai` to the same exact version. It owns pi Agent construction, OpenAI-compatible model descriptors, MCP version negotiation (preferring `2026-07-28` discovery with a `2025-11-25` initialize fallback), MCP-to-pi tool adaptation, cancellation, and runtime events. It has no application tool names, SvelteKit, Better Auth, D1, R2, KV, or Cloudflare imports. Mutation sequencing is derived from standard MCP tool annotations. It deliberately has no budgets, snapshots, persistence, thread IDs, retry, or regeneration API.
 
 Its public contracts are collected in `packages/ai-core/src/types.ts`; small pure conversion helpers live in `utils.ts`. Tests are isolated under each package or app's `src/__tests__` directory. Server code imports hashtag parsing directly from `apps/memos/src/lib/utils/tags.ts`, so it never loads the browser navigation utilities.
 
@@ -224,7 +224,7 @@ Behavior:
 - model: `deepseek-chat` through Cloudflare AI Gateway's provider-native DeepSeek endpoint; the Gateway injects the configured BYOK provider key
 - pi `Agent` is the sole server-side loop owner and runs until natural completion, cancellation, upstream failure, or platform termination
 - streams newline-delimited, typed JSON events for assistant text and tool parts
-- forwards pi tool-call argument deltas so in-product `render_*` cards can update while the model is still generating their input
+- forwards one complete tool input when execution starts; cumulative argument deltas stay server-side to avoid quadratic serialization and repeated visual renders
 - request cancellation propagates to pi, the model request, and MCP tool calls
 - after success, `platform.ctx.waitUntil()` updates memory from only the latest user turn and newly generated assistant reply
 
@@ -232,7 +232,7 @@ Behavior:
 
 File: `apps/memos/src/routes/api/mcp/+server.ts`
 
-- single stateless `POST` endpoint, pinned to MCP `2026-07-28`; 2025 handshakes and session headers are rejected
+- single stateless `POST` endpoint serving MCP `2026-07-28` plus a stateless `2025-11-25` initialize fallback; protocol sessions are not issued and session headers are rejected
 - external clients authenticate with `Authorization: Bearer <MCP_API_KEY>`
 - the fixed key has all remotely exposed tool permissions; no token table, token-management API, or scope store exists
 - external tools: `get_tags`, `list_memos`, `search_memos`, `create_memo`, `update_memo`, `delete_memo`, `web_search`, `fetch_raw`, `fetch_url`, `github_read`, `lookup_docs`

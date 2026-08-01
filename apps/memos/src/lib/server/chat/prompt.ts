@@ -35,7 +35,7 @@ Use for data visualization: bar charts, line charts, pie charts, scatter plots, 
 
 - Provide an HTML fragment: <style> → chart container → <script>. No DOCTYPE/<html>/<head>/<body>.
 - CSS custom properties and SVG color classes are pre-defined in the container.
-- For Chart.js: load UMD from cdnjs.cloudflare.com. Wrap canvas in <div style="position:relative;height:300px">. Use onload="initChart()" on the CDN script + if(window.Chart)initChart() fallback at the end of your inline script. Canvas cannot resolve CSS variables — use hardcoded hex (e.g. #e6e3dc for text, #d8a0b2 for accents, #9a948d/#332f2c for grid).
+- For Chart.js: load the UMD build from cdnjs.cloudflare.com before the inline chart script. Wrap canvas in <div style="position:relative;height:360px">. In the inline script, define initChart and call it exactly once; do not use an onload handler or fallback pair. Use responsive: true, maintainAspectRatio: false, and enough layout padding to keep labels inside the canvas. Canvas cannot resolve CSS variables — use hardcoded hex (e.g. #e6e3dc for text, #d8a0b2 for accents, #9a948d/#332f2c for grid).
 - For ECharts: load from esm.sh or cdn.jsdelivr.net.
 - If the user wants interactive controls on the chart, use render_widget instead.
 
