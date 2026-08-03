@@ -1,12 +1,8 @@
-import { drizzle } from "drizzle-orm/d1";
 import { and, desc, eq, gte, like, or, sql } from "drizzle-orm";
-import { memos } from "../db/schema";
-import type { MemoRow } from "../db/schema";
+import { drizzle } from "drizzle-orm/d1";
+import { memos, type MemoRow } from "$lib/server/db/schema";
 import { buildMemoDateCondition, buildMemoTagConditions } from "./query";
-import { buildMemoR2Key, createMemoId, normalizeTags } from "./utils";
-import { stripHashtags } from "$lib/utils/tags";
-import { deleteMemoOgImagesKv } from "$lib/server/og/cache";
-import type { CreateMemoInput, UpdateMemoInput, MemoListFilters, MemoPage } from "./types";
+import type { AgentMemoFilters, MemoContentRecord, MemoListFilters, MemoPage } from "./types";
 import type { Memo, MemoStats, TagCount } from "$lib/types";
 
 const DEFAULT_LIMIT = 25;
@@ -14,7 +10,7 @@ const CURSOR_VALUE_SEPARATOR = "|";
 const MEMO_ID_RE = /^\d{8}T\d{6}Z-[0-9a-f]{8}$/;
 const SORT_VALUE_RE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/;
 
-function rowToMemo(row: MemoRow): Memo {
+export function memoFromRow(row: MemoRow): Memo {
   return {
     id: row.id,
     content: row.excerpt,
@@ -27,14 +23,8 @@ function rowToMemo(row: MemoRow): Memo {
   };
 }
 
-async function invalidateMemoCache(cache: KVNamespace): Promise<void> {
-  await Promise.all([cache.delete("memo:tags"), cache.delete("memo:tags:public")]);
-}
-
 function encodeCursor(pinned: boolean, sortValue: string, id: string): string {
-  const pinnedValue = pinned ? "1" : "0";
-  const cursorValue = [pinnedValue, sortValue, id].join(CURSOR_VALUE_SEPARATOR);
-  return btoa(cursorValue);
+  return btoa([pinned ? "1" : "0", sortValue, id].join(CURSOR_VALUE_SEPARATOR));
 }
 
 function decodeCursor(raw: string): { p: boolean; v: string; i: string } | null {
@@ -52,44 +42,24 @@ export function isValidMemoCursor(raw: string): boolean {
   return decodeCursor(raw) !== null;
 }
 
-export async function getMemo(d1: D1Database, bucket: R2Bucket, id: string): Promise<Memo | null> {
+export async function findMemoRow(d1: D1Database, id: string): Promise<MemoRow | null> {
   const db = drizzle(d1);
   const [row] = await db.select().from(memos).where(eq(memos.id, id)).limit(1);
-  if (!row) return null;
-
-  const memo = rowToMemo(row);
-
-  const obj = await bucket.get(row.r2Key);
-  if (obj) {
-    memo.content = await obj.text();
-  }
-
-  return memo;
+  return row ?? null;
 }
 
 export async function listMemos(d1: D1Database, filters: MemoListFilters = {}): Promise<MemoPage> {
   const sortColumn = filters.sortByUpdated ? memos.updatedAt : memos.createdAt;
   const limit = filters.limit ?? DEFAULT_LIMIT;
-
-  const db = drizzle(d1);
   const conditions = [filters.archivedOnly ? eq(memos.archived, true) : eq(memos.archived, false)];
 
   if (filters.publicOnly) conditions.push(eq(memos.visibility, "public"));
-
-  if (filters.date) {
-    conditions.push(buildMemoDateCondition(memos.updatedAt, filters.date, "="));
-  }
-
-  if (filters.search) {
-    conditions.push(like(memos.excerpt, `%${filters.search}%`));
-  }
-
+  if (filters.date) conditions.push(buildMemoDateCondition(memos.updatedAt, filters.date, "="));
+  if (filters.search) conditions.push(like(memos.excerpt, `%${filters.search}%`));
   if (filters.tags?.length) {
-    const tagClauses = buildMemoTagConditions(filters.tags);
-    const tagCondition = or(...tagClauses);
+    const tagCondition = or(...buildMemoTagConditions(filters.tags));
     if (tagCondition) conditions.push(tagCondition);
   }
-
   if (filters.cursor) {
     const decoded = decodeCursor(filters.cursor);
     if (!decoded) throw new Error("Invalid memo cursor.");
@@ -98,26 +68,21 @@ export async function listMemos(d1: D1Database, filters: MemoListFilters = {}): 
     );
   }
 
-  // Fetch one extra to determine if there are more
-  const rows = await db
+  const rows = await drizzle(d1)
     .select()
     .from(memos)
     .where(and(...conditions))
     .orderBy(desc(memos.pinned), desc(sortColumn), desc(memos.id))
     .limit(limit + 1);
-
-  const hasMore: boolean = rows.length > limit;
-  const pageRows = hasMore ? rows.slice(0, limit) : rows;
-  const pageMemos: Memo[] = pageRows.map(rowToMemo);
-
-  const nextCursor: string | null =
-    hasMore && pageMemos.length > 0
+  const hasMore = rows.length > limit;
+  const pageMemos = (hasMore ? rows.slice(0, limit) : rows).map(memoFromRow);
+  const lastMemo = pageMemos.at(-1);
+  const nextCursor =
+    hasMore && lastMemo
       ? encodeCursor(
-          pageMemos[pageMemos.length - 1].pinned,
-          sortColumn === memos.updatedAt
-            ? pageMemos[pageMemos.length - 1].updatedAt
-            : pageMemos[pageMemos.length - 1].createdAt,
-          pageMemos[pageMemos.length - 1].id,
+          lastMemo.pinned,
+          filters.sortByUpdated ? lastMemo.updatedAt : lastMemo.createdAt,
+          lastMemo.id,
         )
       : null;
 
@@ -129,29 +94,18 @@ export async function listMemoActivity(
   publicOnly: boolean,
   since: string,
 ): Promise<Memo[]> {
-  const db = drizzle(d1);
   const conditions = [eq(memos.archived, false), gte(memos.createdAt, since)];
-
   if (publicOnly) conditions.push(eq(memos.visibility, "public"));
 
-  const rows = await db
+  const rows = await drizzle(d1)
     .select()
     .from(memos)
     .where(and(...conditions))
     .orderBy(desc(memos.createdAt), desc(memos.id));
-
-  return rows.map(rowToMemo);
+  return rows.map(memoFromRow);
 }
 
-export async function listTagCounts(
-  d1: D1Database,
-  cache: KVNamespace,
-  publicOnly = false,
-): Promise<TagCount[]> {
-  const cacheKey = publicOnly ? "memo:tags:public" : "memo:tags";
-  const cached = await cache.get(cacheKey, "json");
-  if (cached) return cached as TagCount[];
-
+export async function queryTagCounts(d1: D1Database, publicOnly = false): Promise<TagCount[]> {
   const visibilityClause = publicOnly ? "AND visibility = 'public'" : "";
   const { results } = await d1
     .prepare(
@@ -163,9 +117,7 @@ export async function listTagCounts(
     )
     .all<{ name: string; count: number }>();
 
-  const tags = (results ?? []).map((row) => ({ name: row.name, count: Number(row.count) }));
-  await cache.put(cacheKey, JSON.stringify(tags));
-  return tags;
+  return (results ?? []).map((row) => ({ name: row.name, count: Number(row.count) }));
 }
 
 export async function countMemoStats(
@@ -185,130 +137,52 @@ export async function countMemoStats(
     .bind(today)
     .first<{ total: number; today: number | null }>();
 
-  return {
-    total: row?.total ?? 0,
-    today: row?.today ?? 0,
-  };
+  return { total: row?.total ?? 0, today: row?.today ?? 0 };
 }
 
-export async function createMemo(
+export async function listAgentMemoRecords(
   d1: D1Database,
-  bucket: R2Bucket,
-  cache: KVNamespace,
-  input: CreateMemoInput,
-): Promise<Memo> {
-  const now = new Date();
-  const id = createMemoId(now);
-  const tags = input.tags.length ? input.tags : normalizeTags(input.content);
-  const r2Key = buildMemoR2Key(id, now);
-  const content = input.content.trim();
-  const nowIso = now.toISOString();
-
-  await bucket.put(r2Key, content, {
-    httpMetadata: { contentType: "text/markdown; charset=utf-8" },
-  });
-
-  const db = drizzle(d1);
-  await db.insert(memos).values({
-    id,
-    r2Key,
-    tagsJson: tags,
-    excerpt: content,
-    createdAt: nowIso,
-    updatedAt: nowIso,
-    visibility: input.visibility,
-    pinned: false,
-    archived: false,
-  });
-
-  await invalidateMemoCache(cache);
-
-  return {
-    id,
-    content,
-    tags,
-    createdAt: nowIso,
-    updatedAt: nowIso,
-    visibility: input.visibility,
-    pinned: false,
-    archived: false,
-  };
-}
-
-export async function updateMemo(
-  d1: D1Database,
-  bucket: R2Bucket,
-  cache: KVNamespace,
-  id: string,
-  input: UpdateMemoInput,
-): Promise<Memo> {
-  const db = drizzle(d1);
-
-  const [existing] = await db.select().from(memos).where(eq(memos.id, id)).limit(1);
-  if (!existing) throw new Error(`Memo not found: ${id}`);
-
-  await deleteMemoOgImagesKv(cache, id);
-
-  const setValues: Partial<typeof memos.$inferInsert> = {};
-
-  if (input.content !== undefined) {
-    const content = input.content.trim();
-    await bucket.put(existing.r2Key, content, {
-      httpMetadata: { contentType: "text/markdown; charset=utf-8" },
-    });
-    setValues.excerpt = content;
-    setValues.tagsJson = input.tags?.length ? input.tags : normalizeTags(content);
-  } else if (input.tags !== undefined) {
-    const newTags = input.tags.length ? input.tags : [];
-    setValues.tagsJson = newTags;
-
-    // Sync R2 body: strip old hashtags from the body, then append new ones at the end
-    const bodyObj = await bucket.get(existing.r2Key);
-    if (bodyObj) {
-      let body = (await bodyObj.text()).trimEnd();
-      body = stripHashtags(body).trimEnd();
-      if (newTags.length > 0) {
-        const tagLine = newTags.map((t) => `#${t}`).join(" ");
-        body = body + "\n\n" + tagLine;
-      }
-      await bucket.put(existing.r2Key, body, {
-        httpMetadata: { contentType: "text/markdown; charset=utf-8" },
-      });
-      setValues.excerpt = body;
-    }
+  filters: AgentMemoFilters,
+): Promise<MemoContentRecord[]> {
+  const conditions = [eq(memos.archived, false)];
+  if (filters.query) conditions.push(like(memos.excerpt, `%${filters.query}%`));
+  if (filters.fromDate) {
+    conditions.push(buildMemoDateCondition(memos.createdAt, filters.fromDate, ">="));
   }
+  if (filters.toDate) {
+    conditions.push(buildMemoDateCondition(memos.createdAt, filters.toDate, "<="));
+  }
+  if (filters.tags?.length) conditions.push(...buildMemoTagConditions(filters.tags));
 
-  if (input.visibility !== undefined) setValues.visibility = input.visibility;
-  if (input.pinned !== undefined) setValues.pinned = input.pinned;
-  if (input.archived !== undefined) setValues.archived = input.archived;
-
-  setValues.updatedAt = new Date().toISOString();
-
-  await db.update(memos).set(setValues).where(eq(memos.id, id));
-  await invalidateMemoCache(cache);
-
-  const [updated] = await db.select().from(memos).where(eq(memos.id, id)).limit(1);
-  return rowToMemo(updated!);
+  return drizzle(d1)
+    .select({
+      id: memos.id,
+      r2Key: memos.r2Key,
+      excerpt: memos.excerpt,
+      tags: memos.tagsJson,
+      createdAt: memos.createdAt,
+    })
+    .from(memos)
+    .where(and(...conditions))
+    .orderBy(desc(memos.createdAt))
+    .limit(filters.limit);
 }
 
-export async function deleteMemo(
+export async function insertMemoRow(d1: D1Database, row: typeof memos.$inferInsert): Promise<void> {
+  await drizzle(d1).insert(memos).values(row);
+}
+
+export async function updateMemoRow(
   d1: D1Database,
-  bucket: R2Bucket,
-  cache: KVNamespace,
   id: string,
-): Promise<void> {
+  values: Partial<typeof memos.$inferInsert>,
+): Promise<MemoRow> {
   const db = drizzle(d1);
+  await db.update(memos).set(values).where(eq(memos.id, id));
+  const [updated] = await db.select().from(memos).where(eq(memos.id, id)).limit(1);
+  return updated;
+}
 
-  const [existing] = await db
-    .select({ r2Key: memos.r2Key })
-    .from(memos)
-    .where(eq(memos.id, id))
-    .limit(1);
-  if (!existing) throw new Error(`Memo not found: ${id}`);
-
-  await deleteMemoOgImagesKv(cache, id);
-
-  await db.delete(memos).where(eq(memos.id, id));
-  await bucket.delete(existing.r2Key);
-  await invalidateMemoCache(cache);
+export async function deleteMemoRow(d1: D1Database, id: string): Promise<void> {
+  await drizzle(d1).delete(memos).where(eq(memos.id, id));
 }

@@ -1,15 +1,6 @@
 import { json } from "@sveltejs/kit";
 import { z } from "zod";
-import {
-  compileEditorHtml,
-  compileMarkdown,
-  DEFAULT_NOTE_CATEGORY,
-  deleteCategoriesKv,
-  r2KeyFromSlug,
-  stripLeadingTitleHeading,
-  writeNoteKv,
-} from "$lib/server/blog";
-import { normalizeUrlPathSegment } from "$lib/utils/url";
+import { createNote, NoteError } from "$lib/server/notes";
 import type { RequestHandler } from "./$types";
 
 const createNoteSchema = z.object({
@@ -17,15 +8,6 @@ const createNoteSchema = z.object({
   title: z.string().trim().min(1),
   category: z.string().trim(),
 });
-
-function noteFileName(title: string): string {
-  return normalizeUrlPathSegment(title || "untitled-note") || "untitled-note";
-}
-
-function noteSlug(category: string, title: string): string {
-  const cat = normalizeUrlPathSegment(category || DEFAULT_NOTE_CATEGORY) || DEFAULT_NOTE_CATEGORY;
-  return `${cat}/${noteFileName(title)}`;
-}
 
 export const POST: RequestHandler = async ({ request, platform, locals }) => {
   if (!locals.user) {
@@ -41,52 +23,16 @@ export const POST: RequestHandler = async ({ request, platform, locals }) => {
     return json({ error: "Note title is required." }, { status: 400 });
   }
 
-  const bucket = platform.env.MEMOS_BUCKET;
-  const kv = platform.env.MEMOS_CACHE;
-  const title = result.data.title;
-  const source = stripLeadingTitleHeading(result.data.body).trimEnd() + "\n";
-  const slug = noteSlug(result.data.category, title);
-  const r2Key = r2KeyFromSlug(slug);
-
-  const existing = await bucket.head(r2Key);
-  if (existing) {
-    return json({ error: `Note "${slug}" already exists.` }, { status: 409 });
+  try {
+    const note = await createNote(
+      { bucket: platform.env.MEMOS_BUCKET, cache: platform.env.MEMOS_CACHE },
+      result.data,
+    );
+    return json({ note }, { status: 201 });
+  } catch (error) {
+    if (!(error instanceof NoteError)) throw error;
+    const status =
+      error.code === "invalid_input" ? 400 : error.code === "already_exists" ? 409 : 500;
+    return json({ error: error.message }, { status });
   }
-
-  const savedAt = new Date().toISOString();
-  const compiled = await compileMarkdown(source);
-
-  const putResult = await bucket.put(r2Key, source, {
-    httpMetadata: { contentType: "text/markdown; charset=utf-8" },
-    customMetadata: {
-      createdAt: savedAt,
-      updatedAt: savedAt,
-      title,
-    },
-  });
-
-  if (!putResult) {
-    return json({ error: "Failed to create note." }, { status: 500 });
-  }
-
-  const uploadedAt = putResult.uploaded.toISOString();
-  await writeNoteKv(kv, slug, uploadedAt, title, compiled, source);
-  await deleteCategoriesKv(kv);
-
-  return json(
-    {
-      note: {
-        html: compiled.html,
-        toc: compiled.toc,
-        excerpt: compiled.excerpt,
-        title,
-        slug,
-        createdAt: savedAt,
-        updatedAt: savedAt,
-        source,
-        editorHtml: await compileEditorHtml(source),
-      },
-    },
-    { status: 201 },
-  );
 };

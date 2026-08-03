@@ -170,6 +170,6 @@ Some clients name the transport `http` instead of `streamable-http`; the URL and
 - The chat route reads `agent/PROMPT.md` and `agent/MEMORY.md` from `MEMOS_BUCKET`. Missing files degrade gracefully, but chat behavior will change.
 - Successful chats schedule memory maintenance with `waitUntil`; failures and R2 ETag conflicts never fail the already completed chat response.
 - A live MCP key rotation with `wrangler secret put MCP_API_KEY` immediately creates and deploys a Worker version; use `wrangler versions secret put MCP_API_KEY` when preparing an undeployed version. There are no token-management routes or D1 token records.
-- Long-form notes live in R2 under `blog/` prefix, with KV caches for compiled HTML. The note editor (`/note/[...slug]`) reads and updates R2 directly; the API endpoints (`/api/notes`) manage creation and deletion.
+- Long-form notes live in R2 under the `blog/` prefix, with KV caches for compiled HTML. Note page loaders and API endpoints call the shared `notes` service instead of accessing R2 or KV directly.
 - Local development uses remote bindings for D1, KV, and R2 and can mutate the configured Cloudflare resources. The explicit `pnpm d1:migrate:local` command still targets app-local state under `apps/memos/.wrangler/state`.
 - `apps/memos/wrangler.json` currently includes concrete IDs and a production URL. Keep it aligned with `apps/memos/void.json` and `apps/memos/src/app.d.ts`, and avoid mixing environments in one config unless you add explicit environment sections.

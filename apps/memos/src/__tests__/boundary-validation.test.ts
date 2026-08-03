@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { readCategoriesKv } from "$lib/server/blog/cache";
+import { readCategoryCache } from "$lib/server/notes/cache";
 import { readLimitedText } from "$lib/server/mcp/utils";
 import {
   isMemoSearchWithinLimit,
@@ -46,11 +46,11 @@ describe("external response limits", () => {
 describe("KV cache boundaries", () => {
   it("preserves an intentionally empty category cache", async () => {
     const kv = { get: vi.fn().mockResolvedValue([]) } as unknown as KVNamespace;
-    await expect(readCategoriesKv(kv)).resolves.toEqual([]);
+    await expect(readCategoryCache(kv)).resolves.toEqual([]);
   });
 
   it("treats a malformed category cache as a miss", async () => {
     const kv = { get: vi.fn().mockResolvedValue(["valid", 42]) } as unknown as KVNamespace;
-    await expect(readCategoriesKv(kv)).resolves.toBeNull();
+    await expect(readCategoryCache(kv)).resolves.toBeNull();
   });
 });

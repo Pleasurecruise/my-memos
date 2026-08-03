@@ -1,17 +1,14 @@
-import { and, desc, eq, like } from "drizzle-orm";
-import { drizzle } from "drizzle-orm/d1";
 import { Defuddle } from "defuddle/node";
 import TurndownService from "turndown";
 import { z } from "zod";
-import { memos } from "$lib/server/db/schema";
 import {
-  buildMemoDateCondition,
-  buildMemoTagConditions,
   createMemo,
   deleteMemo,
+  listAgentMemos,
   listTagCounts,
   memoDateSchema,
   memoSearchSchema,
+  searchAgentMemos,
   updateMemo,
 } from "$lib/server/memos";
 import { renderChartSchema } from "$lib/visual/chart";
@@ -32,7 +29,6 @@ import {
 } from "./utils";
 
 export function createDomainOperations(env: AppEnv): DomainOperation[] {
-  const db = drizzle(env.DB);
   const turndown = new TurndownService({ headingStyle: "atx", codeBlockStyle: "fenced" });
   turndown.remove(["script", "style", "noscript", "nav", "footer", "iframe"]);
 
@@ -54,23 +50,15 @@ export function createDomainOperations(env: AppEnv): DomainOperation[] {
         limit: z.number().int().min(1).max(20).default(10),
       }),
       execute: async ({ from_date, to_date, tags, limit }) => {
-        const conditions = [eq(memos.archived, false)];
-        if (from_date) conditions.push(buildMemoDateCondition(memos.createdAt, from_date, ">="));
-        if (to_date) conditions.push(buildMemoDateCondition(memos.createdAt, to_date, "<="));
-        if (tags?.length) conditions.push(...buildMemoTagConditions(tags));
-        const rows = await db
-          .select({
-            id: memos.id,
-            excerpt: memos.excerpt,
-            tagsJson: memos.tagsJson,
-            createdAt: memos.createdAt,
-          })
-          .from(memos)
-          .where(and(...conditions))
-          .orderBy(desc(memos.createdAt))
-          .limit(limit);
+        const memoResults = await listAgentMemos(env.DB, {
+          fromDate: from_date,
+          toDate: to_date,
+          tags,
+          limit,
+        });
         return (
-          rows.map((row) => formatMemo(row, row.excerpt)).join("\n\n---\n\n") || "No memos found."
+          memoResults.map((memo) => formatMemo(memo, memo.content)).join("\n\n---\n\n") ||
+          "No memos found."
         );
       },
     }),
@@ -84,27 +72,15 @@ export function createDomainOperations(env: AppEnv): DomainOperation[] {
         tags: z.array(z.string()).optional(),
       }),
       execute: async ({ query, from_date, to_date, tags }) => {
-        const conditions = [eq(memos.archived, false), like(memos.excerpt, `%${query}%`)];
-        if (from_date) conditions.push(buildMemoDateCondition(memos.createdAt, from_date, ">="));
-        if (to_date) conditions.push(buildMemoDateCondition(memos.createdAt, to_date, "<="));
-        if (tags?.length) conditions.push(...buildMemoTagConditions(tags));
-        const rows = await db
-          .select({
-            id: memos.id,
-            r2Key: memos.r2Key,
-            excerpt: memos.excerpt,
-            tagsJson: memos.tagsJson,
-            createdAt: memos.createdAt,
-          })
-          .from(memos)
-          .where(and(...conditions))
-          .orderBy(desc(memos.createdAt))
-          .limit(10);
-        const bodies = await Promise.all(
-          rows.map(async (row) => (await env.MEMOS_BUCKET.get(row.r2Key))?.text() ?? row.excerpt),
-        );
+        const memoResults = await searchAgentMemos(env.DB, env.MEMOS_BUCKET, {
+          query,
+          fromDate: from_date,
+          toDate: to_date,
+          tags,
+          limit: 10,
+        });
         return (
-          rows.map((row, index) => formatMemo(row, bodies[index])).join("\n\n---\n\n") ||
+          memoResults.map((memo) => formatMemo(memo, memo.content)).join("\n\n---\n\n") ||
           "No memos found."
         );
       },

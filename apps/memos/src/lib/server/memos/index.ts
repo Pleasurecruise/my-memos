@@ -1,14 +1,13 @@
 export {
-  getMemo,
-  listMemos,
-  listMemoActivity,
-  listTagCounts,
-  countMemoStats,
   createMemo,
-  updateMemo,
   deleteMemo,
-  isValidMemoCursor,
-} from "./repository";
+  getMemo,
+  listAgentMemos,
+  listTagCounts,
+  searchAgentMemos,
+  updateMemo,
+} from "./service";
+export { listMemos, listMemoActivity, countMemoStats, isValidMemoCursor } from "./repository";
 export { buildMemoDateCondition, buildMemoTagCondition, buildMemoTagConditions } from "./query";
 export {
   MAX_MEMO_SEARCH_BYTES,
@@ -17,4 +16,12 @@ export {
   memoDateSchema,
   memoSearchSchema,
 } from "./validation";
-export type { MemoListFilters, MemoPage, MemoStats, CreateMemoInput } from "./types";
+export { MemoError } from "./types";
+export type {
+  AgentMemoFilters,
+  AgentMemoResult,
+  CreateMemoInput,
+  MemoListFilters,
+  MemoPage,
+  MemoStats,
+} from "./types";

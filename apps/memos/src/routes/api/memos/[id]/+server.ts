@@ -1,4 +1,4 @@
-import { updateMemo, deleteMemo } from "$lib/server/memos";
+import { deleteMemo, MemoError, updateMemo } from "$lib/server/memos";
 import { json } from "@sveltejs/kit";
 import { z } from "zod";
 import type { RequestHandler } from "./$types";
@@ -54,9 +54,9 @@ export const PATCH: RequestHandler = async ({ request, params, platform, locals 
       input,
     );
     return json({ memo });
-  } catch (err) {
-    const message = err instanceof Error ? err.message : "Failed to update memo.";
-    return json({ error: message }, { status: message.includes("not found") ? 404 : 500 });
+  } catch (error) {
+    if (!(error instanceof MemoError)) throw error;
+    return json({ error: error.message }, { status: 404 });
   }
 };
 
@@ -74,8 +74,8 @@ export const DELETE: RequestHandler = async ({ params, platform, locals }) => {
   try {
     await deleteMemo(platform.env.DB, platform.env.MEMOS_BUCKET, platform.env.MEMOS_CACHE, id);
     return new Response(null, { status: 204 });
-  } catch (err) {
-    const message = err instanceof Error ? err.message : "Failed to delete memo.";
-    return json({ error: message }, { status: message.includes("not found") ? 404 : 500 });
+  } catch (error) {
+    if (!(error instanceof MemoError)) throw error;
+    return json({ error: error.message }, { status: 404 });
   }
 };

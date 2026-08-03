@@ -40,9 +40,18 @@ Key areas:
 - [apps/memos/src/routes](../apps/memos/src/routes)
   Page routes and API endpoints.
 - [apps/memos/src/lib/server](../apps/memos/src/lib/server)
-  Server-only auth, filters, and memo persistence helpers.
+  Server-only auth, filters, domain services, and persistence adapters.
   - [apps/memos/src/lib/server/db/schema.ts](../apps/memos/src/lib/server/db/schema.ts)
     Drizzle ORM schema for the `memos` table; exports `MemoRow` inferred type.
+  - `apps/memos/src/lib/server/memos`
+    Memo domain split into D1 repository queries, R2 body storage, KV-derived cache handling,
+    and a service that coordinates operations spanning those boundaries.
+  - `apps/memos/src/lib/server/notes`
+    Long-form note domain split into R2 storage, KV compiled caches, and application services
+    used by both page loaders and API routes.
+  - `apps/memos/src/lib/server/blog`
+    Markdown compilation pipeline for long-form notes. Storage and cache orchestration belong
+    to the `notes` domain rather than the compiler.
   - `apps/memos/src/lib/server/mcp`
     MCP server, authentication, schemas, structured errors, typed domain operations, and MCP-only utilities. Shared contracts live in `types.ts`; implementation files import them instead of redeclaring local aliases.
 - [apps/memos/src/lib/components](../apps/memos/src/lib/components)
@@ -178,20 +187,34 @@ KV stores derived or disposable entries only:
 
 Memo lists are **not** cached in KV — full-list JSON blobs caused KV size/corruption issues and CPU rate limits on Workers. Instead, lists are paginated via cursor-based `limit=25` queries directly against D1.
 
-Cache invalidation currently happens in repository writes (tag counts only).
+Cache invalidation happens in domain services after successful mutations. Cache adapters own
+the concrete KV keys and generated OG invalidation calls.
 
 ## Server Domain Logic
 
-Primary memo data access lives in [apps/memos/src/lib/server/memos/repository.ts](../apps/memos/src/lib/server/memos/repository.ts).
+Memo server logic lives under `apps/memos/src/lib/server/memos` with explicit external
+boundaries.
 
 Responsibilities:
 
-- map D1 rows to app `Memo` objects via Drizzle ORM (`drizzle-orm/d1`)
-- build filtered list queries using Drizzle operators
-- cache tag counts in KV; memo list pages always query D1
-- write full content to R2 during create and update
-- invalidate cache after mutations
-- blog/note compilation pipeline in `apps/memos/src/lib/server/blog` for KV-cached HTML rendering, TOC generation, and visual block extraction
+- `repository.ts` maps D1 rows and owns memo list, statistics, tag, and Agent-facing queries
+  through Drizzle ORM (`drizzle-orm/d1`).
+- `storage.ts` owns canonical memo body reads and writes in R2.
+- `cache.ts` owns derived tag-count and generated OG cache invalidation in KV.
+- `service.ts` owns create, update, delete, canonical-body loading, and Agent search
+  orchestration across D1, R2, and KV.
+
+Long-form note logic follows the same boundary rule without inventing a D1 repository that
+the domain does not use:
+
+- `notes/storage.ts` owns R2 listing, metadata, reads, writes, renames, and deletes.
+- `notes/cache.ts` owns compiled-note and category entries in KV.
+- `notes/service.ts` owns note creation, loading, updates, category discovery, and deletion.
+- `blog/` owns only Markdown compilation, syntax highlighting, TOC generation, and visual
+  block extraction.
+
+SvelteKit routes validate transport input and map typed domain errors to HTTP responses. MCP
+operations call memo domain functions instead of issuing their own D1/R2 queries.
 
 The Wrangler SQL migrations are authoritative for the deployed schema. The Drizzle mirror (`apps/memos/src/lib/server/db/schema.ts`) describes that table to application code and exports `MemoRow` via `typeof memos.$inferSelect`, eliminating hand-written row types.
 

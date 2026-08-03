@@ -1,78 +1,7 @@
 import { error, redirect } from "@sveltejs/kit";
-import {
-  BLOG_PREFIX,
-  DEFAULT_NOTE_CATEGORY,
-  compileEditorHtml,
-  compileNote,
-  type CompiledNote,
-  r2KeyFromSlug,
-  readCategoriesKv,
-  readNoteKv,
-  slugFromR2Key,
-  slugToTitle,
-  stripLeadingTitleHeading,
-  writeCategoriesKv,
-} from "$lib/server/blog";
-import { categoryFromSlug } from "$lib/utils/url";
+import { listNoteCategories, loadNote, NoteError } from "$lib/server/notes";
+import { DEFAULT_NOTE_CATEGORY } from "$lib/utils/url";
 import type { PageServerLoad } from "./$types";
-
-interface NotePageDataInput {
-  compiled: CompiledNote;
-  source: string;
-  title: string;
-  slug: string;
-  createdAt: string;
-  updatedAt: string;
-  categories: string[];
-}
-
-async function getCategories(bucket: R2Bucket, kv: KVNamespace): Promise<string[]> {
-  const cached = await readCategoriesKv(kv);
-  if (cached) return cached;
-
-  const categories = new Set<string>();
-  let cursor: string | undefined;
-
-  do {
-    const listOpts: R2ListOptions = {
-      prefix: BLOG_PREFIX,
-      limit: 1000,
-      cursor,
-    };
-    const listingResponse = await bucket.list(listOpts);
-
-    for (const r2Object of listingResponse.objects) {
-      if (r2Object.key.endsWith("/") || !r2Object.key.toLowerCase().endsWith(".md")) continue;
-      const category = categoryFromSlug(slugFromR2Key(r2Object.key));
-      if (category && category !== DEFAULT_NOTE_CATEGORY) categories.add(category);
-    }
-
-    cursor = listingResponse.truncated ? listingResponse.cursor : undefined;
-  } while (cursor);
-
-  const result = [...categories]
-    .filter((c) => c !== DEFAULT_NOTE_CATEGORY)
-    .sort((a, b) => a.localeCompare(b));
-  await writeCategoriesKv(kv, result);
-  return result;
-}
-
-async function buildNotePageData(input: NotePageDataInput) {
-  return {
-    html: input.compiled.html,
-    toc: input.compiled.toc,
-    visualBlocks: input.compiled.visualBlocks,
-    excerpt: input.compiled.excerpt,
-    title: input.title,
-    slug: input.slug,
-    createdAt: input.createdAt,
-    updatedAt: input.updatedAt,
-    source: input.source,
-    editorHtml: await compileEditorHtml(input.source),
-    categories: input.categories,
-    defaultCategory: DEFAULT_NOTE_CATEGORY,
-  };
-}
 
 export const load: PageServerLoad = async ({ params, platform, locals }) => {
   if (!locals.user) {
@@ -81,82 +10,42 @@ export const load: PageServerLoad = async ({ params, platform, locals }) => {
   if (!platform) {
     error(500, "Cloudflare platform bindings are unavailable.");
   }
-
-  const rawSlug = params.slug;
-
-  if (!rawSlug) {
+  if (!params.slug) {
     error(404, "Note not found.");
   }
 
-  const slug = rawSlug.replace(/\.md$/i, "");
-  const r2Key = r2KeyFromSlug(slug);
-
-  const bucket = platform.env.MEMOS_BUCKET;
-  const kv = platform.env.MEMOS_CACHE;
-  const categories = await getCategories(bucket, kv);
+  const dependencies = {
+    bucket: platform.env.MEMOS_BUCKET,
+    cache: platform.env.MEMOS_CACHE,
+  };
+  const categories = await listNoteCategories(dependencies);
+  const slug = params.slug.replace(/\.md$/i, "");
 
   if (slug === "new") {
     const createdAt = new Date().toISOString();
-    return buildNotePageData({
-      compiled: { html: "", toc: [], visualBlocks: [], excerpt: "" },
-      source: "",
+    return {
+      html: "",
+      toc: [],
+      visualBlocks: [],
+      excerpt: "",
       title: "",
       slug,
       createdAt,
       updatedAt: createdAt,
+      source: "",
+      editorHtml: "",
       categories,
-    });
+      defaultCategory: DEFAULT_NOTE_CATEGORY,
+    };
   }
 
-  const object = await bucket.get(r2Key);
-  if (!object) {
-    error(404, `Note "${slug}" not found.`);
-  }
-
-  const uploadedAt = object.uploaded.toISOString();
-  const createdAt = object.customMetadata?.createdAt ?? uploadedAt;
-  const updatedAt = object.customMetadata?.updatedAt ?? uploadedAt;
-
-  const cached = await readNoteKv(kv, slug, uploadedAt);
-  if (cached) {
-    const source = stripLeadingTitleHeading(cached.source);
-    const title = object.customMetadata?.title ?? slugToTitle(slug);
-    if (source !== cached.source) {
-      const compiled = await compileNote(source, kv, slug, uploadedAt, title);
-      return buildNotePageData({
-        compiled,
-        source,
-        title,
-        slug,
-        createdAt,
-        updatedAt,
-        categories,
-      });
+  try {
+    const note = await loadNote(dependencies, slug);
+    return { ...note, categories, defaultCategory: DEFAULT_NOTE_CATEGORY };
+  } catch (loadError) {
+    if (loadError instanceof NoteError && loadError.code === "not_found") {
+      error(404, loadError.message);
     }
-
-    return buildNotePageData({
-      compiled: cached,
-      source,
-      title,
-      slug,
-      createdAt,
-      updatedAt,
-      categories,
-    });
+    throw loadError;
   }
-
-  const rawSource = await object.text();
-  const source = stripLeadingTitleHeading(rawSource);
-  const title = object.customMetadata?.title ?? slugToTitle(slug);
-  const compiled = await compileNote(source, kv, slug, uploadedAt, title);
-
-  return buildNotePageData({
-    compiled,
-    source,
-    title,
-    slug,
-    createdAt,
-    updatedAt,
-    categories,
-  });
 };
