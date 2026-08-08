@@ -27,13 +27,14 @@ export const load = async ({
     plain.length > 0
       ? plain.slice(0, 160) + (plain.length > 160 ? "…" : "")
       : "A memo from My Memos";
+  const imageVersion = encodeURIComponent(memo.updatedAt);
 
   return {
     memo,
     meta: {
       title: description.slice(0, 60),
       description,
-      ogImage: `${url.origin}/api/memos/${id}/og`,
+      ogImage: `${url.origin}/api/memos/${id}/og?v=${imageVersion}`,
       ogType: "article",
     },
   };

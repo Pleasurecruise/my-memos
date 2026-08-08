@@ -175,3 +175,7 @@ Dark mode is triggered by a `.dark` class on `<html>`. Use `applyTheme(dark)` fr
 5. **Breathing room** — generous whitespace is a feature, not a gap to fill.
 6. **New hex goes to palette first** — add to `palette.css`, name it, then reference from `tokens.css`.
 7. **No new semantic token without discussion** — one-off dimming uses `color-mix(in srgb, var(--color-foreground) 60%, transparent)`.
+
+## Open Graph Images
+
+Generated memo cards use the light warm-earth palette as an explicit standalone-renderer boundary. The layout pairs a paper card on an oat field with a compact Suou-iro identity mark, large serif memo text, restrained tag badges, and a fixed source bar. The accent remains below 5% of the image area; gradients, texture patterns, decorative slogans, and borrowed third-party brand colors are intentionally excluded.

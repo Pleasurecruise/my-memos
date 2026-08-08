@@ -1,5 +1,6 @@
 import { Resvg, initWasm } from "@resvg/resvg-wasm";
 import { OG_FONT_FAMILIES, loadOgFonts } from "./fonts";
+import logoDataUri from "../../../../static/favicon.png?inline";
 
 const OG_WIDTH = 1200;
 const OG_HEIGHT = 630;
@@ -9,11 +10,11 @@ const palette = {
   paper: "#faf7eb",
   cloud: "#f5f2ec",
   oat: "#e8e0d0",
+  sand: "#d4c5a9",
   fog: "#726e69",
   ink: "#1a1a1a",
+  accent: "#963c5a",
 } as const;
-
-const brand = "#963c5a";
 
 const fontFamily = {
   sans: '"Geist", "Inter", system-ui, "PingFang SC", "Noto Sans SC", "Microsoft YaHei", sans-serif',
@@ -38,7 +39,6 @@ interface TextOptions {
   fill: string;
   opacity?: number;
   letterSpacing?: string;
-  transform?: string;
   anchor?: "start" | "middle" | "end";
 }
 
@@ -65,7 +65,7 @@ export function renderOgImage(options: OgImageOptions): string {
     siteName = "My Memos",
   } = options;
 
-  const layout = getLayout(wrapText(title, 900, 46, 4), tags.length > 0);
+  const layout = getLayout(wrapText(title, 880, 46, 4), tags.length > 0);
   const parts = [
     renderCard(layout),
     renderIdentity(layout, siteName),
@@ -217,7 +217,6 @@ function textElement(text: string, options: TextOptions): string {
     `fill="${options.fill}"`,
     options.opacity != null ? `opacity="${options.opacity}"` : "",
     options.letterSpacing ? `letter-spacing="${options.letterSpacing}"` : "",
-    options.transform ? `text-transform="${options.transform}"` : "",
     options.anchor ? `text-anchor="${options.anchor}"` : "",
   ]
     .filter(Boolean)
@@ -227,41 +226,23 @@ function textElement(text: string, options: TextOptions): string {
 
 function renderBackground(): string {
   return `
-    <rect width="${OG_WIDTH}" height="${OG_HEIGHT}" fill="${palette.paper}" />
-    <defs>
-      <radialGradient id="glow" cx="85%" cy="15%" r="55%">
-        <stop offset="0%" stop-color="${brand}" stop-opacity="0.06" />
-        <stop offset="100%" stop-color="${palette.paper}" stop-opacity="0" />
-      </radialGradient>
-      <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
-        <path d="M 40 0 L 0 0 0 40" fill="none" stroke="${palette.oat}" stroke-width="0.5" stroke-opacity="0.35" />
-      </pattern>
-    </defs>
-    <rect width="${OG_WIDTH}" height="${OG_HEIGHT}" fill="url(#glow)" />
-    <rect width="${OG_WIDTH}" height="${OG_HEIGHT}" fill="url(#grid)" />
-    <circle cx="1120" cy="560" r="3" fill="${brand}" opacity="0.15" />
-    <circle cx="1136" cy="548" r="2" fill="${brand}" opacity="0.10" />
-    <circle cx="1148" cy="564" r="2.5" fill="${brand}" opacity="0.12" />
-    <rect x="0" y="0" width="180" height="3" fill="${brand}" />
+    <rect width="${OG_WIDTH}" height="${OG_HEIGHT}" fill="${palette.oat}" />
+    <circle cx="1118" cy="68" r="30" fill="none" stroke="${palette.sand}" stroke-width="1" />
+    <circle cx="1118" cy="68" r="4" fill="${palette.accent}" />
   `;
 }
 
 function getLayout(lines: string[], hasTags: boolean) {
-  const cardLeft = 120;
-  const cardRight = 1080;
-  const cardTop = 70;
-  const cardBottom = 560;
-  const idY = 120;
-  const footerY = 542;
-  const footerSeparatorY = 526;
-
-  const contentLineHeight = 58;
+  const cardLeft = 56;
+  const cardRight = 1144;
+  const cardTop = 48;
+  const cardBottom = 582;
+  const contentLeft = 112;
+  const contentRight = 1088;
+  const contentLineHeight = 60;
   const contentHeight = contentLineHeight * lines.length;
-  const tagHeight = hasTags ? 44 : 0;
-  const blockHeight = contentHeight + tagHeight;
-
-  const availableTop = idY + 44;
-  const availableBottom = footerSeparatorY - 16;
+  const availableTop = 205;
+  const availableBottom = hasTags ? 444 : 478;
   const availableHeight = availableBottom - availableTop;
 
   return {
@@ -270,38 +251,41 @@ function getLayout(lines: string[], hasTags: boolean) {
     cardRight,
     cardTop,
     cardBottom,
-    idY,
-    footerY,
-    footerSeparatorY,
+    contentLeft,
+    contentRight,
     contentLineHeight,
     contentHeight,
-    blockY: availableTop + Math.max(0, (availableHeight - blockHeight) / 2),
-    barTop: idY - 28,
-    barHeight: footerSeparatorY - (idY - 28),
+    blockY: availableTop + Math.max(0, (availableHeight - contentHeight) / 2),
+    tagsY: 474,
+    footerTop: 510,
+    footerY: 550,
   };
 }
 
 function renderCard(layout: OgLayout): string {
   return `
-    <rect x="${layout.cardLeft}" y="${layout.cardTop}" width="${layout.cardRight - layout.cardLeft}" height="${layout.cardBottom - layout.cardTop}" rx="10" fill="${palette.cloud}" stroke="${palette.oat}" stroke-width="1" />
-    <defs>
-      <linearGradient id="bar" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stop-color="${brand}" />
-        <stop offset="100%" stop-color="${brand}" stop-opacity="0.12" />
-      </linearGradient>
-    </defs>
-    <rect x="${layout.cardLeft + 16}" y="${layout.barTop}" width="3" height="${layout.barHeight}" rx="1.5" fill="url(#bar)" />
+    <rect x="${layout.cardLeft}" y="${layout.cardTop}" width="${layout.cardRight - layout.cardLeft}" height="${layout.cardBottom - layout.cardTop}" rx="10" fill="${palette.paper}" stroke="${palette.sand}" stroke-width="1" />
+    <path d="M ${layout.cardLeft + 10} ${layout.cardTop} H ${layout.cardLeft + 206}" stroke="${palette.accent}" stroke-width="6" stroke-linecap="round" />
   `;
 }
 
 function renderIdentity(layout: OgLayout, siteName: string): string {
-  const iconX = layout.cardLeft + 42;
-  const iconY = layout.idY - 8;
+  const markLeft = layout.contentLeft;
+  const markTop = 86;
+  const markSize = 52;
 
   return `
-    <circle cx="${iconX}" cy="${iconY}" r="14" fill="${brand}" fill-opacity="0.12" stroke="${brand}" stroke-opacity="0.28" />
-    ${textElement("M", { x: iconX, y: layout.idY - 1, family: fontFamily.serif, size: 15, weight: 600, fill: brand, anchor: "middle" })}
-    ${textElement(siteName.toUpperCase(), { x: layout.cardLeft + 64, y: layout.idY, family: fontFamily.sans, size: 15, weight: 600, fill: brand, letterSpacing: "0.14em" })}
+    <defs>
+      <clipPath id="site-mark-clip">
+        <rect x="${markLeft}" y="${markTop}" width="${markSize}" height="${markSize}" rx="5" />
+      </clipPath>
+    </defs>
+    <image href="${logoDataUri}" x="${markLeft}" y="${markTop}" width="${markSize}" height="${markSize}" preserveAspectRatio="xMidYMid slice" clip-path="url(#site-mark-clip)" />
+    <rect x="${markLeft}" y="${markTop}" width="${markSize}" height="${markSize}" rx="5" fill="none" stroke="${palette.sand}" stroke-width="1" />
+    ${textElement(siteName.toUpperCase(), { x: markLeft + 72, y: 111, family: fontFamily.sans, size: 17, weight: 600, fill: palette.ink, letterSpacing: "0.12em" })}
+    ${textElement("PERSONAL MEMO", { x: markLeft + 72, y: 133, family: fontFamily.mono, size: 11, weight: 500, fill: palette.fog, letterSpacing: "0.14em" })}
+    <line x1="${layout.contentLeft}" y1="166" x2="${layout.contentRight}" y2="166" stroke="${palette.oat}" stroke-width="1" />
+    ${textElement("MEMO / 备忘", { x: layout.contentRight, y: 116, family: fontFamily.sans, size: 13, weight: 500, fill: palette.fog, letterSpacing: "0.08em", anchor: "end" })}
   `;
 }
 
@@ -309,12 +293,13 @@ function renderTitle(layout: OgLayout): string {
   return layout.lines
     .map((line, i) =>
       textElement(line, {
-        x: layout.cardLeft + 30,
+        x: layout.contentLeft,
         y: layout.blockY + i * layout.contentLineHeight,
-        family: fontFamily.sans,
+        family: fontFamily.serif,
         size: 46,
-        weight: 500,
+        weight: 600,
         fill: palette.ink,
+        letterSpacing: "-0.02em",
       }),
     )
     .join("\n");
@@ -323,57 +308,32 @@ function renderTitle(layout: OgLayout): string {
 function renderTags(layout: OgLayout, tags: string[]): string {
   if (tags.length === 0) return "";
 
-  const tagY = layout.blockY + layout.contentHeight + 24;
-  const maxX = layout.cardRight - 20;
-  let x = layout.cardLeft + 30;
-  const out: string[] = [];
-
+  const output: string[] = [];
+  let x = layout.contentLeft;
   for (const tag of tags.slice(0, 5)) {
-    const label = `# ${tag}`;
-    const width = measureText(label, 13) + 28;
-    if (out.length > 0 && x + width > maxX) break;
-    out.push(`
-      <rect x="${x}" y="${tagY - 18}" width="${width}" height="28" rx="14" fill="${brand}" fill-opacity="0.10" stroke="${brand}" stroke-opacity="0.20" stroke-width="1" />
-      ${textElement(label, { x: x + 14, y: tagY, family: fontFamily.mono, size: 13, weight: 500, fill: brand })}
+    const label = `#${tag}`;
+    const width = measureText(label, 13) + 26;
+    if (x + width > layout.contentRight) break;
+    output.push(`
+      <rect x="${x}" y="${layout.tagsY - 20}" width="${width}" height="30" rx="15" fill="${palette.cloud}" stroke="${palette.oat}" stroke-width="1" />
+      ${textElement(label, { x: x + 13, y: layout.tagsY, family: fontFamily.mono, size: 13, weight: 500, fill: palette.accent })}
     `);
-    x += width + 8;
+    x += width + 10;
   }
 
-  return out.join("\n");
+  return output.join("\n");
 }
 
 function renderFooter(layout: OgLayout, domain: string, date: string | null): string {
-  const parts = [
-    `<line x1="${layout.cardLeft + 20}" y1="${layout.footerSeparatorY}" x2="${layout.cardRight}" y2="${layout.footerSeparatorY}" stroke="${palette.oat}" stroke-width="1" />`,
-    textElement(domain, {
-      x: layout.cardLeft + 20,
-      y: layout.footerY,
-      family: fontFamily.mono,
-      size: 13,
-      weight: 400,
-      fill: palette.fog,
-      opacity: 0.6,
-      letterSpacing: "0.05em",
-      transform: "uppercase",
-    }),
-  ];
+  const meta = date ?? "A WARM, MINIMAL MEMO SPACE";
 
-  if (date) {
-    parts.push(
-      textElement(date, {
-        x: layout.cardRight,
-        y: layout.footerY,
-        family: fontFamily.mono,
-        size: 13,
-        weight: 400,
-        fill: palette.fog,
-        opacity: 0.5,
-        anchor: "end",
-      }),
-    );
-  }
-
-  return parts.join("\n");
+  return `
+    <rect x="${layout.cardLeft}" y="${layout.footerTop}" width="${layout.cardRight - layout.cardLeft}" height="${layout.cardBottom - layout.footerTop}" rx="10" fill="${palette.cloud}" />
+    <rect x="${layout.cardLeft}" y="${layout.footerTop}" width="${layout.cardRight - layout.cardLeft}" height="10" fill="${palette.cloud}" />
+    <line x1="${layout.cardLeft}" y1="${layout.footerTop}" x2="${layout.cardRight}" y2="${layout.footerTop}" stroke="${palette.oat}" stroke-width="1" />
+    ${textElement(domain.toUpperCase(), { x: layout.contentLeft, y: layout.footerY, family: fontFamily.sans, size: 15, weight: 600, fill: palette.ink, letterSpacing: "0.10em" })}
+    ${textElement(meta, { x: layout.contentRight, y: layout.footerY, family: fontFamily.mono, size: 12, weight: 400, fill: palette.fog, letterSpacing: "0.06em", anchor: "end" })}
+  `;
 }
 
 async function ensureWasm() {
