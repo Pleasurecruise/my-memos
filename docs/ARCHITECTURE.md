@@ -262,7 +262,7 @@ File: `apps/memos/src/routes/api/mcp/+server.ts`
 - single stateless `POST` endpoint serving MCP `2026-07-28` plus a stateless `2025-11-25` initialize fallback; protocol sessions are not issued and session headers are rejected
 - external clients authenticate with `Authorization: Bearer <MCP_API_KEY>`
 - the fixed key has all remotely exposed tool permissions; no token table, token-management API, or scope store exists
-- external tools: `get_tags`, `list_memos`, `search_memos`, `create_memo`, `update_memo`, `delete_memo`, `web_search`, `fetch_raw`, `fetch_url`, `github_read`, `lookup_docs`
+- external tools: `get_tags`, `list_memos`, `search_memos`, `create_memo`, `update_memo`, `delete_memo`, `web_search`, `fetch_raw`, `fetch_url`, `lookup_docs`
 - in-product-only tools: `render_chart`, `render_svg`, `render_mermaid`, `render_widget`; these are UI rendering instructions and are never registered for API-key principals
 - write tools execute sequentially; read and render tools may execute in parallel
 - URL-reading tools accept only public HTTP(S) targets without embedded credentials, reject localhost/private/link-local address literals, and refuse redirects; Workers also enables `global_fetch_strictly_public` as a runtime-level egress boundary

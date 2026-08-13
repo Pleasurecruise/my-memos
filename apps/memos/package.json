@@ -9,18 +9,18 @@
     "build": "vp build"
   },
   "dependencies": {
-    "@lucide/svelte": "1.30.0",
+    "@lucide/svelte": "1.31.0",
     "@modelcontextprotocol/server": "2.0.0",
     "@my-memos/ai-core": "workspace:*",
     "@my-memos/ui": "workspace:*",
     "@resvg/resvg-wasm": "2.6.2",
-    "@shikijs/rehype": "4.4.2",
-    "@tiptap/core": "3.29.2",
-    "@tiptap/extension-placeholder": "3.29.2",
-    "@tiptap/extension-table": "3.29.2",
-    "@tiptap/starter-kit": "3.29.2",
-    "@tiptap/static-renderer": "3.29.2",
-    "better-auth": "1.6.26",
+    "@shikijs/rehype": "4.4.3",
+    "@tiptap/core": "3.30.0",
+    "@tiptap/extension-placeholder": "3.30.0",
+    "@tiptap/extension-table": "3.30.0",
+    "@tiptap/starter-kit": "3.30.0",
+    "@tiptap/static-renderer": "3.30.0",
+    "better-auth": "1.6.27",
     "date-fns": "4.4.0",
     "defuddle": "0.19.2",
     "dompurify": "3.4.13",
@@ -32,7 +32,7 @@
     "remark-gfm": "4.0.1",
     "remark-parse": "11.0.0",
     "remark-rehype": "11.1.2",
-    "shiki": "4.4.2",
+    "shiki": "4.4.3",
     "turndown": "7.2.4",
     "unified": "11.0.5",
     "unist-util-visit": "5.1.0",
@@ -44,6 +44,6 @@
     "@types/hast": "3.0.5",
     "@types/mdast": "4.0.4",
     "@types/turndown": "5.0.6",
-    "void": "0.10.11"
+    "void": "0.10.12"
   }
 }

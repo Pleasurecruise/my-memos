@@ -4,7 +4,8 @@ import { normalizeDomainError } from "./errors";
 import type { AppEnv } from "$lib/server/types";
 import type { McpPrincipal } from "./types";
 
-const IN_PRODUCT_ONLY_TOOLS = new Set([
+const INTERNAL_ONLY_TOOLS = new Set([
+  "github_read",
   "render_chart",
   "render_svg",
   "render_mermaid",
@@ -20,7 +21,7 @@ export function createMemosMcpHandler(env: AppEnv, principal: McpPrincipal): Mcp
       );
 
       const operations = createDomainOperations(env).filter(
-        ({ name }) => principal === "user" || !IN_PRODUCT_ONLY_TOOLS.has(name),
+        ({ name }) => principal === "user" || !INTERNAL_ONLY_TOOLS.has(name),
       );
       for (const operation of operations) {
         server.registerTool(

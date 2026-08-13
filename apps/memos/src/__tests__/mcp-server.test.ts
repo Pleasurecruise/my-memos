@@ -11,7 +11,6 @@ const EXTERNAL_TOOLS = [
   "fetch_raw",
   "fetch_url",
   "get_tags",
-  "github_read",
   "list_memos",
   "lookup_docs",
   "search_memos",
@@ -21,6 +20,7 @@ const EXTERNAL_TOOLS = [
 
 const IN_PRODUCT_TOOLS = [
   ...EXTERNAL_TOOLS,
+  "github_read",
   "render_chart",
   "render_mermaid",
   "render_svg",
@@ -66,7 +66,7 @@ describe("MCP dual-era contract", () => {
     await connection.close();
   });
 
-  it("does not expose in-product render tools to API-key clients", async () => {
+  it("does not expose internal-only tools to API-key clients", async () => {
     const handler = createMemosMcpHandler(fakeEnv(), "api-key");
     handlers.push(handler);
     const connection = await connectMcp({

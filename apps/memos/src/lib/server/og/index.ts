@@ -65,7 +65,8 @@ export function renderOgImage(options: OgImageOptions): string {
     siteName = "My Memos",
   } = options;
 
-  const layout = getLayout(wrapText(title, 880, 46, 4), tags.length > 0);
+  const titleSize = getTitleSize(title);
+  const layout = getLayout(wrapText(title, 900, titleSize, 4), titleSize, tags.length > 0);
   const parts = [
     renderCard(layout),
     renderIdentity(layout, siteName),
@@ -232,47 +233,56 @@ function renderBackground(): string {
   `;
 }
 
-function getLayout(lines: string[], hasTags: boolean) {
+function getTitleSize(title: string): number {
+  const length = Array.from(title.trim()).length;
+  if (length <= 16) return 64;
+  if (length <= 30) return 58;
+  if (length <= 50) return 52;
+  return 46;
+}
+
+function getLayout(lines: string[], titleSize: number, hasTags: boolean) {
   const cardLeft = 56;
   const cardRight = 1144;
   const cardTop = 48;
   const cardBottom = 582;
   const contentLeft = 112;
+  const titleLeft = 136;
   const contentRight = 1088;
-  const contentLineHeight = 60;
-  const contentHeight = contentLineHeight * lines.length;
-  const availableTop = 205;
+  const contentLineHeight = Math.round(titleSize * 1.08);
+  const contentHeight = titleSize + contentLineHeight * (lines.length - 1);
+  const availableTop = 202;
   const availableBottom = hasTags ? 444 : 478;
   const availableHeight = availableBottom - availableTop;
 
   return {
     lines,
+    titleSize,
     cardLeft,
     cardRight,
     cardTop,
     cardBottom,
     contentLeft,
+    titleLeft,
     contentRight,
     contentLineHeight,
-    contentHeight,
-    blockY: availableTop + Math.max(0, (availableHeight - contentHeight) / 2),
-    tagsY: 474,
-    footerTop: 510,
-    footerY: 550,
+    blockY: availableTop + Math.max(0, (availableHeight - contentHeight) / 2) + titleSize * 0.82,
+    tagsY: 488,
+    footerY: 558,
   };
 }
 
 function renderCard(layout: OgLayout): string {
   return `
     <rect x="${layout.cardLeft}" y="${layout.cardTop}" width="${layout.cardRight - layout.cardLeft}" height="${layout.cardBottom - layout.cardTop}" rx="10" fill="${palette.paper}" stroke="${palette.sand}" stroke-width="1" />
-    <path d="M ${layout.cardLeft + 10} ${layout.cardTop} H ${layout.cardLeft + 206}" stroke="${palette.accent}" stroke-width="6" stroke-linecap="round" />
+    <path d="M ${layout.cardLeft + 10} ${layout.cardTop} H ${layout.cardLeft + 186}" stroke="${palette.accent}" stroke-width="5" stroke-linecap="round" />
   `;
 }
 
 function renderIdentity(layout: OgLayout, siteName: string): string {
   const markLeft = layout.contentLeft;
-  const markTop = 86;
-  const markSize = 52;
+  const markTop = 84;
+  const markSize = 50;
 
   return `
     <defs>
@@ -282,43 +292,50 @@ function renderIdentity(layout: OgLayout, siteName: string): string {
     </defs>
     <image href="${logoDataUri}" x="${markLeft}" y="${markTop}" width="${markSize}" height="${markSize}" preserveAspectRatio="xMidYMid slice" clip-path="url(#site-mark-clip)" />
     <rect x="${markLeft}" y="${markTop}" width="${markSize}" height="${markSize}" rx="5" fill="none" stroke="${palette.sand}" stroke-width="1" />
-    ${textElement(siteName.toUpperCase(), { x: markLeft + 72, y: 111, family: fontFamily.sans, size: 17, weight: 600, fill: palette.ink, letterSpacing: "0.12em" })}
-    ${textElement("PERSONAL MEMO", { x: markLeft + 72, y: 133, family: fontFamily.mono, size: 11, weight: 500, fill: palette.fog, letterSpacing: "0.14em" })}
-    <line x1="${layout.contentLeft}" y1="166" x2="${layout.contentRight}" y2="166" stroke="${palette.oat}" stroke-width="1" />
-    ${textElement("MEMO / 备忘", { x: layout.contentRight, y: 116, family: fontFamily.sans, size: 13, weight: 500, fill: palette.fog, letterSpacing: "0.08em", anchor: "end" })}
+    ${textElement(siteName.toUpperCase(), { x: markLeft + 70, y: 108, family: fontFamily.serif, size: 18, weight: 600, fill: palette.ink, letterSpacing: "0.08em" })}
+    ${textElement("PERSONAL MEMO", { x: markLeft + 70, y: 131, family: fontFamily.mono, size: 11, weight: 500, fill: palette.fog, letterSpacing: "0.12em" })}
+    ${textElement("MEMO · 01 / 备忘", { x: layout.contentRight, y: 111, family: fontFamily.mono, size: 12, weight: 500, fill: palette.fog, letterSpacing: "0.07em", anchor: "end" })}
+    <line x1="${layout.contentLeft}" y1="164" x2="${layout.contentRight}" y2="164" stroke="${palette.oat}" stroke-width="1" />
   `;
 }
 
 function renderTitle(layout: OgLayout): string {
-  return layout.lines
+  const title = layout.lines
     .map((line, i) =>
       textElement(line, {
-        x: layout.contentLeft,
+        x: layout.titleLeft,
         y: layout.blockY + i * layout.contentLineHeight,
         family: fontFamily.serif,
-        size: 46,
+        size: layout.titleSize,
         weight: 600,
         fill: palette.ink,
-        letterSpacing: "-0.02em",
+        letterSpacing: "-0.035em",
       }),
     )
     .join("\n");
+
+  const ruleTop = layout.blockY - layout.titleSize * 0.78;
+  const ruleBottom = layout.blockY + (layout.lines.length - 1) * layout.contentLineHeight + 9;
+  return `
+    <path d="M ${layout.contentLeft} ${ruleTop} V ${ruleBottom}" stroke="${palette.accent}" stroke-width="4" stroke-linecap="round" />
+    ${title}
+  `;
 }
 
 function renderTags(layout: OgLayout, tags: string[]): string {
   if (tags.length === 0) return "";
 
   const output: string[] = [];
-  let x = layout.contentLeft;
-  for (const tag of tags.slice(0, 5)) {
+  let x = layout.titleLeft;
+  for (const tag of tags.slice(0, 4)) {
     const label = `#${tag}`;
-    const width = measureText(label, 13) + 26;
+    const width = measureText(label, 13) + 24;
     if (x + width > layout.contentRight) break;
     output.push(`
-      <rect x="${x}" y="${layout.tagsY - 20}" width="${width}" height="30" rx="15" fill="${palette.cloud}" stroke="${palette.oat}" stroke-width="1" />
-      ${textElement(label, { x: x + 13, y: layout.tagsY, family: fontFamily.mono, size: 13, weight: 500, fill: palette.accent })}
+      <rect x="${x}" y="${layout.tagsY - 20}" width="${width}" height="29" rx="3" fill="${palette.cloud}" stroke="${palette.oat}" stroke-width="1" />
+      ${textElement(label, { x: x + 12, y: layout.tagsY, family: fontFamily.mono, size: 13, weight: 500, fill: palette.fog })}
     `);
-    x += width + 10;
+    x += width + 9;
   }
 
   return output.join("\n");
@@ -328,11 +345,11 @@ function renderFooter(layout: OgLayout, domain: string, date: string | null): st
   const meta = date ?? "A WARM, MINIMAL MEMO SPACE";
 
   return `
-    <rect x="${layout.cardLeft}" y="${layout.footerTop}" width="${layout.cardRight - layout.cardLeft}" height="${layout.cardBottom - layout.footerTop}" rx="10" fill="${palette.cloud}" />
-    <rect x="${layout.cardLeft}" y="${layout.footerTop}" width="${layout.cardRight - layout.cardLeft}" height="10" fill="${palette.cloud}" />
-    <line x1="${layout.cardLeft}" y1="${layout.footerTop}" x2="${layout.cardRight}" y2="${layout.footerTop}" stroke="${palette.oat}" stroke-width="1" />
-    ${textElement(domain.toUpperCase(), { x: layout.contentLeft, y: layout.footerY, family: fontFamily.sans, size: 15, weight: 600, fill: palette.ink, letterSpacing: "0.10em" })}
-    ${textElement(meta, { x: layout.contentRight, y: layout.footerY, family: fontFamily.mono, size: 12, weight: 400, fill: palette.fog, letterSpacing: "0.06em", anchor: "end" })}
+    <rect x="${layout.cardLeft}" y="510" width="${layout.cardRight - layout.cardLeft}" height="${layout.cardBottom - 510}" rx="10" fill="${palette.cloud}" />
+    <rect x="${layout.cardLeft}" y="510" width="${layout.cardRight - layout.cardLeft}" height="10" fill="${palette.cloud}" />
+    <line x1="${layout.cardLeft}" y1="510" x2="${layout.cardRight}" y2="510" stroke="${palette.oat}" stroke-width="1" />
+    ${textElement(domain.toUpperCase(), { x: layout.contentLeft, y: layout.footerY, family: fontFamily.sans, size: 14, weight: 600, fill: palette.ink, letterSpacing: "0.09em" })}
+    ${textElement(meta, { x: layout.contentRight, y: layout.footerY, family: fontFamily.mono, size: 12, weight: 400, fill: palette.fog, letterSpacing: "0.05em", anchor: "end" })}
   `;
 }
 

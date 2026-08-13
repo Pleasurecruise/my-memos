@@ -45,7 +45,7 @@ Externally exposed tool names are stable:
 
 - `get_tags`, `list_memos`, `search_memos`
 - `create_memo`, `update_memo`, `delete_memo`
-- `web_search`, `fetch_raw`, `fetch_url`, `github_read`, `lookup_docs`
+- `web_search`, `fetch_raw`, `fetch_url`, `lookup_docs`
 
 The in-product Agent additionally receives `render_chart`, `render_svg`, `render_mermaid`, and `render_widget` through its trusted Better Auth principal. Those tools describe page UI and are deliberately omitted from discovery and invocation for external API-key clients.
 

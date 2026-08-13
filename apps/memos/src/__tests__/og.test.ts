@@ -13,6 +13,7 @@ describe("Open Graph image", () => {
     expect(svg).toContain('width="1200" height="630"');
     expect(svg).toContain("A memo &lt;with&gt; &amp; details");
     expect(svg).toContain("MY MEMOS");
+    expect(svg).toContain("PERSONAL MEMO");
     expect(svg).toContain("MEMOS.EXAMPLE.COM");
     expect(svg).toContain("2026年8月8日");
     expect(svg).toContain("#design");
@@ -21,6 +22,7 @@ describe("Open Graph image", () => {
     expect(svg).toContain('clip-path="url(#site-mark-clip)"');
     expect(svg).toContain('fill="#963c5a"');
     expect(svg).toContain('fill="#faf7eb"');
+    expect(svg).not.toContain('rx="15"');
     expect(svg).not.toContain('transform="rotate');
     expect(svg).not.toContain("radialGradient");
     expect(svg).not.toContain("<pattern");
@@ -32,5 +34,11 @@ describe("Open Graph image", () => {
 
     expect(titleLines).toHaveLength(4);
     expect(titleLines.at(-1)).toContain("…");
+  });
+
+  it("gives short memo titles a stronger editorial scale", () => {
+    const svg = renderOgImage({ title: "慢慢记录生活" });
+
+    expect(svg).toContain('font-size="64"');
   });
 });
