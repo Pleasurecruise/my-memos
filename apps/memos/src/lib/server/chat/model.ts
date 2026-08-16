@@ -5,7 +5,7 @@ import type { ChatProvider } from "./types";
 export function createChatProvider(env: AppEnv): ChatProvider {
   return {
     model: createOpenAICompatibleModel({
-      id: "deepseek-v4-pro",
+      id: "deepseek-v4-flash",
       provider: "cloudflare-ai-gateway",
       baseUrl: `https://gateway.ai.cloudflare.com/v1/${encodeURIComponent(env.CF_ACCOUNT_ID)}/default/custom-opencode/v1`,
     }),

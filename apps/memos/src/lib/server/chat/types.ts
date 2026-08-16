@@ -6,11 +6,6 @@ export interface CachedMarkdown {
   expiresAt: number;
 }
 
-export interface MemoryResult {
-  changed: boolean;
-  memory: string;
-}
-
 export interface ChatProvider {
   model: Model<"openai-completions">;
   headers: ProviderHeaders;

@@ -16,6 +16,7 @@ import { normalizeMermaidCode, renderMermaidSchema } from "$lib/visual/mermaid";
 import { renderSvgSchema } from "$lib/visual/svg";
 import { renderWidgetSchema } from "$lib/visual/widget";
 import { DomainError } from "./errors";
+import { updateMemory } from "$lib/server/chat/memory";
 import type { AppEnv } from "$lib/server/types";
 import type { DomainOperation } from "./types";
 import {
@@ -124,6 +125,22 @@ export function createDomainOperations(env: AppEnv): DomainOperation[] {
         await deleteMemo(env.DB, env.MEMOS_BUCKET, env.MEMOS_CACHE, id);
         return { id, deleted: true };
       },
+    }),
+    defineOperation({
+      name: "update_memory",
+      description:
+        "Update the existing long-term memory file with one exact edit. Use only for durable user-confirmed facts, preferences, corrections, or explicit remember/forget requests. Prefer replacing related existing text; leave old_text empty only to append a genuinely new concise entry. Never store secrets, temporary tasks, raw transcripts, or unconfirmed inferences.",
+      mutation: true,
+      schema: z
+        .object({
+          old_text: z.string().max(16_000),
+          new_text: z.string().max(16_000),
+        })
+        .refine(({ old_text, new_text }) => old_text.length > 0 || new_text.length > 0, {
+          message: "Memory edit cannot be empty.",
+        }),
+      execute: async ({ old_text, new_text }) =>
+        updateMemory(env.MEMOS_BUCKET, { oldText: old_text, newText: new_text }),
     }),
     defineOperation({
       name: "web_search",

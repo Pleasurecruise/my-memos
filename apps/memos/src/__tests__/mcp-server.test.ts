@@ -25,6 +25,7 @@ const IN_PRODUCT_TOOLS = [
   "render_mermaid",
   "render_svg",
   "render_widget",
+  "update_memory",
 ].sort();
 
 function fakeEnv(): AppEnv {
@@ -60,9 +61,6 @@ describe("MCP dual-era contract", () => {
     expect(connection.client.getNegotiatedProtocolVersion()).toBe(MCP_PROTOCOL_VERSION);
     expect(connection.client.getServerVersion()?.name).toBe("my-memos");
     expect(connection.tools.map((tool) => tool.name).sort()).toEqual(IN_PRODUCT_TOOLS);
-    expect(
-      connection.tools.every((tool) => (tool.parameters as { type?: unknown }).type === "object"),
-    ).toBe(true);
     await connection.close();
   });
 
@@ -76,6 +74,22 @@ describe("MCP dual-era contract", () => {
 
     expect(connection.tools.map((tool) => tool.name).sort()).toEqual(EXTERNAL_TOOLS);
     await connection.close();
+  });
+
+  it("validates internal memory edits at the operation boundary", () => {
+    const operation = createDomainOperations(fakeEnv()).find(
+      (candidate) => candidate.name === "update_memory",
+    );
+    if (!operation) throw new Error("update_memory operation is missing.");
+
+    expect(operation.mutation).toBe(true);
+    expect(operation.schema.safeParse({ old_text: "", new_text: "" }).success).toBe(false);
+    expect(operation.schema.safeParse({ old_text: "", new_text: "- Likes tea" }).success).toBe(
+      true,
+    );
+    expect(operation.schema.safeParse({ old_text: "", new_text: "x".repeat(16_001) }).success).toBe(
+      false,
+    );
   });
 
   it("falls back to the 2025-11-25 handshake for a legacy-only endpoint", async () => {

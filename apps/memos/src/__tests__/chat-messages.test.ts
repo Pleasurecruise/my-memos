@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { chatRequestSchema, parseChatEvent } from "$lib/chat/protocol";
 import type { ChatMessage } from "$lib/chat/types";
-import { latestUserTurn, uiMessagesToPi } from "$lib/server/chat/bridge";
+import { uiMessagesToPi } from "$lib/server/chat/bridge";
 import { readMemoSearchResult } from "$lib/chat/memo-search";
 
 describe("stateless chat context conversion", () => {
@@ -53,7 +53,6 @@ describe("stateless chat context conversion", () => {
     );
     expect(converted[1]).toEqual(expect.objectContaining({ model: "deepseek-ai/DeepSeek-V3.2" }));
     expect(JSON.stringify(converted)).not.toContain("call-incomplete");
-    expect(latestUserTurn(messages)).toEqual({ id: "u2", text: "second" });
   });
 
   it("validates the local wire protocol", () => {

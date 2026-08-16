@@ -47,7 +47,6 @@ describe("pi to UI message stream bridge", () => {
       { type: "text-delta", delta: "first" },
       { type: "assistant-step" },
     ]);
-    expect(bridge.assistantText).toBe("first");
   });
 
   it("maps tool starts, results, and errors to dynamic UI parts", () => {

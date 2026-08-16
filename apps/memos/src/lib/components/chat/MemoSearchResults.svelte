@@ -14,8 +14,7 @@
       <p class="empty">No memos found.</p>
     {:else}
       {#each result.memos as memo (memo.id)}
-        <article class="memo-result">
-          <a class="memo-link" href={`/memo/${memo.id}`} aria-label="Open memo"></a>
+        <a class="memo-result" href={`/#memo-${memo.id}`} aria-label="Open memo">
           <div class="memo-meta">
             <time datetime={memo.createdAt}>
               {new Date(memo.createdAt).toLocaleDateString(undefined, {
@@ -32,7 +31,7 @@
               {#each memo.tags as tag (tag)}<span>#{tag}</span>{/each}
             </div>
           {/if}
-        </article>
+        </a>
       {/each}
     {/if}
   </div>
@@ -46,12 +45,14 @@
   }
 
   .memo-result {
-    position: relative;
+    display: block;
     overflow: hidden;
     border: 1px solid var(--color-border);
     border-radius: var(--radius-md);
     background: var(--color-muted);
+    color: inherit;
     padding: 10px 12px;
+    text-decoration: none;
     transition:
       border-color var(--duration-fast),
       background-color var(--duration-fast);
@@ -62,15 +63,9 @@
     background: var(--color-background);
   }
 
-  .memo-link {
-    position: absolute;
-    inset: 0;
-    z-index: 1;
-  }
-
-  .memo-link:focus-visible {
+  .memo-result:focus-visible {
     outline: 2px solid var(--color-accent);
-    outline-offset: -2px;
+    outline-offset: 2px;
   }
 
   .memo-meta,

@@ -11,7 +11,7 @@ describe("Cloudflare AI Gateway custom-provider BYOK model", () => {
 
     expect(provider.model).toEqual(
       expect.objectContaining({
-        id: "deepseek-v4-pro",
+        id: "deepseek-v4-flash",
         provider: "cloudflare-ai-gateway",
         baseUrl: "https://gateway.ai.cloudflare.com/v1/account%2Fid/default/custom-opencode/v1",
       }),

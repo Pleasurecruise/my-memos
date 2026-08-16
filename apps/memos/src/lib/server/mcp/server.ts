@@ -6,6 +6,7 @@ import type { McpPrincipal } from "./types";
 
 const INTERNAL_ONLY_TOOLS = new Set([
   "github_read",
+  "update_memory",
   "render_chart",
   "render_svg",
   "render_mermaid",

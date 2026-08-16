@@ -66,14 +66,7 @@ export function uiMessagesToPi(messages: ChatMessage[], modelId: string): AgentM
   return converted;
 }
 
-export function latestUserTurn(messages: ChatMessage[]) {
-  const message = messages.findLast((item) => item.role === "user");
-  return message ? { id: message.id, text: messageText(message).trim() } : null;
-}
-
 export class AgentChatStreamBridge {
-  assistantText = "";
-
   constructor(private readonly writeEvent: (event: ChatEvent) => void) {}
 
   write(event: AgentEvent) {
@@ -83,7 +76,6 @@ export class AgentChatStreamBridge {
     if (event.type === "message_update") {
       const update = event.assistantMessageEvent;
       if (update.type === "text_delta") {
-        this.assistantText += update.delta;
         this.writeEvent({ type: "text-delta", delta: update.delta });
       }
     }

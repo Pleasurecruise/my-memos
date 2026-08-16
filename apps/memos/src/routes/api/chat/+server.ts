@@ -6,8 +6,7 @@ import { createMemosMcpHandler } from "$lib/server/mcp";
 import { createChatProvider } from "$lib/server/chat/model";
 import { GENERATIVE_UI_PROMPT } from "$lib/server/chat/prompt";
 import { loadPromptMemory } from "$lib/server/chat/prompt-cache";
-import { AgentChatStreamBridge, latestUserTurn, uiMessagesToPi } from "$lib/server/chat/bridge";
-import { updateMemoryAfterChat } from "$lib/server/chat/memory";
+import { AgentChatStreamBridge, uiMessagesToPi } from "$lib/server/chat/bridge";
 import { chatErrorText } from "$lib/server/chat/utils";
 import type { RequestHandler } from "./$types";
 
@@ -21,13 +20,13 @@ export const POST: RequestHandler = async ({ request, platform, locals }) => {
     return json({ error: "Invalid chat transcript." }, { status: 400 });
   }
   const requestMessages = validation.data.messages;
-  const latestUser = latestUserTurn(requestMessages);
   const { prompt, memory } = await loadPromptMemory(platform.env.MEMOS_BUCKET);
   const today = new Date().toISOString().slice(0, 10);
   const system = [
     `Today's date (UTC): ${today}`,
     prompt || "You are a helpful personal assistant.",
     memory ? `<memory>\n${memory}\n</memory>` : "",
+    "Use update_memory only for durable, user-confirmed facts, preferences, corrections, or explicit remember/forget requests. Make one small exact edit and preserve unrelated memory.",
     GENERATIVE_UI_PROMPT,
   ]
     .filter(Boolean)
@@ -64,16 +63,6 @@ export const POST: RequestHandler = async ({ request, platform, locals }) => {
             onEvent: (event) => bridge.write(event),
           });
           write({ type: "finish" });
-          if (!signal.aborted && latestUser && bridge.assistantText.trim()) {
-            platform.ctx.waitUntil(
-              updateMemoryAfterChat(
-                platform.env,
-                latestUser.id,
-                latestUser.text,
-                bridge.assistantText.trim(),
-              ),
-            );
-          }
         } catch (error) {
           if (!cancelled && !signal.aborted) {
             write({ type: "error", message: chatErrorText(error) });
