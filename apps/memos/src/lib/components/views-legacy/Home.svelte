@@ -353,31 +353,30 @@
           <Archive size={12} />
           {arc.archivingId === memo.id ? "Archiving…" : "Archive"}
         </Button>
-        {#if memo.visibility === "public"}
-          <Button
-            variant="ghost"
-            size="sm"
-            class="gap-1.5 font-normal text-muted-foreground"
-            onclick={() => {
-              const url = `${window.location.origin}${window.location.pathname}#memo-${memo.id}`;
-              navigator.clipboard
-                .writeText(url)
-                .then(() => showToast("success", "Link copied to clipboard"))
-                .catch(() => {
-                  const ta = document.createElement("textarea");
-                  ta.value = url;
-                  document.body.appendChild(ta);
-                  ta.select();
-                  document.execCommand("copy");
-                  document.body.removeChild(ta);
-                  showToast("success", "Link copied to clipboard");
-                });
-            }}
-          >
-            <Share2 size={12} />
-            Share
-          </Button>
-        {/if}
+        <Button
+          variant="ghost"
+          size="sm"
+          class="gap-1.5 font-normal text-muted-foreground"
+          title={memo.visibility === "private" ? "Only accessible to you" : "Share memo"}
+          onclick={() => {
+            const url = `${window.location.origin}/memo/${memo.id}`;
+            navigator.clipboard
+              .writeText(url)
+              .then(() => showToast("success", "Link copied to clipboard"))
+              .catch(() => {
+                const ta = document.createElement("textarea");
+                ta.value = url;
+                document.body.appendChild(ta);
+                ta.select();
+                document.execCommand("copy");
+                document.body.removeChild(ta);
+                showToast("success", "Link copied to clipboard");
+              });
+          }}
+        >
+          <Share2 size={12} />
+          {memo.visibility === "public" ? "Share" : "Copy link"}
+        </Button>
         <Button
           variant="destructive"
           size="sm"

@@ -1,4 +1,4 @@
-import { deleteMemo, MemoError, updateMemo } from "$lib/server/memos";
+import { deleteMemo, getMemo, MemoError, updateMemo } from "$lib/server/memos";
 import { json } from "@sveltejs/kit";
 import { z } from "zod";
 import type { RequestHandler } from "./$types";
@@ -11,6 +11,19 @@ const updateMemoSchema = z.object({
   pinned: z.boolean().optional(),
   archived: z.boolean().optional(),
 });
+
+export const GET: RequestHandler = async ({ params, platform, locals }) => {
+  if (!locals.user) {
+    return json({ error: "Unauthorized." }, { status: 401 });
+  }
+
+  if (!platform) {
+    return json({ error: "Cloudflare platform bindings are unavailable." }, { status: 500 });
+  }
+
+  const memo = await getMemo(platform.env.DB, platform.env.MEMOS_BUCKET, params.id);
+  return memo ? json(memo) : json({ error: "Memo not found." }, { status: 404 });
+};
 
 export const PATCH: RequestHandler = async ({ request, params, platform, locals }) => {
   if (!locals.user) {

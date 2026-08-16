@@ -58,12 +58,13 @@
     <Avatar src={avatarSrc} fallback={avatarFallback ?? "AI"} size="sm" class="shrink-0 mt-0.5" />
     <div class="flex flex-col gap-1 items-start min-w-0 flex-1">
       <div class="assistant-body">
-        {#if typing}
-          <ThinkingIndicator />
-        {:else if children}
+        {#if children}
           {@render children()}
         {:else}
           <span class="bubble-text">{content}</span>
+        {/if}
+        {#if typing}
+          <ThinkingIndicator />
         {/if}
       </div>
       {#if timestamp}

@@ -79,10 +79,11 @@ export function createDomainOperations(env: AppEnv): DomainOperation[] {
           tags,
           limit: 10,
         });
-        return (
-          memoResults.map((memo) => formatMemo(memo, memo.content)).join("\n\n---\n\n") ||
-          "No memos found."
-        );
+        return {
+          type: "memo-search-results",
+          query,
+          memos: memoResults,
+        };
       },
     }),
     defineOperation({

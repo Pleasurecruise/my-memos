@@ -2,8 +2,8 @@ import { describe, expect, it } from "vitest";
 import { createChatProvider } from "$lib/server/chat/model";
 import type { AppEnv } from "$lib/server/types";
 
-describe("Cloudflare AI Gateway BYOK model", () => {
-  it("uses the provider-native endpoint without an upstream authorization header", () => {
+describe("Cloudflare AI Gateway custom-provider BYOK model", () => {
+  it("uses the custom-opencode endpoint without an upstream authorization header", () => {
     const provider = createChatProvider({
       CF_ACCOUNT_ID: "account/id",
       CF_AIG_TOKEN: "gateway-token",
@@ -11,9 +11,9 @@ describe("Cloudflare AI Gateway BYOK model", () => {
 
     expect(provider.model).toEqual(
       expect.objectContaining({
-        id: "deepseek-chat",
+        id: "deepseek-v4-pro",
         provider: "cloudflare-ai-gateway",
-        baseUrl: "https://gateway.ai.cloudflare.com/v1/account%2Fid/default/deepseek",
+        baseUrl: "https://gateway.ai.cloudflare.com/v1/account%2Fid/default/custom-opencode/v1",
       }),
     );
     expect(provider.headers).toEqual({

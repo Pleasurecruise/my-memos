@@ -6,10 +6,12 @@ export const load = async ({
   params,
   platform,
   url,
+  locals,
 }: {
   params: { id: string };
   platform: App.Platform;
   url: URL;
+  locals: App.Locals;
 }) => {
   if (!platform) {
     error(500, "Cloudflare platform bindings are unavailable.");
@@ -18,8 +20,12 @@ export const load = async ({
   const { id } = params;
   const memo = await getMemo(platform.env.DB, platform.env.MEMOS_BUCKET, id);
 
-  if (!memo || memo.visibility !== "public") {
+  if (!memo || (memo.visibility === "private" && !locals.user)) {
     error(404, "Memo not found.");
+  }
+
+  if (memo.visibility === "private") {
+    return { memo, meta: { robots: "noindex, nofollow" } };
   }
 
   const plain = stripMarkdown(memo.content);

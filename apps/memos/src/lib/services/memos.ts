@@ -1,7 +1,7 @@
 import type { Memo, MemoVisibility } from "$lib/types";
 import { z } from "zod";
 
-const memoSchema = z.object({
+export const memoSchema = z.object({
   id: z.string(),
   content: z.string(),
   tags: z.array(z.string()),

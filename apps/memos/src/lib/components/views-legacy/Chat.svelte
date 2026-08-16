@@ -3,6 +3,7 @@
   import { Chat } from "$lib/chat/chat.svelte";
   import AppShell from "$lib/components/layout/AppShell.svelte";
   import MarkdownContent from "$lib/components/MarkdownContent.svelte";
+  import MemoSearchResults from "$lib/components/chat/MemoSearchResults.svelte";
   import { VisualCard } from "$lib/components/visual";
 
   interface Props {
@@ -60,7 +61,9 @@
                       <MarkdownContent content={part.text} class="bubble-md" />
                     {:else if part.type === "tool"}
                       {@const toolName = part.toolName}
-                      {#if VISUAL_TOOLS.has(toolName) && part.state !== "output-error"}
+                      {#if toolName === "search_memos" && part.state === "output-available"}
+                        <MemoSearchResults output={part.output} />
+                      {:else if VISUAL_TOOLS.has(toolName) && part.state !== "output-error"}
                         <VisualCard {part} streaming={part.state !== "output-available"} />
                       {:else if part.state !== "output-available"}
                         <p class="tool-status">

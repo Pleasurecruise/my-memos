@@ -39,6 +39,9 @@
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content={pageTitle} />
   <meta name="twitter:description" content={pageDescription} />
+  {#if $page.data.meta?.robots}
+    <meta name="robots" content={$page.data.meta.robots} />
+  {/if}
 </svelte:head>
 
 {@render children()}

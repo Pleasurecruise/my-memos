@@ -10,6 +10,7 @@
     CollapsibleTrigger,
   } from "@my-memos/ui";
   import MarkdownContent from "$lib/components/MarkdownContent.svelte";
+  import MemoSearchResults from "$lib/components/chat/MemoSearchResults.svelte";
   import { VisualCard } from "$lib/components/visual";
   import Masthead from "$lib/components/layout/Masthead.svelte";
   import { Chat } from "$lib/chat/chat.svelte";
@@ -74,7 +75,9 @@
                     {#each msg.steps as step, stepIndex (stepIndex)}
                       {#each step.parts as part, partIndex (partIndex)}
                         {#if part.type === "tool"}
-                          {#if VISUAL_TOOLS.has(part.toolName) && part.state !== "output-error"}
+                          {#if part.toolName === "search_memos" && part.state === "output-available"}
+                            <MemoSearchResults output={part.output} />
+                          {:else if VISUAL_TOOLS.has(part.toolName) && part.state !== "output-error"}
                             <VisualCard {part} streaming={part.state !== "output-available"} />
                           {:else}
                             <Collapsible>

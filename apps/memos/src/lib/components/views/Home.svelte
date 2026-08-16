@@ -658,26 +658,27 @@
                         ? "Archiving..."
                         : "Archive"}
                     </Button>
-                    {#if memo.visibility === "public"}
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        class="gap-1.5 font-normal text-muted-foreground"
-                        onclick={() => {
-                          const url = `${window.location.origin}/memo/${memo.id}`;
-                          navigator.clipboard
-                            .writeText(url)
-                            .then(() => {
-                              showToast("success", "Link copied to clipboard");
-                            })
-                            .catch(() => {
-                              showToast("error", "Failed to copy link");
-                            });
-                        }}
-                      >
-                        <Share2 size={12} />Share
-                      </Button>
-                    {/if}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      class="gap-1.5 font-normal text-muted-foreground"
+                      title={memo.visibility === "private"
+                        ? "Only accessible to you"
+                        : "Share memo"}
+                      onclick={() => {
+                        const url = `${window.location.origin}/memo/${memo.id}`;
+                        navigator.clipboard
+                          .writeText(url)
+                          .then(() => {
+                            showToast("success", "Link copied to clipboard");
+                          })
+                          .catch(() => {
+                            showToast("error", "Failed to copy link");
+                          });
+                      }}
+                    >
+                      <Share2 size={12} />{memo.visibility === "public" ? "Share" : "Copy link"}
+                    </Button>
                     <Button
                       variant="destructive"
                       size="sm"

@@ -27,7 +27,9 @@ export const handle: Handle = async ({ event, resolve }) => {
     headers: event.request.headers,
   });
 
-  if (session) {
+  event.locals.session = null;
+  event.locals.user = null;
+  if (session && session.user.email === event.platform.env.ALLOWED_EMAIL) {
     event.locals.session = session.session;
     event.locals.user = session.user;
   }

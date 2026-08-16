@@ -1,5 +1,5 @@
 import { invalidateAll } from "$app/navigation";
-import { apiUpdateMemo, apiDeleteMemo } from "$lib/services/memos";
+import { apiDeleteMemo, apiUpdateMemo, memoSchema } from "$lib/services/memos";
 import { showToast } from "$lib/state/toast.svelte";
 import type { Memo, MemoVisibility } from "$lib/types";
 
@@ -9,10 +9,16 @@ export function createEditActions() {
   let editVisibility = $state<MemoVisibility>("private");
   let isUpdating = $state(false);
 
-  function start(memo: Memo) {
-    editingId = memo.id;
-    editContent = memo.content;
-    editVisibility = memo.visibility;
+  async function start(memo: Memo) {
+    const response = await fetch(`/api/memos/${memo.id}`);
+    if (!response.ok) {
+      showToast("error", `Failed to load memo (${response.status})`);
+      return;
+    }
+    const latest = memoSchema.parse(await response.json());
+    editingId = latest.id;
+    editContent = latest.content;
+    editVisibility = latest.visibility;
   }
 
   function cancel() {

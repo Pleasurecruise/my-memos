@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { chatRequestSchema, parseChatEvent } from "$lib/chat/protocol";
 import type { ChatMessage } from "$lib/chat/types";
 import { latestUserTurn, uiMessagesToPi } from "$lib/server/chat/bridge";
+import { readMemoSearchResult } from "$lib/chat/memo-search";
 
 describe("stateless chat context conversion", () => {
   it("converts the complete page transcript in order, including tool results", () => {
@@ -82,5 +83,23 @@ describe("stateless chat context conversion", () => {
       delta: "hello",
     });
     expect(() => parseChatEvent('{"type":"tool-output"}')).toThrow();
+  });
+
+  it("validates structured memo search results", () => {
+    expect(
+      readMemoSearchResult({
+        type: "memo-search-results",
+        query: "project",
+        memos: [
+          {
+            id: "memo-1",
+            content: "Project note",
+            tags: ["work"],
+            createdAt: "2026-08-15T00:00:00.000Z",
+          },
+        ],
+      })?.memos[0]?.id,
+    ).toBe("memo-1");
+    expect(readMemoSearchResult({ type: "memo-search-results", memos: [] })).toBeNull();
   });
 });
