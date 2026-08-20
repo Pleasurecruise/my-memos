@@ -4,14 +4,14 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "pnpm --filter @my-memos/app dev",
-    "dev:storybook": "pnpm --filter @my-memos/ui dev",
-    "build": "pnpm --filter @my-memos/app build",
+    "dev": "vp run --filter ./apps/memos dev",
+    "dev:storybook": "vp run --filter ./packages/ui dev",
+    "build": "vp run --filter ./apps/memos build",
     "d1:migrate:local": "wrangler d1 migrations apply DB --local --persist-to apps/memos/.wrangler/state --config apps/memos/wrangler.json",
     "d1:migrate:remote": "wrangler d1 migrations apply DB --remote --config apps/memos/wrangler.json",
     "deploy": "pnpm --filter @my-memos/app exec void deploy",
-    "test": "vitest run",
-    "check": "pnpm --filter @my-memos/app prepare && vp check && svelte-check --workspace packages/ui --tsconfig tsconfig.json && svelte-check --workspace apps/memos --tsconfig tsconfig.check.json && tsgo --noEmit",
+    "test": "vp run -r test",
+    "check": "vp run --filter ./apps/memos prepare && vp check && svelte-check --workspace packages/ui --tsconfig tsconfig.json && svelte-check --workspace apps/memos --tsconfig tsconfig.check.json && tsgo --noEmit",
     "lint": "vp lint",
     "format": "vp fmt"
   },
@@ -25,8 +25,7 @@
     "tailwindcss": "4.3.3",
     "typescript": "6.0.3",
     "vite-plus": "0.2.9",
-    "vitest": "4.1.10",
-    "wrangler": "4.123.0"
+    "wrangler": "4.124.0"
   },
   "packageManager": "pnpm@11.21.0"
 }

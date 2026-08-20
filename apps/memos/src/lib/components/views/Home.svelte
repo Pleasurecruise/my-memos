@@ -30,6 +30,7 @@
     Check,
     X,
     Star,
+    Heart,
     Archive,
     Search,
     Clock3,
@@ -41,6 +42,7 @@
     createDeleteActions,
     createEditActions,
     createPinActions,
+    createFavoriteActions,
     createArchiveActions,
   } from "$lib/state/memo-actions.svelte";
   import { apiCreateMemo, apiListMemos } from "$lib/services/memos";
@@ -102,6 +104,7 @@
   const del = createDeleteActions();
   const edit = createEditActions();
   const pin = createPinActions();
+  const favorite = createFavoriteActions();
   const arc = createArchiveActions();
 
   const tagNames = $derived(tags.map((t) => t.name));
@@ -626,25 +629,45 @@
                       size="sm"
                       class="gap-1.5 font-normal {memo.pinned
                         ? 'text-accent'
-                        : 'text-muted-foreground'}"
+                        : 'text-muted-foreground'} max-sm:px-2"
                       disabled={pin.pinningId === memo.id}
                       onclick={() => pin.toggle(memo)}
+                      aria-label={memo.pinned ? "Unpin memo" : "Pin memo"}
+                      title={memo.pinned ? "Unpin memo" : "Pin memo"}
                     >
                       <Star size={12} fill={memo.pinned ? "currentColor" : "none"} />
-                      {memo.pinned ? "Unpin" : "Pin"}
+                      <span class="hidden sm:inline">{memo.pinned ? "Unpin" : "Pin"}</span>
                     </Button>
                     <Button
                       variant="ghost"
                       size="sm"
-                      class="gap-1.5 font-normal text-muted-foreground"
-                      onclick={() => edit.start(memo)}
+                      class="gap-1.5 font-normal {memo.favorite
+                        ? 'text-accent'
+                        : 'text-muted-foreground'} max-sm:px-2"
+                      disabled={favorite.favoritingId === memo.id}
+                      onclick={() => favorite.toggle(memo)}
+                      aria-label={memo.favorite ? "Unfavorite memo" : "Favorite memo"}
+                      title={memo.favorite ? "Unfavorite memo" : "Favorite memo"}
                     >
-                      <Pencil size={12} />Edit
+                      <Heart size={12} fill={memo.favorite ? "currentColor" : "none"} />
+                      <span class="hidden sm:inline"
+                        >{memo.favorite ? "Unfavorite" : "Favorite"}</span
+                      >
                     </Button>
                     <Button
                       variant="ghost"
                       size="sm"
-                      class="gap-1.5 font-normal text-muted-foreground"
+                      class="gap-1.5 font-normal text-muted-foreground max-sm:px-2"
+                      onclick={() => edit.start(memo)}
+                      aria-label="Edit memo"
+                      title="Edit memo"
+                    >
+                      <Pencil size={12} /><span class="hidden sm:inline">Edit</span>
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      class="gap-1.5 font-normal text-muted-foreground max-sm:px-2"
                       disabled={arc.archivingId === memo.id}
                       onclick={() => {
                         if (!page.data.user) {
@@ -653,18 +676,21 @@
                         }
                         arc.archive(memo.id);
                       }}
+                      aria-label="Archive memo"
+                      title="Archive memo"
                     >
-                      <Archive size={12} />{arc.archivingId === memo.id
-                        ? "Archiving..."
-                        : "Archive"}
+                      <Archive size={12} /><span class="hidden sm:inline"
+                        >{arc.archivingId === memo.id ? "Archiving..." : "Archive"}</span
+                      >
                     </Button>
                     <Button
                       variant="ghost"
                       size="sm"
-                      class="gap-1.5 font-normal text-muted-foreground"
+                      class="gap-1.5 font-normal text-muted-foreground max-sm:px-2"
                       title={memo.visibility === "private"
                         ? "Only accessible to you"
                         : "Share memo"}
+                      aria-label={memo.visibility === "public" ? "Share memo" : "Copy memo link"}
                       onclick={() => {
                         const url = `${window.location.origin}/memo/${memo.id}`;
                         navigator.clipboard
@@ -677,15 +703,19 @@
                           });
                       }}
                     >
-                      <Share2 size={12} />{memo.visibility === "public" ? "Share" : "Copy link"}
+                      <Share2 size={12} /><span class="hidden sm:inline"
+                        >{memo.visibility === "public" ? "Share" : "Copy link"}</span
+                      >
                     </Button>
                     <Button
                       variant="destructive"
                       size="sm"
-                      class="gap-1.5 font-normal ml-auto"
+                      class="gap-1.5 font-normal ml-auto max-sm:px-2"
                       onclick={() => del.request(memo.id)}
+                      aria-label="Delete memo"
+                      title="Delete memo"
                     >
-                      <Trash2 size={12} />Delete
+                      <Trash2 size={12} /><span class="hidden sm:inline">Delete</span>
                     </Button>
                   {/if}
                 </div>

@@ -12,6 +12,8 @@ body,
 
 html {
   color-scheme: light;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
 html.dark {
@@ -20,6 +22,16 @@ html.dark {
 
 body {
   margin: 0;
+}
+
+@media (max-width: 39.999rem) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="button"]):not(
+      [type="submit"]
+    ):not([type="reset"]),
+  textarea:not([disabled]),
+  select:not([disabled]) {
+    font-size: 1rem;
+  }
 }
 
 * {

@@ -7,9 +7,15 @@ export function createEditActions() {
   let editingId = $state<string | null>(null);
   let editContent = $state("");
   let editVisibility = $state<MemoVisibility>("private");
+  let savedContent = "";
+  let savedVisibility: MemoVisibility = "private";
   let isUpdating = $state(false);
 
   async function start(memo: Memo) {
+    if (editingId === memo.id || isUpdating) return;
+
+    if (editingId && !(await save(editingId))) return;
+
     const response = await fetch(`/api/memos/${memo.id}`);
     if (!response.ok) {
       showToast("error", `Failed to load memo (${response.status})`);
@@ -19,26 +25,41 @@ export function createEditActions() {
     editingId = latest.id;
     editContent = latest.content;
     editVisibility = latest.visibility;
+    savedContent = latest.content;
+    savedVisibility = latest.visibility;
   }
 
   function cancel() {
+    if (isUpdating) return;
     editingId = null;
     editContent = "";
+    savedContent = "";
   }
 
-  function save(id: string) {
-    if (!editContent.trim() || isUpdating) return;
+  async function save(id: string): Promise<boolean> {
+    if (editingId !== id || !editContent.trim() || isUpdating) return false;
+
+    if (editContent === savedContent && editVisibility === savedVisibility) {
+      cancel();
+      return true;
+    }
+
     isUpdating = true;
-    apiUpdateMemo(id, { content: editContent, visibility: editVisibility })
-      .then(async () => {
-        editingId = null;
-        editContent = "";
-        await invalidateAll();
-        showToast("success", "Memo updated");
-      })
-      .catch((err: unknown) => {
-        showToast("error", "Failed to update memo", err instanceof Error ? err.message : undefined);
-      })
+    return apiUpdateMemo(id, { content: editContent, visibility: editVisibility })
+      .then(
+        async () => {
+          editingId = null;
+          editContent = "";
+          savedContent = "";
+          await invalidateAll();
+          showToast("success", "Memo updated");
+          return true;
+        },
+        () => {
+          showToast("error", "Failed to update memo");
+          return false;
+        },
+      )
       .finally(() => {
         isUpdating = false;
       });
@@ -145,6 +166,36 @@ export function createPinActions() {
   return {
     get pinningId() {
       return pinningId;
+    },
+    toggle,
+  };
+}
+
+export function createFavoriteActions() {
+  let favoritingId = $state<string | null>(null);
+
+  function toggle(memo: Memo) {
+    if (favoritingId) return;
+    favoritingId = memo.id;
+    const willFavorite = !memo.favorite;
+    apiUpdateMemo(memo.id, { favorite: willFavorite })
+      .then(
+        async () => {
+          await invalidateAll();
+          showToast("success", willFavorite ? "Memo added to favorites" : "Memo unfavorited");
+        },
+        () => {
+          showToast("error", "Failed to update memo");
+        },
+      )
+      .finally(() => {
+        favoritingId = null;
+      });
+  }
+
+  return {
+    get favoritingId() {
+      return favoritingId;
     },
     toggle,
   };

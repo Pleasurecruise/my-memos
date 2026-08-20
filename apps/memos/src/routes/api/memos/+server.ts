@@ -29,6 +29,10 @@ const listQuerySchema = z.object({
     .string()
     .optional()
     .transform((v) => v === "true"),
+  favoritesOnly: z
+    .string()
+    .optional()
+    .transform((v) => v === "true"),
   sortByUpdated: z
     .string()
     .optional()
@@ -46,9 +50,18 @@ export const GET: RequestHandler = async ({ url, platform, locals }) => {
     return json({ error: "Invalid query parameters." }, { status: 400 });
   }
 
-  const { cursor, limit, search, date, tags, publicOnly, archivedOnly, sortByUpdated } =
-    queryParams.data;
-  if (archivedOnly && !locals.user) {
+  const {
+    cursor,
+    limit,
+    search,
+    date,
+    tags,
+    publicOnly,
+    archivedOnly,
+    favoritesOnly,
+    sortByUpdated,
+  } = queryParams.data;
+  if ((archivedOnly || favoritesOnly) && !locals.user) {
     return json({ error: "Unauthorized." }, { status: 401 });
   }
   if (cursor && !isValidMemoCursor(cursor)) {
@@ -69,6 +82,7 @@ export const GET: RequestHandler = async ({ url, platform, locals }) => {
     tags: tagList,
     publicOnly: effectivePublic,
     archivedOnly,
+    favoritesOnly,
     sortByUpdated,
   });
 
@@ -102,16 +116,12 @@ export const POST: RequestHandler = async ({ request, platform, locals }) => {
 
   const { content, visibility, tags } = result.data;
 
-  const memo = await createMemo(
-    platform.env.DB,
-    platform.env.MEMOS_BUCKET,
-    platform.env.MEMOS_CACHE,
-    {
-      content,
-      visibility,
-      tags,
-    },
-  );
+  const memo = await createMemo(platform.env.DB, platform.env.MEMOS_BUCKET, {
+    content,
+    visibility,
+    tags,
+    favorite: false,
+  });
 
   return json({ memo }, { status: 201 });
 };

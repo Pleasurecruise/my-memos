@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 import { verifyMcpApiKey } from "$lib/server/mcp/auth";
 
 describe("MCP fixed API key", () => {

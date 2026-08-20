@@ -21,12 +21,12 @@ The deploy target is defined in [apps/memos/wrangler.json](../apps/memos/wrangle
 
 The current Worker expects these bindings to exist:
 
-| Binding        | Type   | Purpose                                             |
-| -------------- | ------ | --------------------------------------------------- |
-| `DB`           | D1     | Memo metadata and Better Auth tables                |
-| `MEMOS_CACHE`  | KV     | Tag, note, OG/font, and memory-deduplication caches |
-| `MEMOS_BUCKET` | R2     | Memo bodies, long-form notes, prompts, and memory   |
-| `ASSETS`       | Assets | Built SvelteKit client assets                       |
+| Binding        | Type   | Purpose                              |
+| -------------- | ------ | ------------------------------------ |
+| `DB`           | D1     | Memo metadata and Better Auth tables |
+| `MEMOS_CACHE`  | KV     | Generated OG images and font caches  |
+| `MEMOS_BUCKET` | R2     | Memo bodies, prompts, and memory     |
+| `ASSETS`       | Assets | Built SvelteKit client assets        |
 
 Current binding names and IDs live in [apps/memos/wrangler.json](../apps/memos/wrangler.json). Runtime TypeScript declarations live in [apps/memos/src/app.d.ts](../apps/memos/src/app.d.ts). Void is used for framework build and deployment integration, while Wrangler remains the source of truth for the existing D1, KV, and R2 bindings.
 
@@ -99,12 +99,14 @@ pnpm check
 
 ## Data And Auth Migration Notes
 
-The app relies on two migration groups:
+The app relies on these migration groups:
 
 - [apps/memos/migrations/0001_create_memos.sql](../apps/memos/migrations/0001_create_memos.sql)
   Creates the `memos` table and indexes.
 - [apps/memos/migrations/0002_auth_tables.sql](../apps/memos/migrations/0002_auth_tables.sql)
   Creates Better Auth tables: `user`, `session`, `account`, `verification`.
+- `apps/memos/migrations/0003_add_memo_favorite.sql`
+  Adds the memo favorite flag and its filtered-list index.
 
 Run migrations before the first deployment and whenever schema changes are introduced.
 
@@ -131,18 +133,20 @@ Verify these paths after deployment:
   Public memo list should render.
 - `/archive`
   Redirects unauthenticated users to `/`; there is no standalone `/login` route.
+- `/favorites`
+  Requires authentication, supports the shared new/classic layout preference, lists non-archived
+  favorite memos, and contains the X/Twitter import form.
 - `/chat`
   Requires an authenticated session and working AI bindings.
-- `/note`
-  Requires authenticated session; lists notes from R2.
 - `/api/memos`
   Public/auth-aware paginated GET; authenticated POST creates a memo.
+- `/api/memos/import/x`
+  Authenticated POST imports a public X/Twitter status through `api.fxtwitter.com` and creates a
+  favorite memo. No X API credentials are configured.
 - `/api/chat`
   Stateless pi Agent NDJSON stream backed by Cloudflare AI Gateway, MCP, D1, and R2.
 - `/api/mcp`
   Send either a modern `server/discover` request with MCP `2026-07-28` or a legacy `2025-11-25` `initialize` request, then list and call tools with the fixed Bearer key. External discovery must not contain the four in-product `render_*` tools. The legacy path is stateless: it does not issue `Mcp-Session-Id`, and supplied session IDs are rejected.
-- `/api/notes`
-  POST creates a note (authenticated).
 
 ### Remote MCP client
 
@@ -166,10 +170,11 @@ Some clients name the transport `http` instead of `streamable-http`; the URL and
 
 ## Operational Notes
 
-- R2 is canonical for memo bodies. The current D1 `excerpt` field mirrors the trimmed body for list rendering and search. Memo lists are paginated from D1; KV contains only disposable caches and deduplication markers, so deleting KV entries must not lose source data.
+- R2 is canonical for memo bodies. The current D1 `excerpt` field mirrors the trimmed body for list rendering and search. Memo lists and tag counts are queried from D1; KV contains only disposable generated-image and font caches, so deleting KV entries must not lose source data.
+- X post import depends on outbound HTTPS access to the public FxTwitter API. The integration sends only the numeric post ID and a descriptive user agent; it requires no secret or Cloudflare binding. FxTwitter failures leave D1 and R2 unchanged.
 - The chat route reads `agent/PROMPT.md` and `agent/MEMORY.md` from `MEMOS_BUCKET`. Missing files degrade gracefully, but chat behavior will change.
+- Chat runs as a streaming HTTP invocation, not a Queue consumer. This deployment intentionally leaves `limits.cpu_ms` unset because it targets Workers Free, whose CPU ceiling is 10 ms per invocation; the 30-second default and configurable 5-minute maximum belong to Workers Paid. Model, R2, D1, and MCP I/O wait time does not consume CPU time, and the response stream keeps the HTTP invocation alive while the client remains connected.
 - Successful chats schedule memory maintenance with `waitUntil`; failures and R2 ETag conflicts never fail the already completed chat response.
 - A live MCP key rotation with `wrangler secret put MCP_API_KEY` immediately creates and deploys a Worker version; use `wrangler versions secret put MCP_API_KEY` when preparing an undeployed version. There are no token-management routes or D1 token records.
-- Long-form notes live in R2 under the `blog/` prefix, with KV caches for compiled HTML. Note page loaders and API endpoints call the shared `notes` service instead of accessing R2 or KV directly.
 - Local development uses remote bindings for D1, KV, and R2 and can mutate the configured Cloudflare resources. The explicit `pnpm d1:migrate:local` command still targets app-local state under `apps/memos/.wrangler/state`.
 - `apps/memos/wrangler.json` currently includes concrete IDs and a production URL. Keep it aligned with `apps/memos/void.json` and `apps/memos/src/app.d.ts`, and avoid mixing environments in one config unless you add explicit environment sections.

@@ -9,6 +9,7 @@ const updateMemoSchema = z.object({
   visibility: z.enum(["public", "private"]).optional(),
   tags: z.array(z.string()).optional(),
   pinned: z.boolean().optional(),
+  favorite: z.boolean().optional(),
   archived: z.boolean().optional(),
 });
 

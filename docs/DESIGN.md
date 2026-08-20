@@ -150,6 +150,10 @@ Dark mode is triggered by a `.dark` class on `<html>`. Use `applyTheme(dark)` fr
 @import "@my-memos/ui/styles";
 ```
 
+Reusable avatar instances must provide a meaningful `fallback` (for example, a user name,
+role, or `Guest`). Do not use `?` as a generic placeholder because it hides whether identity
+data is absent or the viewer is intentionally anonymous.
+
 ```css
 .card {
   background: var(--color-muted);

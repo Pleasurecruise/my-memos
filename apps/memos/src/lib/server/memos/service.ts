@@ -1,11 +1,6 @@
 import { stripHashtags } from "$lib/utils/tags";
 import type { Memo, TagCount } from "$lib/types";
-import {
-  invalidateMemoOgCache,
-  invalidateMemoTagCache,
-  readTagCountCache,
-  writeTagCountCache,
-} from "./cache";
+import { invalidateMemoOgCache } from "./cache";
 import {
   deleteMemoRow,
   findMemoRow,
@@ -29,17 +24,8 @@ export async function getMemo(d1: D1Database, bucket: R2Bucket, id: string): Pro
   return memo;
 }
 
-export async function listTagCounts(
-  d1: D1Database,
-  cache: KVNamespace,
-  publicOnly = false,
-): Promise<TagCount[]> {
-  const cached = await readTagCountCache(cache, publicOnly);
-  if (cached) return cached;
-
-  const tagCounts = await queryTagCounts(d1, publicOnly);
-  await writeTagCountCache(cache, publicOnly, tagCounts);
-  return tagCounts;
+export async function listTagCounts(d1: D1Database, publicOnly = false): Promise<TagCount[]> {
+  return queryTagCounts(d1, publicOnly);
 }
 
 export async function listAgentMemos(
@@ -74,7 +60,6 @@ export async function searchAgentMemos(
 export async function createMemo(
   d1: D1Database,
   bucket: R2Bucket,
-  cache: KVNamespace,
   input: CreateMemoInput,
 ): Promise<Memo> {
   const now = new Date();
@@ -94,10 +79,9 @@ export async function createMemo(
     updatedAt: nowIso,
     visibility: input.visibility,
     pinned: false,
+    favorite: input.favorite,
     archived: false,
   });
-  await invalidateMemoTagCache(cache);
-
   return {
     id,
     content,
@@ -106,6 +90,7 @@ export async function createMemo(
     updatedAt: nowIso,
     visibility: input.visibility,
     pinned: false,
+    favorite: input.favorite,
     archived: false,
   };
 }
@@ -120,7 +105,8 @@ export async function updateMemo(
   const existing = await findMemoRow(d1, id);
   if (!existing) throw new MemoError("not_found", `Memo not found: ${id}`);
 
-  await invalidateMemoOgCache(cache, id);
+  const affectsOgImage = input.content !== undefined || input.tags !== undefined;
+  if (affectsOgImage) await invalidateMemoOgCache(cache, id);
   const values: Parameters<typeof updateMemoRow>[2] = {};
 
   if (input.content !== undefined) {
@@ -143,11 +129,11 @@ export async function updateMemo(
 
   if (input.visibility !== undefined) values.visibility = input.visibility;
   if (input.pinned !== undefined) values.pinned = input.pinned;
+  if (input.favorite !== undefined) values.favorite = input.favorite;
   if (input.archived !== undefined) values.archived = input.archived;
   values.updatedAt = new Date().toISOString();
 
   const updated = await updateMemoRow(d1, id, values);
-  await invalidateMemoTagCache(cache);
   return memoFromRow(updated);
 }
 
@@ -163,5 +149,4 @@ export async function deleteMemo(
   await invalidateMemoOgCache(cache, id);
   await deleteMemoRow(d1, id);
   await deleteMemoBody(bucket, existing.r2Key);
-  await invalidateMemoTagCache(cache);
 }

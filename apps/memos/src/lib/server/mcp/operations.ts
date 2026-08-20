@@ -39,7 +39,7 @@ export function createDomainOperations(env: AppEnv): DomainOperation[] {
       description:
         "List all memo tags with counts. Call this before filtering by a user-provided tag.",
       schema: z.object({}),
-      execute: async () => listTagCounts(env.DB, env.MEMOS_CACHE),
+      execute: async () => listTagCounts(env.DB),
     }),
     defineOperation({
       name: "list_memos",
@@ -95,8 +95,9 @@ export function createDomainOperations(env: AppEnv): DomainOperation[] {
         content: z.string().min(1),
         tags: z.array(z.string()).default([]),
         visibility: z.enum(["private", "public"]).default("private"),
+        favorite: z.boolean().default(false),
       }),
-      execute: async (input) => createMemo(env.DB, env.MEMOS_BUCKET, env.MEMOS_CACHE, input),
+      execute: async (input) => createMemo(env.DB, env.MEMOS_BUCKET, input),
     }),
     defineOperation({
       name: "update_memo",
@@ -108,6 +109,7 @@ export function createDomainOperations(env: AppEnv): DomainOperation[] {
         tags: z.array(z.string()).optional(),
         visibility: z.enum(["private", "public"]).optional(),
         pinned: z.boolean().optional(),
+        favorite: z.boolean().optional(),
         archived: z.boolean().optional(),
       }),
       execute: async ({ id, ...input }) => {

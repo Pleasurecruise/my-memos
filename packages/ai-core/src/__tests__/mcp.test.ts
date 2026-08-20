@@ -1,5 +1,5 @@
 import type { Tool } from "@modelcontextprotocol/client";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vite-plus/test";
 import type { McpToolClient } from "../types";
 import { toPiTool } from "../mcp";
 

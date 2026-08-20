@@ -1,14 +1,11 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
-import { invalidateMemoOgCache, invalidateMemoTagCache } from "$lib/server/memos/cache";
+import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
+import { invalidateMemoOgCache } from "$lib/server/memos/cache";
 import { findMemoRow, listAgentMemoRecords, updateMemoRow } from "$lib/server/memos/repository";
 import { searchAgentMemos, updateMemo } from "$lib/server/memos/service";
 import { readMemoBody, writeMemoBody } from "$lib/server/memos/storage";
 
 vi.mock("$lib/server/memos/cache", () => ({
   invalidateMemoOgCache: vi.fn(),
-  invalidateMemoTagCache: vi.fn(),
-  readTagCountCache: vi.fn(),
-  writeTagCountCache: vi.fn(),
 }));
 
 vi.mock("$lib/server/memos/repository", () => ({
@@ -24,6 +21,7 @@ vi.mock("$lib/server/memos/repository", () => ({
     updatedAt: row.updatedAt,
     visibility: row.visibility,
     pinned: row.pinned,
+    favorite: row.favorite,
     archived: row.archived,
   })),
   queryTagCounts: vi.fn(),
@@ -45,6 +43,7 @@ const memoRow = {
   updatedAt: "2026-08-03T00:00:00.000Z",
   visibility: "private" as const,
   pinned: false,
+  favorite: false,
   archived: false,
 };
 
@@ -72,7 +71,6 @@ describe("memo service", () => {
       expect.objectContaining({ excerpt: "Body\n\n#new", tagsJson: ["new"] }),
     );
     expect(invalidateMemoOgCache).toHaveBeenCalledWith(expect.anything(), memoRow.id);
-    expect(invalidateMemoTagCache).toHaveBeenCalledOnce();
     expect(memo.tags).toEqual(["new"]);
   });
 

@@ -7,7 +7,7 @@
   export interface AvatarProps extends HTMLAttributes<HTMLDivElement> {
     src?: string | null;
     alt?: string;
-    fallback?: string;
+    fallback: string;
     size?: AvatarSize;
   }
 
@@ -30,10 +30,10 @@
   {...rest}
 >
   {#if src}
-    <img {src} alt={alt ?? fallback ?? ""} class="h-full w-full object-cover" />
+    <img {src} alt={alt ?? fallback} class="h-full w-full object-cover" />
   {:else}
     <span class="select-none font-sans font-medium text-muted-foreground">
-      {fallback ? fallback.slice(0, 2).toUpperCase() : "?"}
+      {fallback.slice(0, 2).toUpperCase()}
     </span>
   {/if}
 </div>

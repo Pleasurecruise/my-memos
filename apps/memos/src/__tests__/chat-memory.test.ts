@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
 
 const promptCache = vi.hoisted(() => ({ invalidateMarkdown: vi.fn() }));
 vi.mock("$lib/server/chat/prompt-cache", () => promptCache);

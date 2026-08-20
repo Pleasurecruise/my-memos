@@ -5,6 +5,7 @@ export interface MemoListFilters {
   search?: string;
   date?: string;
   archivedOnly?: boolean;
+  favoritesOnly?: boolean;
   tags?: string[];
   publicOnly?: boolean;
   sortByUpdated?: boolean;
@@ -21,6 +22,7 @@ export interface CreateMemoInput {
   content: string;
   visibility: import("$lib/types").MemoVisibility;
   tags: string[];
+  favorite: boolean;
 }
 
 export interface UpdateMemoInput {
@@ -28,6 +30,7 @@ export interface UpdateMemoInput {
   visibility?: import("$lib/types").MemoVisibility;
   tags?: string[];
   pinned?: boolean;
+  favorite?: boolean;
   archived?: boolean;
 }
 

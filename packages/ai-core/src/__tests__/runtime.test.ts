@@ -1,5 +1,5 @@
 import type { AgentMessage, StreamFn } from "@earendil-works/pi-agent-core";
-import { beforeEach, describe, expect, it, vi, type Mock } from "vitest";
+import { beforeEach, describe, expect, it, vi, type Mock } from "vite-plus/test";
 
 const agentMock = vi.hoisted(() => ({
   instances: [] as Array<{

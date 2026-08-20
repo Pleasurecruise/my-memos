@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 import { chatRequestSchema, parseChatEvent } from "$lib/chat/protocol";
 import type { ChatMessage } from "$lib/chat/types";
 import { uiMessagesToPi } from "$lib/server/chat/bridge";

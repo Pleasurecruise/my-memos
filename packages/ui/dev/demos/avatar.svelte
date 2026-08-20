@@ -21,7 +21,7 @@
     {
       name: "fallback",
       type: "string",
-      description: "Text used when no image is available. First two characters are shown.",
+      description: "Required text used when no image is available. First two characters are shown.",
     },
     {
       name: "size",
@@ -38,9 +38,9 @@
 
   const usage = `import { Avatar } from "@my-memos/ui";
 
-<Avatar src="/avatar.png" alt="Jane Smith" />
+<Avatar src="/avatar.png" alt="Jane Smith" fallback="JS" />
 <Avatar fallback="JS" size="lg" />
-<Avatar fallback="?" />`;
+<Avatar fallback="Guest" />`;
 </script>
 
 <DemoPage {propDefs} {usage}>
@@ -59,17 +59,17 @@
     <div style="display: flex; gap: 12px; align-items: center;">
       <Avatar fallback="AB" />
       <Avatar fallback="XY" />
-      <Avatar fallback="?" />
-      <Avatar />
+      <Avatar fallback="Guest" />
+      <Avatar fallback="Anonymous" />
     </div>
   </section>
 
   <section style="display: flex; flex-direction: column; gap: 12px;">
     <SectionLabel>With image</SectionLabel>
     <div style="display: flex; gap: 12px; align-items: center;">
-      <Avatar src="https://i.pravatar.cc/150?img=1" alt="User" size="sm" />
-      <Avatar src="https://i.pravatar.cc/150?img=2" alt="User" size="md" />
-      <Avatar src="https://i.pravatar.cc/150?img=3" alt="User" size="lg" />
+      <Avatar src="https://i.pravatar.cc/150?img=1" alt="User one" fallback="U1" size="sm" />
+      <Avatar src="https://i.pravatar.cc/150?img=2" alt="User two" fallback="U2" size="md" />
+      <Avatar src="https://i.pravatar.cc/150?img=3" alt="User three" fallback="U3" size="lg" />
     </div>
   </section>
 </DemoPage>

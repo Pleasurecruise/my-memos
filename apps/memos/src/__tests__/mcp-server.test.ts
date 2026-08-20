@@ -1,6 +1,6 @@
 import { connectMcp, MCP_PROTOCOL_VERSION } from "@my-memos/ai-core";
 import type { McpHttpHandler } from "@modelcontextprotocol/server";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vite-plus/test";
 import { createDomainOperations } from "$lib/server/mcp/operations";
 import { createMemosMcpHandler } from "$lib/server/mcp/server";
 import type { AppEnv } from "$lib/server/types";

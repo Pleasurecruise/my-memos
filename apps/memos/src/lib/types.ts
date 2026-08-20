@@ -8,6 +8,7 @@ export interface Memo {
   updatedAt: string;
   visibility: MemoVisibility;
   pinned: boolean;
+  favorite: boolean;
   archived: boolean;
 }
 

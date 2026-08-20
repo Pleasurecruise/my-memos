@@ -8,32 +8,28 @@
   const result = $derived(readMemoSearchResult(output));
 </script>
 
-{#if result}
+{#if result && result.memos.length > 0}
   <div class="memo-results" aria-label={`Memo results for ${result.query}`}>
-    {#if result.memos.length === 0}
-      <p class="empty">No memos found.</p>
-    {:else}
-      {#each result.memos as memo (memo.id)}
-        <a class="memo-result" href={`/#memo-${memo.id}`} aria-label="Open memo">
-          <div class="memo-meta">
-            <time datetime={memo.createdAt}>
-              {new Date(memo.createdAt).toLocaleDateString(undefined, {
-                year: "numeric",
-                month: "short",
-                day: "numeric",
-              })}
-            </time>
-            <span class="open-icon"><MoveUpRight size={12} /></span>
+    {#each result.memos as memo (memo.id)}
+      <a class="memo-result" href={`/#memo-${memo.id}`} aria-label="Open memo">
+        <div class="memo-meta">
+          <time datetime={memo.createdAt}>
+            {new Date(memo.createdAt).toLocaleDateString(undefined, {
+              year: "numeric",
+              month: "short",
+              day: "numeric",
+            })}
+          </time>
+          <span class="open-icon"><MoveUpRight size={12} /></span>
+        </div>
+        <p class="memo-content">{stripHashtags(memo.content)}</p>
+        {#if memo.tags.length > 0}
+          <div class="memo-tags">
+            {#each memo.tags as tag (tag)}<span>#{tag}</span>{/each}
           </div>
-          <p class="memo-content">{stripHashtags(memo.content)}</p>
-          {#if memo.tags.length > 0}
-            <div class="memo-tags">
-              {#each memo.tags as tag (tag)}<span>#{tag}</span>{/each}
-            </div>
-          {/if}
-        </a>
-      {/each}
-    {/if}
+        {/if}
+      </a>
+    {/each}
   </div>
 {/if}
 
@@ -99,11 +95,5 @@
     flex-wrap: wrap;
     margin-top: 7px;
     color: var(--color-accent);
-  }
-
-  .empty {
-    margin: 0;
-    color: var(--color-muted-foreground);
-    font-size: 12px;
   }
 </style>

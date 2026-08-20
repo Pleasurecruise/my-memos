@@ -47,7 +47,7 @@ export const load: PageServerLoad = async ({ platform, url, locals }) => {
       sortByUpdated,
       limit: PAGE_LIMIT,
     }),
-    listTagCounts(platform.env.DB, platform.env.MEMOS_CACHE, publicOnly),
+    listTagCounts(platform.env.DB, publicOnly),
     countMemoStats(platform.env.DB, today, publicOnly),
     listMemoActivity(platform.env.DB, publicOnly, activitySince()),
   ]);

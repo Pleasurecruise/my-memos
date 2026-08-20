@@ -19,6 +19,7 @@ export function memoFromRow(row: MemoRow): Memo {
     updatedAt: row.updatedAt,
     visibility: row.visibility,
     pinned: row.pinned,
+    favorite: row.favorite,
     archived: row.archived,
   };
 }
@@ -54,6 +55,7 @@ export async function listMemos(d1: D1Database, filters: MemoListFilters = {}): 
   const conditions = [filters.archivedOnly ? eq(memos.archived, true) : eq(memos.archived, false)];
 
   if (filters.publicOnly) conditions.push(eq(memos.visibility, "public"));
+  if (filters.favoritesOnly) conditions.push(eq(memos.favorite, true));
   if (filters.date) conditions.push(buildMemoDateCondition(memos.updatedAt, filters.date, "="));
   if (filters.search) conditions.push(like(memos.excerpt, `%${filters.search}%`));
   if (filters.tags?.length) {
@@ -117,7 +119,7 @@ export async function queryTagCounts(d1: D1Database, publicOnly = false): Promis
     )
     .all<{ name: string; count: number }>();
 
-  return (results ?? []).map((row) => ({ name: row.name, count: Number(row.count) }));
+  return results.map((row) => ({ name: row.name, count: Number(row.count) }));
 }
 
 export async function countMemoStats(
@@ -130,14 +132,15 @@ export async function countMemoStats(
     .prepare(
       `SELECT
         COUNT(*) AS total,
-        SUM(CASE WHEN substr(created_at, 1, 10) = ? THEN 1 ELSE 0 END) AS today
+        COALESCE(SUM(CASE WHEN substr(created_at, 1, 10) = ? THEN 1 ELSE 0 END), 0) AS today
        FROM memos
        WHERE archived = 0 ${visibilityClause}`,
     )
     .bind(today)
-    .first<{ total: number; today: number | null }>();
+    .first<{ total: number; today: number }>();
 
-  return { total: row?.total ?? 0, today: row?.today ?? 0 };
+  if (!row) throw new Error("Memo stats query returned no row.");
+  return { total: row.total, today: row.today };
 }
 
 export async function listAgentMemoRecords(

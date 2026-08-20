@@ -13,8 +13,8 @@
   } from "@my-memos/ui";
   import {
     Home,
+    Heart,
     Archive,
-    NotebookText,
     MessageSquare,
     Sun,
     Moon,
@@ -37,8 +37,8 @@
   const THEME_KEY = "my-memos:theme";
   const NAV_ITEMS = [
     { href: "/", label: "Home", Icon: Home, requiresAuth: false },
+    { href: "/favorites", label: "Favorites", Icon: Heart, requiresAuth: true },
     { href: "/archive", label: "Archive", Icon: Archive, requiresAuth: true },
-    { href: "/note", label: "Note", Icon: NotebookText, requiresAuth: true },
     { href: "/chat", label: "Chat", Icon: MessageSquare, requiresAuth: true },
   ] as const;
 
@@ -201,7 +201,7 @@
             </div>
           {:else}
             <div class="flex flex-col items-center gap-3 py-1">
-              <Avatar size="lg" fallback="?" />
+              <Avatar size="lg" fallback="Guest" />
               <p class="text-sm text-muted-foreground">Not signed in</p>
               <Button
                 size="sm"

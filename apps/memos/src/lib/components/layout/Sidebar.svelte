@@ -17,6 +17,7 @@
   import { signIn, signOut } from "$lib/services/auth";
   import {
     Home,
+    Heart,
     Archive,
     MessageSquare,
     Globe,
@@ -33,6 +34,7 @@
 
   const NAV_ITEMS = [
     { href: "/", label: "Home", icon: Home, requiresAuth: false },
+    { href: "/favorites", label: "Favorites", icon: Heart, requiresAuth: true },
     { href: "/archive", label: "Archive", icon: Archive, requiresAuth: true },
     { href: "/chat", label: "Chat", icon: MessageSquare, requiresAuth: true },
   ] as const;
@@ -271,7 +273,7 @@
           </div>
         {:else}
           <div class="flex flex-col items-center gap-3 py-1">
-            <Avatar size="lg" fallback="?" />
+            <Avatar size="lg" fallback="Guest" />
             <p class="text-sm text-muted-foreground">Not signed in</p>
             <Button
               size="sm"

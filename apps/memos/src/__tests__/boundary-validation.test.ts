@@ -1,5 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
-import { readCategoryCache } from "$lib/server/notes/cache";
+import { describe, expect, it } from "vite-plus/test";
 import { readLimitedText } from "$lib/server/mcp/utils";
 import {
   isMemoSearchWithinLimit,
@@ -40,17 +39,5 @@ describe("external response limits", () => {
     await expect(readLimitedText(response, "test", 10)).rejects.toThrow(
       "response exceeds the 10-byte limit",
     );
-  });
-});
-
-describe("KV cache boundaries", () => {
-  it("preserves an intentionally empty category cache", async () => {
-    const kv = { get: vi.fn().mockResolvedValue([]) } as unknown as KVNamespace;
-    await expect(readCategoryCache(kv)).resolves.toEqual([]);
-  });
-
-  it("treats a malformed category cache as a miss", async () => {
-    const kv = { get: vi.fn().mockResolvedValue(["valid", 42]) } as unknown as KVNamespace;
-    await expect(readCategoryCache(kv)).resolves.toBeNull();
   });
 });

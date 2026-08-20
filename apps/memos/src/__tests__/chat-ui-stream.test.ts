@@ -1,5 +1,5 @@
 import type { AgentEvent, AssistantMessage } from "@my-memos/ai-core";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vite-plus/test";
 import { AgentChatStreamBridge } from "$lib/server/chat/bridge";
 
 const ASSISTANT_MESSAGE = {

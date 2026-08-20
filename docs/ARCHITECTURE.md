@@ -46,18 +46,14 @@ Key areas:
   - `apps/memos/src/lib/server/memos`
     Memo domain split into D1 repository queries, R2 body storage, KV-derived cache handling,
     and a service that coordinates operations spanning those boundaries.
-  - `apps/memos/src/lib/server/notes`
-    Long-form note domain split into R2 storage, KV compiled caches, and application services
-    used by both page loaders and API routes.
-  - `apps/memos/src/lib/server/blog`
-    Markdown compilation pipeline for long-form notes. Storage and cache orchestration belong
-    to the `notes` domain rather than the compiler.
+  - `apps/memos/src/lib/server/x-import.ts`
+    Validates X/Twitter status URLs and the FxTwitter response fields used by the import route.
   - `apps/memos/src/lib/server/mcp`
     MCP server, authentication, schemas, structured errors, typed domain operations, and MCP-only utilities. Shared contracts live in `types.ts`; implementation files import them instead of redeclaring local aliases.
 - [apps/memos/src/lib/components](../apps/memos/src/lib/components)
   App-specific Svelte UI not exported as reusable package components.
   Contains two layout generations:
-  - `views/` — default `Home`, `Chat`, `Archive`, and `Note` views using the masthead-based layout and timeline feed.
+  - `views/` — default `Home`, `Chat`, and `Archive` views using the masthead-based layout and timeline feed.
   - `views-legacy/` — classic views kept for comparison via the in-page toggle; these use `AppShell` + `Sidebar` where applicable.
 - [apps/memos/migrations](../apps/memos/migrations)
   D1 schema migrations applied by wrangler. These numbered SQL files are the source of truth; the Drizzle schema mirrors the runtime table shape for query building.
@@ -102,6 +98,17 @@ The main page load lives in [apps/memos/src/routes/+page.server.ts](../apps/memo
 
 Route loader: [apps/memos/src/routes/archive/+page.server.ts](../apps/memos/src/routes/archive/+page.server.ts)
 
+### Favorites Page
+
+- `/favorites` is authenticated only.
+- Lists non-archived memos whose `favorite` flag is set.
+- Uses the same month-grouped new layout and classic card-based legacy layout as `/archive`,
+  selected through the shared `my-memos:layout` preference.
+- Owns the X/Twitter import form. Imported posts are created as favorite memos so they appear in
+  the current list after invalidation; the home page does not expose this form.
+
+Route loader: `apps/memos/src/routes/favorites/+page.server.ts`
+
 ### Chat Page
 
 - `/chat` is authenticated only.
@@ -110,17 +117,6 @@ Route loader: [apps/memos/src/routes/archive/+page.server.ts](../apps/memos/src/
 - Every request sends the full page transcript; the server performs one stateless pi Agent run.
 
 Route loader: [apps/memos/src/routes/chat/+page.server.ts](../apps/memos/src/routes/chat/+page.server.ts)
-
-### Note Pages
-
-- `/note` and `/note/[...slug]` are authenticated only.
-- Browse and edit long-form markdown notes stored in R2 under `blog/` prefix.
-- Supports categories, table of contents, and visual blocks.
-
-Route loaders:
-
-- [apps/memos/src/routes/note/+page.server.ts](../apps/memos/src/routes/note/+page.server.ts)
-- [apps/memos/src/routes/note/[...slug]/+page.server.ts](../apps/memos/src/routes/note/[...slug]/+page.server.ts)
 
 ## Authentication
 
@@ -156,6 +152,7 @@ Table defined in [apps/memos/migrations/0001_create_memos.sql](../apps/memos/mig
 - `updated_at`
 - `visibility`
 - `pinned`
+- `favorite`
 - `archived`
 
 Use D1 for:
@@ -171,19 +168,13 @@ R2 stores:
 
 - full memo markdown body
 - chat support files such as `agent/PROMPT.md` and `agent/MEMORY.md`
-- long-form notes under `blog/` prefix, with custom metadata (title, timestamps) and KV-compiled caches
 
 During `pnpm dev`, this binding proxies to the configured remote R2 bucket. D1 and KV are remote bindings as well, so local development reads and writes the configured Cloudflare resources.
 
 ### KV
 
-KV stores derived or disposable entries only:
-
-- `memo:tags`
-- `memo:tags:public`
-- short-lived `agent:memory-update:<message-id>` dedupe/status entries; never chat content
-- compiled long-form note HTML and category lists under `blog-*` keys
-- generated Open Graph images and fetched font bytes
+KV stores generated Open Graph images and fetched font bytes. Tag counts are queried directly
+from D1 so page rendering does not depend on remote KV availability.
 
 Memo lists are **not** cached in KV — full-list JSON blobs caused KV size/corruption issues and CPU rate limits on Workers. Instead, lists are paginated via cursor-based `limit=25` queries directly against D1.
 
@@ -200,21 +191,18 @@ Responsibilities:
 - `repository.ts` maps D1 rows and owns memo list, statistics, tag, and Agent-facing queries
   through Drizzle ORM (`drizzle-orm/d1`).
 - `storage.ts` owns canonical memo body reads and writes in R2.
-- `cache.ts` owns derived tag-count and generated OG cache invalidation in KV.
+- `cache.ts` owns generated OG cache invalidation in KV.
 - `service.ts` owns create, update, delete, canonical-body loading, and Agent search
-  orchestration across D1, R2, and KV.
-
-Long-form note logic follows the same boundary rule without inventing a D1 repository that
-the domain does not use:
-
-- `notes/storage.ts` owns R2 listing, metadata, reads, writes, renames, and deletes.
-- `notes/cache.ts` owns compiled-note and category entries in KV.
-- `notes/service.ts` owns note creation, loading, updates, category discovery, and deletion.
-- `blog/` owns only Markdown compilation, syntax highlighting, TOC generation, and visual
-  block extraction.
+  orchestration across D1, R2, and the remaining generated-image cache boundary.
 
 SvelteKit routes validate transport input and map typed domain errors to HTTP responses. MCP
 operations call memo domain functions instead of issuing their own D1/R2 queries.
+
+X post import is a narrow external boundary: the server accepts only HTTPS status URLs on
+`x.com` or `twitter.com`, extracts the numeric post ID, and requests the fixed
+`api.fxtwitter.com` host without user credentials. The resulting text, author attribution, and
+canonical source URL pass through the normal memo creation service and D1/R2 write path.
+X imports set the new memo's `favorite` flag during that same creation path.
 
 The Wrangler SQL migrations are authoritative for the deployed schema. The Drizzle mirror (`apps/memos/src/lib/server/db/schema.ts`) describes that table to application code and exports `MemoRow` via `typeof memos.$inferSelect`, eliminating hand-written row types.
 
@@ -227,7 +215,7 @@ Agent tools are defined once as MCP tools in `apps/memos/src/lib/server/mcp`. Th
 File: [apps/memos/src/routes/api/memos/+server.ts](../apps/memos/src/routes/api/memos/+server.ts)
 
 - `GET`
-  Paginated memo list. Accepts `cursor` (base64-encoded compound cursor), `limit` (default 25, max 100), `search` (at most 48 UTF-8 bytes), `date` (a valid `YYYY-MM-DD` value), `tags` (comma-separated), `publicOnly`, `archivedOnly`, `sortByUpdated` query params. Returns `{ memos: Memo[], nextCursor: string | null }`. Used by the client for infinite-scroll loading.
+  Paginated memo list. Accepts `cursor` (base64-encoded compound cursor), `limit` (default 25, max 100), `search` (at most 48 UTF-8 bytes), `date` (a valid `YYYY-MM-DD` value), `tags` (comma-separated), `publicOnly`, `archivedOnly`, `favoritesOnly`, `sortByUpdated` query params. `favoritesOnly` requires authentication. Returns `{ memos: Memo[], nextCursor: string | null }`. Used by the client for infinite-scroll loading.
 - `POST`
   Creates a memo for authenticated users.
 
@@ -236,9 +224,15 @@ File: [apps/memos/src/routes/api/memos/+server.ts](../apps/memos/src/routes/api/
 File: [apps/memos/src/routes/api/memos/[id]/+server.ts](../apps/memos/src/routes/api/memos/[id]/+server.ts)
 
 - `PATCH`
-  Updates content, tags, visibility, pin state, or archive state.
+  Updates content, tags, visibility, pin state, favorite state, or archive state.
 - `DELETE`
   Deletes a memo and its stored content.
+
+### `/api/memos/import/x`
+
+- `POST`
+  Imports an X/Twitter status URL for an authenticated user through FxTwitter, then creates a
+  memo with the requested visibility.
 
 ### `/api/chat`
 
@@ -270,19 +264,6 @@ File: `apps/memos/src/routes/api/mcp/+server.ts`
 ## Memory Update Lifecycle
 
 `agent/PROMPT.md` and `agent/MEMORY.md` are loaded from R2 with a short TTL and ETag validation. A successful chat schedules a no-tool model call in the background. Only durable, explicit user facts are eligible. Unchanged output is not written. Changed memory uses conditional R2 writes; one ETag conflict triggers a fresh read and one recomputation. A second conflict or model failure is logged without changing the completed chat response. Raw transcripts are never persisted.
-
-### `/api/notes`
-
-File: [apps/memos/src/routes/api/notes/+server.ts](../apps/memos/src/routes/api/notes/+server.ts)
-
-- `POST` creates a new note (authenticated).
-
-### `/api/notes/[...slug]`
-
-File: [apps/memos/src/routes/api/notes/[...slug]/+server.ts](../apps/memos/src/routes/api/notes/[...slug]/+server.ts)
-
-- `PATCH` updates a note's content, title, or category (authenticated).
-- `DELETE` deletes a note (authenticated).
 
 ## Type Boundaries
 
