@@ -4,13 +4,13 @@ import { normalizeDomainError } from "./errors";
 import type { AppEnv } from "$lib/server/types";
 import type { McpPrincipal } from "./types";
 
-const INTERNAL_ONLY_TOOLS = new Set([
-  "github_read",
-  "update_memory",
-  "render_chart",
-  "render_svg",
-  "render_mermaid",
-  "render_widget",
+const EXTERNAL_OPERATION_NAMES = new Set([
+  "create_memo",
+  "delete_memo",
+  "get_tags",
+  "list_memos",
+  "search_memos",
+  "update_memo",
 ]);
 
 export function createMemosMcpHandler(env: AppEnv, principal: McpPrincipal): McpHttpHandler {
@@ -21,9 +21,10 @@ export function createMemosMcpHandler(env: AppEnv, principal: McpPrincipal): Mcp
         { capabilities: { tools: {} } },
       );
 
-      const operations = createDomainOperations(env).filter(
-        ({ name }) => principal === "user" || !INTERNAL_ONLY_TOOLS.has(name),
-      );
+      const operations = createDomainOperations(env).filter((operation) => {
+        if (principal === "user") return true;
+        return EXTERNAL_OPERATION_NAMES.has(operation.name);
+      });
       for (const operation of operations) {
         server.registerTool(
           operation.name,

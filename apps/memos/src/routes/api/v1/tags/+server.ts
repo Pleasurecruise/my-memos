@@ -1,13 +1,10 @@
-import { json } from "@sveltejs/kit";
-import { createMemosMcpHandler } from "$lib/server/mcp";
 import { verifyApiKey } from "$lib/server/apikey";
+import { listTagCounts } from "$lib/server/memos";
+import { json } from "@sveltejs/kit";
 import type { RequestHandler } from "./$types";
 
-export const POST: RequestHandler = async ({ request, platform }) => {
+export const GET: RequestHandler = async ({ request, platform }) => {
   if (!platform) return json({ error: "Platform bindings unavailable." }, { status: 500 });
-  if (request.headers.has("mcp-session-id")) {
-    return json({ error: "MCP sessions are not supported." }, { status: 400 });
-  }
   if (!(await verifyApiKey(request, platform.env.API_KEY))) {
     return json(
       { error: "Unauthorized." },
@@ -15,5 +12,5 @@ export const POST: RequestHandler = async ({ request, platform }) => {
     );
   }
 
-  return createMemosMcpHandler(platform.env, "api-key").fetch(request);
+  return json({ tags: await listTagCounts(platform.env.DB) });
 };

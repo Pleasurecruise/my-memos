@@ -8,24 +8,24 @@ import type { AppEnv } from "$lib/server/types";
 const EXTERNAL_TOOLS = [
   "create_memo",
   "delete_memo",
-  "fetch_raw",
-  "fetch_url",
   "get_tags",
   "list_memos",
-  "lookup_docs",
   "search_memos",
   "update_memo",
-  "web_search",
 ];
 
 const IN_PRODUCT_TOOLS = [
   ...EXTERNAL_TOOLS,
+  "fetch_raw",
+  "fetch_url",
   "github_read",
+  "lookup_docs",
   "render_chart",
   "render_mermaid",
   "render_svg",
   "render_widget",
   "update_memory",
+  "web_search",
 ].sort();
 
 function fakeEnv(): AppEnv {
@@ -33,6 +33,7 @@ function fakeEnv(): AppEnv {
     DB: {} as D1Database,
     MEMOS_BUCKET: {} as R2Bucket,
     MEMOS_CACHE: {} as KVNamespace,
+    API_KEY: { getByName: () => ({ fetch: async () => new Response() }) },
     BETTER_AUTH_SECRET: "",
     BETTER_AUTH_URL: "",
     GOOGLE_CLIENT_ID: "",
@@ -40,7 +41,6 @@ function fakeEnv(): AppEnv {
     ALLOWED_EMAIL: "",
     CF_ACCOUNT_ID: "",
     CF_AIG_TOKEN: "",
-    MCP_API_KEY: "",
     TAVILY_API_KEY: "",
   };
 }

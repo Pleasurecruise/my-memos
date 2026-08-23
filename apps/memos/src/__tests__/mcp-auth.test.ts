@@ -1,17 +1,79 @@
 import { describe, expect, it } from "vite-plus/test";
-import { verifyMcpApiKey } from "$lib/server/mcp/auth";
+import { z } from "zod";
+import { generateApiKey, getApiKeyStatus, verifyApiKey } from "$lib/server/apikey";
 
-describe("MCP fixed API key", () => {
-  it("accepts only the configured bearer value", async () => {
-    const valid = new Request("https://example.test/api/mcp", {
-      headers: { authorization: "Bearer secret-value" },
-    });
-    const invalid = new Request("https://example.test/api/mcp", {
-      headers: { authorization: "Bearer secret-valuF" },
+describe("generated API key", () => {
+  it("stores one digest and immediately invalidates the previous key", async () => {
+    const state: {
+      apiKeyRecord: { version: 1; digest: string; createdAt: string } | null;
+      reads: number;
+      writes: number;
+    } = {
+      apiKeyRecord: null,
+      reads: 0,
+      writes: 0,
+    };
+    const namespace = {
+      getByName(name: string) {
+        expect(name).toBe("my-memos-api-key");
+        return {
+          async fetch(request: Request) {
+            expect(new URL(request.url).pathname).toBe("/key");
+            if (request.method === "GET") {
+              state.reads += 1;
+              return state.apiKeyRecord === null
+                ? new Response(null, { status: 404 })
+                : Response.json(state.apiKeyRecord);
+            }
+            if (request.method === "PUT") {
+              state.writes += 1;
+              state.apiKeyRecord = z
+                .object({
+                  version: z.literal(1),
+                  digest: z.string(),
+                  createdAt: z.string(),
+                })
+                .parse(await request.json());
+              return new Response(null, { status: 204 });
+            }
+            return new Response(null, { status: 405 });
+          },
+        };
+      },
+    };
+
+    await expect(getApiKeyStatus(namespace)).resolves.toEqual({ configured: false });
+    const previous = await generateApiKey(namespace);
+    expect(previous.apiKey).toMatch(/^sk-[A-Za-z0-9_-]{43}$/);
+    expect(JSON.stringify(state.apiKeyRecord)).not.toContain(previous.apiKey);
+    expect(state.apiKeyRecord).toMatchObject({
+      version: 1,
+      digest: expect.stringMatching(/^[0-9a-f]{64}$/),
+      createdAt: previous.createdAt,
     });
 
-    await expect(verifyMcpApiKey(valid, "secret-value")).resolves.toBe(true);
-    await expect(verifyMcpApiKey(invalid, "secret-value")).resolves.toBe(false);
-    await expect(verifyMcpApiKey(valid, undefined)).resolves.toBe(false);
+    const current = await generateApiKey(namespace);
+    expect(state.writes).toBe(2);
+    await expect(
+      verifyApiKey(
+        new Request("https://example.test/api/mcp", {
+          headers: { authorization: `Bearer ${previous.apiKey}` },
+        }),
+        namespace,
+      ),
+    ).resolves.toBe(false);
+    await expect(
+      verifyApiKey(
+        new Request("https://example.test/api/mcp", {
+          headers: { authorization: `Bearer ${current.apiKey}` },
+        }),
+        namespace,
+      ),
+    ).resolves.toBe(true);
+    await expect(getApiKeyStatus(namespace)).resolves.toEqual({
+      configured: true,
+      createdAt: current.createdAt,
+    });
+    expect(state.reads).toBe(4);
   });
 });

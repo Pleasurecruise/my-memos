@@ -37,19 +37,28 @@ https://gateway.ai.cloudflare.com/v1/{account}/default/deepseek
 
 `POST /api/mcp` is a single stateless endpoint created with the official v2 TypeScript SDK and `legacy: "stateless"`. The in-product client uses automatic version negotiation: it prefers the modern discovery flow and can fall back to the stateless `2025-11-25` initialize handshake. Session headers are rejected.
 
-External clients send `Authorization: Bearer <MCP_API_KEY>`. The server hashes both the supplied and configured values with Web Crypto and compares the fixed-length digests. This one manually rotated key has access to every remotely exposed domain tool. There are no token CRUD routes, token tables, or scopes.
+The in-product Agent reaches this handler through an in-process `fetch` with a trusted principal
+derived from Better Auth. It receives the complete Agent toolset, including web search, URL
+reading, documentation lookup, memory updates, and visual rendering.
 
-The in-product Agent uses the same handler through an in-process `fetch`, with a trusted in-product principal derived from Better Auth state. It does not expose or read the external key.
-
-Externally exposed tool names are stable:
+External MCP clients receive a narrower allowlist:
 
 - `get_tags`, `list_memos`, `search_memos`
 - `create_memo`, `update_memo`, `delete_memo`
-- `web_search`, `fetch_raw`, `fetch_url`, `lookup_docs`
 
-The in-product Agent additionally receives `render_chart`, `render_svg`, `render_mermaid`, and `render_widget` through its trusted Better Auth principal. Those tools describe page UI and are deliberately omitted from discovery and invocation for external API-key clients.
+They authenticate with a user-generated Bearer API key. The plaintext is returned once; the
+`my-memos-api-key` Durable Object instance stores its SHA-256 digest and creation time. Generation
+and regeneration replace that single strongly consistent record, immediately invalidating the
+previous key. Authentication has no R2 or KV fallback. Keys use the `sk-` prefix and have no
+automatic expiry, scopes, or token tables. Initial creation refuses to replace an existing key;
+replacement is exposed only through the confirmed regeneration request.
 
-Domain operations contain the implementation and parse their schemas at their own boundary, even when invoked outside MCP. The MCP layer owns principal-based exposure, invocation, structured results, and structured error mapping. Mutation tools are sequential; read and in-product render tools may run in parallel. URL-reading tools reject non-public targets before fetching.
+MCP operations parse tool inputs and adapt memo domain results for Agent consumption. The external
+REST routes under `/api/v1/memos` and `/api/v1/tags` call the memo domain directly and return
+structured JSON; they do not invoke MCP operations. The MCP layer owns principal-based exposure,
+structured results, and structured error mapping. Mutation tools are sequential; read and
+in-product render tools may run in parallel. URL-reading tools reject non-public targets before
+fetching.
 
 ## Prompt and memory
 
@@ -57,7 +66,7 @@ Domain operations contain the implementation and parse their schemas at their ow
 
 After a successful chat, the server passes only the newest user message and newly generated assistant text to `platform.ctx.waitUntil()`. A no-tool model call returns `{ changed, memory }`. It may keep explicit durable identity, preferences, work habits, long-running projects, corrections, and remember/forget instructions. It must exclude transient tasks, ordinary chat, raw tool output, unconfirmed assistant inferences, credentials, secrets, and sensitive data.
 
-Unchanged memory is not written. Changed memory uses an R2 `onlyIf` ETag condition. On conflict the updater reads current memory and recomputes once; a second conflict or any background failure is logged without affecting chat. KV stores only a short-lived message-ID status marker for deduplication. The only durable chat-derived content is the consolidated `MEMORY.md`.
+Unchanged memory is not written. Changed memory uses an R2 `onlyIf` ETag condition. On conflict the updater reads current memory and recomputes once; a second conflict or any background failure is logged without affecting chat. The only durable chat-derived content is the consolidated `MEMORY.md`.
 
 ## Historical lightweight adapter
 

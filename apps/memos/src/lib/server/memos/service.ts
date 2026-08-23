@@ -35,6 +35,7 @@ export async function listAgentMemos(
   const records = await listAgentMemoRecords(d1, filters);
   return records.map((record) => ({
     id: record.id,
+    r2Key: record.r2Key,
     createdAt: record.createdAt,
     tags: record.tags,
     content: record.excerpt,
@@ -50,6 +51,7 @@ export async function searchAgentMemos(
   return Promise.all(
     records.map(async (record) => ({
       id: record.id,
+      r2Key: record.r2Key,
       createdAt: record.createdAt,
       tags: record.tags,
       content: (await readMemoBody(bucket, record.r2Key)) ?? record.excerpt,
@@ -84,6 +86,7 @@ export async function createMemo(
   });
   return {
     id,
+    r2Key,
     content,
     tags,
     createdAt: nowIso,

@@ -6,6 +6,12 @@
     applyTheme,
     Avatar,
     Button,
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
     Popover,
     PopoverContent,
     PopoverTrigger,
@@ -22,10 +28,15 @@
     LogOut,
     Globe,
     UserRound,
+    Copy,
+    RefreshCw,
+    Shield,
+    X,
   } from "@lucide/svelte";
   import { signIn, signOut } from "$lib/services/auth";
   import { showToast } from "$lib/state/toast.svelte";
   import { updateQuery } from "$lib/utils";
+  import { apiGenerateApiKey, apiGetApiKeyStatus } from "$lib/services/api-key";
   import type { MemoStats, TagCount } from "$lib/types";
 
   interface Props {
@@ -46,15 +57,40 @@
 
   let isDark = $state(false);
   let themeBtnEl = $state<HTMLButtonElement | null>(null);
+  let apiKeyConfigured = $state(false);
+  let apiKeyLoading = $state(true);
+  let apiKeyDialogOpen = $state(false);
+  let apiKeyConfirmOpen = $state(false);
+  let generatedApiKey = $state("");
+  let apiKeyCopied = $state(false);
+  let apiKeyActionLabel = $state("Generate API key");
 
   onMount(() => {
     const saved = localStorage.getItem(THEME_KEY);
     isDark = saved ? saved === "dark" : window.matchMedia("(prefers-color-scheme: dark)").matches;
     applyTheme(isDark);
+
+    if (page.data.user) {
+      apiGetApiKeyStatus()
+        .then((status) => {
+          apiKeyConfigured = status.configured;
+          if (status.configured) apiKeyActionLabel = "Regenerate API key";
+        })
+        .catch(() => showToast("error", "Could not load API key status"))
+        .finally(() => {
+          apiKeyLoading = false;
+        });
+    }
   });
 
   $effect(() => {
     localStorage.setItem(THEME_KEY, isDark ? "dark" : "light");
+  });
+
+  $effect(() => {
+    if (apiKeyDialogOpen) return;
+    generatedApiKey = "";
+    apiKeyCopied = false;
   });
 
   function toggleTheme() {
@@ -69,6 +105,42 @@
       return;
     }
     goto(href);
+  }
+
+  function requestApiKeyGeneration() {
+    if (apiKeyConfigured) {
+      apiKeyConfirmOpen = true;
+      return;
+    }
+    generateApiKey("POST");
+  }
+
+  function generateApiKey(method: "POST" | "PUT") {
+    if (apiKeyLoading) return;
+    apiKeyLoading = true;
+    apiGenerateApiKey(method)
+      .then((result) => {
+        generatedApiKey = result.apiKey;
+        apiKeyConfigured = true;
+        apiKeyActionLabel = "Regenerate API key";
+        apiKeyCopied = false;
+        apiKeyConfirmOpen = false;
+        apiKeyDialogOpen = true;
+      })
+      .catch(() => showToast("error", "Could not generate API key"))
+      .finally(() => {
+        apiKeyLoading = false;
+      });
+  }
+
+  function copyApiKey() {
+    navigator.clipboard
+      .writeText(generatedApiKey)
+      .then(() => {
+        apiKeyCopied = true;
+        showToast("success", "API key copied");
+      })
+      .catch(() => showToast("error", "Could not copy API key"));
   }
 </script>
 
@@ -128,6 +200,24 @@
     <!-- theme + avatar -->
     <div class="flex items-center gap-2 shrink-0">
       {#if page.data.user}
+        <Tooltip content={apiKeyActionLabel} side="top">
+          <button
+            type="button"
+            onclick={requestApiKeyGeneration}
+            disabled={apiKeyLoading}
+            class="flex items-center justify-center h-8 w-8 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors disabled:opacity-50"
+            aria-label={apiKeyActionLabel}
+          >
+            {#if apiKeyConfigured}
+              <span class:animate-spin={apiKeyLoading}>
+                <RefreshCw size={15} />
+              </span>
+            {:else}
+              <Shield size={15} />
+            {/if}
+          </button>
+        </Tooltip>
+
         <Tooltip content={viewAsPublic ? "View as private" : "View as public"} side="top">
           <button
             type="button"
@@ -236,6 +326,60 @@
     </div>
   </div>
 </header>
+
+<Dialog bind:open={apiKeyConfirmOpen}>
+  <DialogContent aria-label="Confirm API key regeneration">
+    <DialogHeader>
+      <DialogTitle>Regenerate API key?</DialogTitle>
+      <DialogDescription class="mt-1.5">
+        The current my-memos key will be replaced immediately.
+      </DialogDescription>
+    </DialogHeader>
+
+    <DialogFooter class="mt-5 gap-2">
+      <Button variant="outline" onclick={() => (apiKeyConfirmOpen = false)}>Cancel</Button>
+      <Button onclick={() => generateApiKey("PUT")} disabled={apiKeyLoading}>Regenerate</Button>
+    </DialogFooter>
+  </DialogContent>
+</Dialog>
+
+<Dialog bind:open={apiKeyDialogOpen}>
+  <DialogContent aria-label="API key">
+    <DialogHeader>
+      <div class="flex items-start justify-between gap-4">
+        <div>
+          <DialogTitle>API key generated</DialogTitle>
+          <DialogDescription class="mt-1.5">
+            Copy this key now. It cannot be viewed again after this dialog closes.
+          </DialogDescription>
+        </div>
+        <Button
+          variant="ghost"
+          size="icon"
+          class="h-7 w-7 shrink-0 text-muted-foreground"
+          onclick={() => (apiKeyDialogOpen = false)}
+          aria-label="Close"
+        >
+          <X size={14} />
+        </Button>
+      </div>
+    </DialogHeader>
+
+    <div class="mt-5 flex items-center gap-2 rounded-md border border-border bg-muted p-2">
+      <code class="min-w-0 flex-1 break-all px-1 font-mono text-xs text-foreground"
+        >{generatedApiKey}</code
+      >
+      <Button variant="outline" size="sm" class="shrink-0 gap-1.5" onclick={copyApiKey}>
+        <Copy size={13} />
+        {#if apiKeyCopied}Copied{:else}Copy{/if}
+      </Button>
+    </div>
+
+    <DialogFooter class="mt-5">
+      <Button onclick={() => (apiKeyDialogOpen = false)}>Done</Button>
+    </DialogFooter>
+  </DialogContent>
+</Dialog>
 
 <style>
   .masthead-wordmark {

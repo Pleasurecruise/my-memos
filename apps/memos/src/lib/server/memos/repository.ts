@@ -13,6 +13,7 @@ const SORT_VALUE_RE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/;
 export function memoFromRow(row: MemoRow): Memo {
   return {
     id: row.id,
+    r2Key: row.r2Key,
     content: row.excerpt,
     tags: row.tagsJson,
     createdAt: row.createdAt,

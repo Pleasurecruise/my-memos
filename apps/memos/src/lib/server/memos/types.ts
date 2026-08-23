@@ -52,6 +52,7 @@ export interface MemoContentRecord {
 
 export interface AgentMemoResult {
   id: string;
+  r2Key: string;
   content: string;
   tags: string[];
   createdAt: string;

@@ -50,8 +50,11 @@ export const publicHttpUrl = z
     );
   }, "URL must use HTTP(S) and address a public host without embedded credentials.");
 
-export function formatMemo(memo: { id: string; createdAt: string; tags: string[] }, body: string) {
-  return `id: ${memo.id}\n[${memo.createdAt.slice(0, 10)}] tags: ${memo.tags.join(", ") || "none"}\n${body}`;
+export function formatMemo(
+  memo: { id: string; r2Key: string; createdAt: string; tags: string[] },
+  body: string,
+) {
+  return `id: ${memo.id}\nr2Key: ${memo.r2Key}\n[${memo.createdAt.slice(0, 10)}] tags: ${memo.tags.join(", ") || "none"}\n${body}`;
 }
 
 export function requireOk(response: Response, source: string) {

@@ -2,7 +2,7 @@
 
 A personal memo app built with SvelteKit, deployed as a Cloudflare Worker.
 
-- **Storage** — D1 for memo indexes and searchable body mirrors, R2 for canonical markdown, KV for disposable caches
+- **Storage** — D1 for memo indexes and searchable body mirrors, R2 for canonical markdown, KV for disposable caches, and a Durable Object for the generated API key
 - **Auth** — Google OAuth via Better Auth; optional single-user gating with `ALLOWED_EMAIL`
 - **AI chat** — Cloudflare AI Gateway with memo-aware tools (list, search, create, update, delete)
 - **Stack** — SvelteKit · Drizzle ORM · pnpm workspace · adapter-cloudflare
@@ -11,7 +11,8 @@ See [`docs/`](docs/) for architecture, deployment, and design system details.
 
 ## MCP client
 
-Connect a Streamable HTTP MCP client to the public endpoint with the fixed API key:
+Generate an API key from the authenticated application masthead, then connect a Streamable HTTP
+MCP client to the public endpoint:
 
 ```json
 {
@@ -20,14 +21,17 @@ Connect a Streamable HTTP MCP client to the public endpoint with the fixed API k
       "type": "streamable-http",
       "url": "https://memos.you-find.me/api/mcp",
       "headers": {
-        "Authorization": "Bearer ${MCP_API_KEY}"
+        "Authorization": "Bearer ${MY_MEMOS_API_KEY}"
       }
     }
   }
 }
 ```
 
-Replace `${MCP_API_KEY}` with the configured secret, or use the client's environment-variable expansion when supported. The endpoint supports MCP `2026-07-28` and stateless `2025-11-25` clients. It does not issue an `Mcp-Session-Id`.
+The plaintext key is shown only when generated or regenerated. Replace
+`${MY_MEMOS_API_KEY}` with that value, or use the client's environment-variable expansion. The
+endpoint supports MCP `2026-07-28` and stateless `2025-11-25` clients. It does not issue an
+`Mcp-Session-Id`.
 
 ## License
 

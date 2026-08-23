@@ -23,7 +23,6 @@
       "CF_AIG_TOKEN",
       "GOOGLE_CLIENT_ID",
       "GOOGLE_CLIENT_SECRET",
-      "MCP_API_KEY",
       "TAVILY_API_KEY"
     ]
   },
@@ -54,6 +53,15 @@
       "remote": true
     }
   ],
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "API_KEY",
+        "class_name": "ApiKeyDurableObject",
+        "script_name": "my-knowledge"
+      }
+    ]
+  },
   "observability": {
     "logs": {
       "enabled": true,

@@ -23,8 +23,9 @@ Browser (in-memory Svelte Chat store)
   -> typed domain operations in apps/memos/src/lib/server
   -> Cloudflare bindings
      - D1: structured memo indexes, searchable body mirrors, and auth tables
-     - R2: full memo markdown + agent memory files
+     - R2: full memo markdown and agent memory files
      - KV: derived caches
+     - Durable Object: this project's single generated API key
 ```
 
 ## Workspace Structure
@@ -213,6 +214,10 @@ Agent tools are defined once as MCP tools in `apps/memos/src/lib/server/mcp`. Th
 
 ## API Surface
 
+Memo responses use the shared `Memo` contract and include `id`, `r2Key`, `content`, tags,
+timestamps, visibility, pin, favorite, and archive state. `r2Key` is the canonical object path used
+for the memo body in R2.
+
 ### `/api/memos`
 
 File: [apps/memos/src/routes/api/memos/+server.ts](../apps/memos/src/routes/api/memos/+server.ts)
@@ -252,17 +257,35 @@ Behavior:
 - request cancellation propagates to pi, the model request, and MCP tool calls
 - after success, `platform.ctx.waitUntil()` updates memory from only the latest user turn and newly generated assistant reply
 
-### `/api/mcp`
+### External Memo Integrations
 
-File: `apps/memos/src/routes/api/mcp/+server.ts`
+External REST and MCP clients share one API key but have independent transport adapters. REST
+routes call memo domain services directly and return structured JSON. MCP maps the same domain
+capabilities to `get_tags`, `list_memos`, `search_memos`, `create_memo`, `update_memo`, and
+`delete_memo`. Web search, URL reading, documentation lookup, memory updates, and visual rendering
+belong to the authenticated in-product Agent and cannot be invoked with the external API key.
 
-- single stateless `POST` endpoint serving MCP `2026-07-28` plus a stateless `2025-11-25` initialize fallback; protocol sessions are not issued and session headers are rejected
-- external clients authenticate with `Authorization: Bearer <MCP_API_KEY>`
-- the fixed key has all remotely exposed tool permissions; no token table, token-management API, or scope store exists
-- external tools: `get_tags`, `list_memos`, `search_memos`, `create_memo`, `update_memo`, `delete_memo`, `web_search`, `fetch_raw`, `fetch_url`, `lookup_docs`
-- in-product-only tools: `render_chart`, `render_svg`, `render_mermaid`, `render_widget`; these are UI rendering instructions and are never registered for API-key principals
-- write tools execute sequentially; read and render tools may execute in parallel
-- URL-reading tools accept only public HTTP(S) targets without embedded credentials, reject localhost/private/link-local address literals, and refuse redirects; Workers also enables `global_fetch_strictly_public` as a runtime-level egress boundary
+An authenticated user manages the key through `/api/settings/api-key`. `GET` reports its
+status and creation time. `POST` generates a key and `PUT` confirms regeneration. Successful writes
+replace the authoritative record and return the new plaintext once. The server stores
+its SHA-256 digest and creation time in the
+`my-memos-api-key` Durable Object instance. The class is exported by the my-knowledge Worker; the
+instance is separate from the `my-knowledge-api-key` and `my-moment-api-key` instances. Generation
+replaces one record, so the previous my-memos key is immediately invalid. Authentication never falls
+back to R2 or KV. Generated keys use the `sk-` prefix.
+
+The REST surface uses `Authorization: Bearer <key>`:
+
+- `GET /api/v1/memos` returns `{ memos, nextCursor }` and supports cursor, limit, search, date,
+  tags, public, archive, favorite, and updated-time filters.
+- `POST /api/v1/memos` creates a memo.
+- `GET`, `PATCH`, and `DELETE /api/v1/memos/[id]` read, update, and delete one memo.
+- `GET /api/v1/tags` returns tag counts.
+
+`POST /api/mcp` exposes the same allowlist through a stateless MCP handler. It serves the modern
+`2026-07-28` protocol and the stateless `2025-11-25` initialize fallback, does not issue protocol
+sessions, and rejects session headers. Mutating tools execute sequentially; reads may execute in
+parallel.
 
 ## Memory Update Lifecycle
 

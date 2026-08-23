@@ -2,6 +2,7 @@ export type MemoVisibility = "public" | "private";
 
 export interface Memo {
   id: string;
+  r2Key: string;
   content: string;
   tags: string[];
   createdAt: string;
