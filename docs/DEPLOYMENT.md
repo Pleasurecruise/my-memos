@@ -131,6 +131,9 @@ Verify these paths after deployment:
 
 - `/`
   Public memo list should render.
+- `/memo/[id]`
+  Public permalinks open the matching home-feed card without a second document load; private
+  memos remain subject to authentication.
 - `/archive`
   Redirects unauthenticated users to `/`; there is no standalone `/login` route.
 - `/favorites`
@@ -171,7 +174,7 @@ Some clients name the transport `http` instead of `streamable-http`; the URL and
 ## Operational Notes
 
 - R2 is canonical for memo bodies. The current D1 `excerpt` field mirrors the trimmed body for list rendering and search. Memo lists and tag counts are queried from D1; KV contains only disposable generated-image and font caches, so deleting KV entries must not lose source data.
-- X post import depends on outbound HTTPS access to the public FxTwitter API. The integration sends only the numeric post ID and a descriptive user agent; it requires no secret or Cloudflare binding. FxTwitter failures leave D1 and R2 unchanged.
+- X post import depends on outbound HTTPS access to the public FxTwitter API. The integration sends only the numeric post ID and a descriptive user agent; it requires no secret or Cloudflare binding. Imported photos remain external and are stored as Markdown links in the memo body; image bytes are not proxied or copied to R2. FxTwitter failures leave D1 and R2 unchanged.
 - The chat route reads `agent/PROMPT.md` and `agent/MEMORY.md` from `MEMOS_BUCKET`. Missing files degrade gracefully, but chat behavior will change.
 - Chat runs as a streaming HTTP invocation, not a Queue consumer. This deployment intentionally leaves `limits.cpu_ms` unset because it targets Workers Free, whose CPU ceiling is 10 ms per invocation; the 30-second default and configurable 5-minute maximum belong to Workers Paid. Model, R2, D1, and MCP I/O wait time does not consume CPU time, and the response stream keeps the HTTP invocation alive while the client remains connected.
 - Successful chats schedule memory maintenance with `waitUntil`; failures and R2 ETag conflicts never fail the already completed chat response.

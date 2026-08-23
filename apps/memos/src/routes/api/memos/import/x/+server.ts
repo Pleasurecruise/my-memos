@@ -34,8 +34,21 @@ export const POST: RequestHandler = async ({ request, platform, locals }) => {
     return json({ error: "X returned an unsupported post response." }, { status: 502 });
   }
 
-  const { text, url, author } = parsed.data.tweet;
-  const content = `${text}\n\n— ${author.name} (@${author.screen_name})\n${url}`;
+  const { text, url, author, media } = parsed.data.tweet;
+  let content = text;
+  if (media.photos?.length) {
+    const images = media.photos.map(({ url: photoUrl, altText }) => {
+      const alt = altText
+        .replace(/\s+/g, " ")
+        .trim()
+        .replace(/\\/g, "\\\\")
+        .replace(/\[/g, "\\[")
+        .replace(/\]/g, "\\]");
+      return `![${alt}](<${photoUrl}>)`;
+    });
+    content += `\n\n${images.join("\n\n")}`;
+  }
+  content += `\n\n— ${author.name} (@${author.screen_name})\n${url}`;
   const memo = await createMemo(platform.env.DB, platform.env.MEMOS_BUCKET, {
     content,
     visibility: result.data.visibility,

@@ -10,7 +10,7 @@
     "test": "vp test"
   },
   "dependencies": {
-    "@lucide/svelte": "1.32.0",
+    "@lucide/svelte": "1.33.0",
     "@modelcontextprotocol/server": "2.0.0",
     "@my-memos/ai-core": "workspace:*",
     "@my-memos/ui": "workspace:*",
@@ -18,7 +18,7 @@
     "better-auth": "1.7.1",
     "date-fns": "4.4.0",
     "defuddle": "0.19.2",
-    "dompurify": "3.4.13",
+    "dompurify": "3.4.14",
     "drizzle-orm": "1.0.0-rc.2",
     "entities": "8.0.0",
     "marked": "18.0.10",

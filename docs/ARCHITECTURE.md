@@ -84,6 +84,8 @@ The app uses a small local chat protocol under `apps/memos/src/lib/chat`: shared
 ### Public Pages
 
 - `/` loads memos and tag counts with optional filters.
+- `/memo/[id]` is the canonical share entry for a memo. It applies visibility checks and share
+  metadata before handing off to the matching card in the home feed.
 - Unauthenticated users can browse public memos.
 - Authenticated users can browse all non-archived memos.
 - Authenticated users can toggle `view=public` to browse only public memos without private memo data in the page payload.
@@ -200,8 +202,9 @@ operations call memo domain functions instead of issuing their own D1/R2 queries
 
 X post import is a narrow external boundary: the server accepts only HTTPS status URLs on
 `x.com` or `twitter.com`, extracts the numeric post ID, and requests the fixed
-`api.fxtwitter.com` host without user credentials. The resulting text, author attribution, and
-canonical source URL pass through the normal memo creation service and D1/R2 write path.
+`api.fxtwitter.com` host without user credentials. The resulting text, photo URLs rendered as
+separate Markdown image blocks, author attribution, and canonical source URL pass through the
+normal memo creation service and D1/R2 write path.
 X imports set the new memo's `favorite` flag during that same creation path.
 
 The Wrangler SQL migrations are authoritative for the deployed schema. The Drizzle mirror (`apps/memos/src/lib/server/db/schema.ts`) describes that table to application code and exports `MemoRow` via `typeof memos.$inferSelect`, eliminating hand-written row types.

@@ -28,6 +28,15 @@ describe("X post import", () => {
           text: "A useful post",
           url: "https://x.com/Cloudflare/status/2084626665670398004",
           author: { name: "Cloudflare", screen_name: "Cloudflare" },
+          media: {
+            photos: [
+              {
+                type: "photo",
+                url: "https://pbs.twimg.com/media/example.jpg",
+                altText: "An architecture diagram",
+              },
+            ],
+          },
         },
       }).success,
     ).toBe(true);

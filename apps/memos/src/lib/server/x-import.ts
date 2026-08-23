@@ -1,5 +1,11 @@
 import { z } from "zod";
 
+const xPostPhotoSchema = z.object({
+  type: z.literal("photo"),
+  url: z.url(),
+  altText: z.string(),
+});
+
 export const xPostResponseSchema = z.object({
   tweet: z.object({
     text: z.string().trim().min(1),
@@ -7,6 +13,9 @@ export const xPostResponseSchema = z.object({
     author: z.object({
       name: z.string().trim().min(1),
       screen_name: z.string().trim().min(1),
+    }),
+    media: z.object({
+      photos: z.array(xPostPhotoSchema).optional(),
     }),
   }),
 });
