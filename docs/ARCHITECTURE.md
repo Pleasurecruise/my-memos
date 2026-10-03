@@ -99,7 +99,10 @@ The main page load lives in [apps/memos/src/routes/+page.server.ts](../apps/memo
 
 `/robots.txt`, `/sitemap.xml`, `/rss.xml`, and `/llms.txt` are generated from public, non-archived
 memos by [apps/memos/src/lib/server/discovery](../apps/memos/src/lib/server/discovery/index.ts).
-`robots.txt` disallows `/api/` (except memo OG images), `/archive`, `/favorites`, and `/chat`.
+`robots.txt` disallows `/api/` (except memo OG images and the OpenAPI document), `/archive`,
+`/favorites`, and `/chat`. `/.well-known/api-catalog` publishes an RFC 9727 linkset for the REST
+API, and the home page sends RFC 8288 `Link` headers for `api-catalog`, `service-desc`,
+`service-doc`, and `describedby` (`/llms.txt`).
 Memo markdown renders as escaped text during SSR so crawlers receive memo content without running
 JavaScript.
 
@@ -290,6 +293,10 @@ The REST surface uses `Authorization: Bearer <key>`:
 - `POST /api/v1/memos` creates a memo.
 - `GET`, `PATCH`, and `DELETE /api/v1/memos/[id]` read, update, and delete one memo.
 - `GET /api/v1/tags` returns tag counts.
+
+The OpenAPI 3.1 description is a static asset at
+[apps/memos/static/api/v1/openapi.json](../apps/memos/static/api/v1/openapi.json); update it with
+any REST route change.
 
 `POST /api/mcp` exposes the same allowlist through a stateless MCP handler. It serves the modern
 `2026-07-28` protocol and the stateless `2025-11-25` initialize fallback, does not issue protocol

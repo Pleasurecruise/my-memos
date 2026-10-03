@@ -23,13 +23,16 @@ function cloudflareWorkersShim(): Plugin {
   };
 }
 
-export default defineConfig(({ command }) => ({
+export default defineConfig(({ command, mode }) => ({
   envDir: command === "build" ? ".void/build-env" : ".",
   plugins: [
     voidPlugin(),
     sveltekit({
       preprocess: vitePreprocess(),
-      adapter: adapter({ config: "./wrangler.json" }),
+      adapter: adapter({
+        config: "./wrangler.json",
+        platformProxy: { remoteBindings: mode !== "test" },
+      }),
     }),
     tailwindcss(),
     cloudflareWorkersShim(),

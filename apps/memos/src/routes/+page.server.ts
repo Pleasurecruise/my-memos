@@ -22,7 +22,15 @@ function activitySince(): string {
   return start.toISOString();
 }
 
-export const load: PageServerLoad = async ({ url, locals }) => {
+export const load: PageServerLoad = async ({ url, locals, setHeaders }) => {
+  setHeaders({
+    Link: [
+      '</.well-known/api-catalog>; rel="api-catalog"',
+      '</api/v1/openapi.json>; rel="service-desc"; type="application/vnd.oai.openapi+json"',
+      '<https://github.com/Pleasurecruise/my-memos/blob/main/docs/ARCHITECTURE.md#external-memo-integrations>; rel="service-doc"; type="text/html"',
+      '</llms.txt>; rel="describedby"; type="text/plain"',
+    ].join(", "),
+  });
   const filters = parsePageFilters(url);
   if (!isMemoSearchWithinLimit(filters.search)) {
     error(400, "Search query is too long.");

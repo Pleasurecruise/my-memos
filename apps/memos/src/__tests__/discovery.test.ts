@@ -32,6 +32,7 @@ describe("crawler discovery", () => {
 
     expect(robots).toContain("User-agent: *\nAllow: /\n");
     expect(robots).toContain("Allow: /api/memos/*/og");
+    expect(robots).toContain("Allow: /api/v1/openapi.json");
     expect(robots).toContain("Disallow: /api/");
     expect(robots).toContain("Disallow: /chat");
     expect(robots).toContain("Sitemap: https://memos.example.com/sitemap.xml");

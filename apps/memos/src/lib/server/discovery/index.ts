@@ -42,6 +42,7 @@ export function createRobotsText(origin: URL): string {
     "User-agent: *",
     "Allow: /",
     "Allow: /api/memos/*/og",
+    "Allow: /api/v1/openapi.json",
     ...DISALLOWED_PATHS.map((path) => `Disallow: ${path}`),
     "",
     `Sitemap: ${new URL("/sitemap.xml", origin).href}`,
