@@ -11,21 +11,21 @@
     "d1:migrate:remote": "wrangler d1 migrations apply DB --remote --config apps/memos/wrangler.json",
     "deploy": "pnpm --filter @my-memos/app exec void deploy",
     "test": "vp run -r test",
-    "check": "vp run --filter ./apps/memos prepare && vp check && svelte-check --workspace packages/ui --tsconfig tsconfig.json && svelte-check --workspace apps/memos --tsconfig tsconfig.check.json && tsgo --noEmit",
+    "check": "vp run --filter ./apps/memos prepare && vp check && vp run -r typecheck",
     "lint": "vp lint",
     "format": "vp fmt"
   },
   "devDependencies": {
-    "@sveltejs/vite-plugin-svelte": "7.3.0",
+    "@sveltejs/vite-plugin-svelte": "7.3.1",
     "@tailwindcss/vite": "4.3.3",
-    "@types/node": "26.2.0",
-    "@typescript/native-preview": "beta",
-    "svelte": "5.56.10",
+    "@types/node": "26.6.4",
+    "@typescript/native": "npm:typescript@7.0.2",
+    "svelte": "5.57.1",
     "svelte-check": "4.7.6",
     "tailwindcss": "4.3.3",
     "typescript": "6.0.3",
-    "vite-plus": "0.2.9",
-    "wrangler": "4.125.0"
+    "vite-plus": "1.0.0",
+    "wrangler": "4.147.0"
   },
-  "packageManager": "pnpm@11.21.0"
+  "packageManager": "pnpm@12.8.1"
 }

@@ -10,14 +10,14 @@ import {
   memoSearchSchema,
   searchAgentMemos,
   updateMemo,
-} from "$lib/server/memos";
-import { renderChartSchema } from "$lib/visual/chart";
-import { normalizeMermaidCode, renderMermaidSchema } from "$lib/visual/mermaid";
-import { renderSvgSchema } from "$lib/visual/svg";
-import { renderWidgetSchema } from "$lib/visual/widget";
+} from "#lib/server/memos/index.ts";
+import { renderChartSchema } from "#lib/visual/chart.ts";
+import { normalizeMermaidCode, renderMermaidSchema } from "#lib/visual/mermaid.ts";
+import { renderSvgSchema } from "#lib/visual/svg.ts";
+import { renderWidgetSchema } from "#lib/visual/widget.ts";
 import { DomainError } from "./errors";
-import { updateMemory } from "$lib/server/chat/memory";
-import type { AppEnv } from "$lib/server/types";
+import { updateMemory } from "#lib/server/chat/memory.ts";
+import type { AppEnv } from "#lib/server/types.ts";
 import type { DomainOperation } from "./types";
 import {
   cleanMarkdown,

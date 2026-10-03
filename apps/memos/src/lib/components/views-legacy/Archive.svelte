@@ -1,7 +1,7 @@
 <script lang="ts">
   import { format, isSameDay } from "date-fns";
   import { untrack } from "svelte";
-  import { updateQuery } from "$lib/utils";
+  import { updateQuery } from "#lib/utils/index.ts";
   import {
     Button,
     Dialog,
@@ -12,13 +12,13 @@
     DialogTitle,
   } from "@my-memos/ui";
   import { RotateCcw, Trash2 } from "@lucide/svelte";
-  import type { Memo } from "$lib/types";
-  import { createDeleteActions, createRestoreActions } from "$lib/state/memo-actions.svelte";
-  import { showToast } from "$lib/state/toast.svelte";
-  import { apiListMemos } from "$lib/services/memos";
-  import MemoCard from "$lib/components/MemoCard.svelte";
-  import MarkdownContent from "$lib/components/MarkdownContent.svelte";
-  import MemoFilterBar from "$lib/components/MemoFilterBar.svelte";
+  import type { Memo } from "#lib/types.ts";
+  import { createDeleteActions, createRestoreActions } from "#lib/state/memo-actions.svelte.ts";
+  import { showToast } from "#lib/state/toast.svelte.ts";
+  import { apiListMemos } from "#lib/services/memos.ts";
+  import MemoCard from "#lib/components/MemoCard.svelte";
+  import MarkdownContent from "#lib/components/MarkdownContent.svelte";
+  import MemoFilterBar from "#lib/components/MemoFilterBar.svelte";
 
   interface ArchiveContentProps {
     memos: Memo[];

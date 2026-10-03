@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
 
 const promptCache = vi.hoisted(() => ({ invalidateMarkdown: vi.fn() }));
-vi.mock("$lib/server/chat/prompt-cache", () => promptCache);
+vi.mock("#lib/server/chat/prompt-cache.ts", () => promptCache);
 
-import { updateMemory } from "$lib/server/chat/memory";
+import { updateMemory } from "#lib/server/chat/memory.ts";
 
 const MEMORY = "# Memory\n\n- Likes tea\n";
 const WRITE_OPTIONS = {

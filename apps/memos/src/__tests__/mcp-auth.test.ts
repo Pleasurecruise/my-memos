@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vite-plus/test";
 import { z } from "zod";
-import { generateApiKey, getApiKeyStatus, verifyApiKey } from "$lib/server/apikey";
+import { generateApiKey, getApiKeyStatus, verifyApiKey } from "#lib/server/apikey/index.ts";
 
 describe("generated API key", () => {
   it("stores one digest and immediately invalidates the previous key", async () => {

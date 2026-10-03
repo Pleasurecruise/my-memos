@@ -30,11 +30,11 @@ The current Worker expects these bindings to exist:
 | `API_KEY`      | Durable Object | API key digest and creation time     |
 | `ASSETS`       | Assets         | Built SvelteKit client assets        |
 
-Current binding names and IDs live in [apps/memos/wrangler.json](../apps/memos/wrangler.json). Runtime TypeScript declarations live in [apps/memos/src/app.d.ts](../apps/memos/src/app.d.ts). Void is used for framework build and deployment integration, while Wrangler remains the source of truth for the existing D1, KV, and R2 bindings.
+Current binding names and IDs live in [apps/memos/wrangler.json](../apps/memos/wrangler.json). Runtime TypeScript declarations live in [apps/memos/src/lib/server/types.ts](../apps/memos/src/lib/server/types.ts) (`AppEnv`), which [apps/memos/src/app.d.ts](../apps/memos/src/app.d.ts) merges into `Cloudflare.Env`. Server code reads bindings with `import { env } from "cloudflare:workers"`; SvelteKit 3 and `@sveltejs/adapter-cloudflare` 8 no longer provide `platform`. Void is used for framework build and deployment integration, while Wrangler remains the source of truth for the existing D1, KV, and R2 bindings.
 
 ## Required Environment Variables
 
-`App.Platform.env` is declared in [apps/memos/src/app.d.ts](../apps/memos/src/app.d.ts). In practice, this app needs:
+`AppEnv` is declared in [apps/memos/src/lib/server/types.ts](../apps/memos/src/lib/server/types.ts). In practice, this app needs:
 
 | Variable               | Required              | Purpose                                             |
 | ---------------------- | --------------------- | --------------------------------------------------- |
@@ -47,7 +47,7 @@ Current binding names and IDs live in [apps/memos/wrangler.json](../apps/memos/w
 | `CF_AIG_TOKEN`         | yes for chat          | Authenticates the Gateway; it is not a provider key |
 | `TAVILY_API_KEY`       | yes for chat          | Tavily API key for web search                       |
 
-Local development uses [apps/memos/.env.example](../apps/memos/.env.example) as the template. Copy it to `apps/memos/.env.local`; Void and Vite load it from the application package during development. Production builds switch Vite's `envDir` to `.void/build-env`, so local secrets are not copied into Worker vars. Production secrets should be managed with Wrangler secrets and environment vars, not committed files.
+Local development reads the variables above from `apps/memos/.env`, the only local env file Void supports; Void refuses to start when `.env.example` or `.env.local` exist. Production builds switch Vite's `envDir` to `.void/build-env`, so local secrets are not copied into Worker vars. Production secrets should be managed with Wrangler secrets and environment vars, not committed files.
 
 ## External API Key
 

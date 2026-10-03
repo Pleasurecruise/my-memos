@@ -3,14 +3,14 @@
   import { untrack } from "svelte";
   import { Button } from "@my-memos/ui";
   import { Heart, Lock } from "@lucide/svelte";
-  import type { Memo } from "$lib/types";
-  import { createFavoriteActions } from "$lib/state/memo-actions.svelte";
-  import { apiListMemos } from "$lib/services/memos";
-  import { showToast } from "$lib/state/toast.svelte";
-  import { groupBy, updateQuery } from "$lib/utils";
-  import MarkdownContent from "$lib/components/MarkdownContent.svelte";
-  import XImportForm from "$lib/components/XImportForm.svelte";
-  import Masthead from "$lib/components/layout/Masthead.svelte";
+  import type { Memo } from "#lib/types.ts";
+  import { createFavoriteActions } from "#lib/state/memo-actions.svelte.ts";
+  import { apiListMemos } from "#lib/services/memos.ts";
+  import { showToast } from "#lib/state/toast.svelte.ts";
+  import { groupBy, updateQuery } from "#lib/utils/index.ts";
+  import MarkdownContent from "#lib/components/MarkdownContent.svelte";
+  import XImportForm from "#lib/components/XImportForm.svelte";
+  import Masthead from "#lib/components/layout/Masthead.svelte";
 
   interface Props {
     memos: Memo[];

@@ -4,7 +4,7 @@ import type {
   AssistantMessage,
   ToolResultMessage,
 } from "@my-memos/ai-core";
-import type { ChatEvent, ChatMessage } from "$lib/chat/types";
+import type { ChatEvent, ChatMessage } from "#lib/chat/types.ts";
 import { messageText } from "./utils";
 
 const EMPTY_USAGE = {

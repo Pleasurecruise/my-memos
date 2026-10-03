@@ -1,4 +1,4 @@
-import type { VisualBlock } from "$lib/types";
+import type { VisualBlock } from "#lib/types.ts";
 
 export type ArticleVisualPart =
   | { type: "html"; html: string }

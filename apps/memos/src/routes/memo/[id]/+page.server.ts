@@ -1,47 +1,61 @@
+import { env } from "cloudflare:workers";
 import { error } from "@sveltejs/kit";
-import { getMemo } from "$lib/server/memos";
-import { stripMarkdown } from "$lib/server/og";
+import { getMemo } from "#lib/server/memos/index.ts";
+import { memoSummary, memoTitle, memoUrl, siteOrigin } from "#lib/server/discovery/index.ts";
+import { SITE_NAME } from "#lib/site.ts";
 
 export const load = async ({
   params,
-  platform,
   url,
   locals,
 }: {
   params: { id: string };
-  platform: App.Platform;
   url: URL;
   locals: App.Locals;
 }) => {
-  if (!platform) {
-    error(500, "Cloudflare platform bindings are unavailable.");
-  }
-
   const { id } = params;
-  const memo = await getMemo(platform.env.DB, platform.env.MEMOS_BUCKET, id);
+  const memo = await getMemo(env.DB, env.MEMOS_BUCKET, id);
 
   if (!memo || (memo.visibility === "private" && !locals.user)) {
     error(404, "Memo not found.");
   }
 
-  if (memo.visibility === "private") {
+  if (memo.visibility === "private" || memo.archived) {
     return { memo, meta: { robots: "noindex, nofollow" } };
   }
 
-  const plain = stripMarkdown(memo.content);
-  const description =
-    plain.length > 0
-      ? plain.slice(0, 160) + (plain.length > 160 ? "…" : "")
-      : "A memo from My Memos";
+  const origin = siteOrigin(env, url);
+  const canonical = memoUrl(origin, id);
+  const description = memoSummary(memo.content);
+  const title = memoTitle(memo.content);
   const imageVersion = encodeURIComponent(memo.updatedAt);
+  const ogImage = new URL(`/api/memos/${id}/og?v=${imageVersion}`, origin).href;
 
   return {
     memo,
     meta: {
-      title: description.slice(0, 60),
+      title,
       description,
-      ogImage: `${url.origin}/api/memos/${id}/og?v=${imageVersion}`,
+      canonical,
+      ogImage,
       ogType: "article",
+      publishedTime: memo.createdAt,
+      modifiedTime: memo.updatedAt,
+      tags: memo.tags,
+      jsonLd: {
+        "@context": "https://schema.org",
+        "@type": "SocialMediaPosting",
+        headline: title,
+        description,
+        url: canonical,
+        mainEntityOfPage: canonical,
+        datePublished: memo.createdAt,
+        dateModified: memo.updatedAt,
+        keywords: memo.tags,
+        image: ogImage,
+        articleBody: memo.content,
+        isPartOf: { "@type": "WebSite", name: SITE_NAME, url: new URL("/", origin).href },
+      },
     },
   };
 };

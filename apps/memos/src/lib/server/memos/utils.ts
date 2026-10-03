@@ -1,4 +1,4 @@
-import { extractTags } from "$lib/utils/tags";
+import { extractTags } from "#lib/utils/tags.ts";
 
 export function createMemoId(now = new Date()): string {
   const stamp = now

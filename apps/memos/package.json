@@ -3,33 +3,37 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
+  "imports": {
+    "#lib/*": "./src/lib/*"
+  },
   "scripts": {
     "prepare": "void prepare && svelte-kit sync",
     "dev": "vp dev",
     "build": "vp build",
-    "test": "vp test"
+    "test": "vp test",
+    "typecheck": "svelte-check --tsconfig ./tsconfig.check.json"
   },
   "dependencies": {
-    "@lucide/svelte": "1.33.0",
-    "@modelcontextprotocol/server": "2.0.0",
+    "@lucide/svelte": "1.50.0",
+    "@modelcontextprotocol/server": "2.2.0",
     "@my-memos/ai-core": "workspace:*",
     "@my-memos/ui": "workspace:*",
     "@resvg/resvg-wasm": "2.6.2",
-    "better-auth": "1.7.1",
+    "better-auth": "1.7.7",
     "date-fns": "4.4.0",
-    "defuddle": "0.19.2",
-    "dompurify": "3.4.14",
+    "defuddle": "0.19.4",
+    "dompurify": "3.4.16",
     "drizzle-orm": "1.0.0-rc.2",
-    "entities": "8.0.0",
-    "marked": "18.0.10",
-    "mermaid": "11.17.0",
+    "entities": "8.1.0",
+    "marked": "18.0.14",
+    "mermaid": "12.1.0",
     "turndown": "7.2.4",
-    "zod": "4.4.3"
+    "zod": "4.6.5"
   },
   "devDependencies": {
-    "@sveltejs/adapter-cloudflare": "7.2.9",
-    "@sveltejs/kit": "2.70.3",
+    "@sveltejs/adapter-cloudflare": "8.0.0",
+    "@sveltejs/kit": "3.0.0",
     "@types/turndown": "5.0.6",
-    "void": "0.10.12"
+    "void": "0.23.0"
   }
 }

@@ -1,7 +1,7 @@
 <script lang="ts">
   import DOMPurify from "dompurify";
   import { onMount } from "svelte";
-  import { renderMermaidCode } from "$lib/visual/mermaid";
+  import { renderMermaidCode } from "#lib/visual/mermaid.ts";
 
   interface Props {
     code: string;

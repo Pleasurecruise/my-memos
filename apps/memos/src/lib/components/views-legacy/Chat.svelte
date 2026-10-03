@@ -1,10 +1,10 @@
 <script lang="ts">
   import { ChatThread, ChatMessage, ChatInput } from "@my-memos/ui";
-  import { Chat } from "$lib/chat/chat.svelte";
-  import AppShell from "$lib/components/layout/AppShell.svelte";
-  import MarkdownContent from "$lib/components/MarkdownContent.svelte";
-  import MemoSearchResults from "$lib/components/chat/MemoSearchResults.svelte";
-  import { VisualCard } from "$lib/components/visual";
+  import { Chat } from "#lib/chat/chat.svelte.ts";
+  import AppShell from "#lib/components/layout/AppShell.svelte";
+  import MarkdownContent from "#lib/components/MarkdownContent.svelte";
+  import MemoSearchResults from "#lib/components/chat/MemoSearchResults.svelte";
+  import { VisualCard } from "#lib/components/visual/index.ts";
 
   interface Props {
     user: { image?: string | null | undefined; name: string } | null;

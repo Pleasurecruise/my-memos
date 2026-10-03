@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
-import type { Memo } from "$lib/types";
+import type { Memo } from "#lib/types.ts";
 
 const { apiUpdateMemo, invalidateAll } = vi.hoisted(() => ({
   apiUpdateMemo: vi.fn(),
@@ -7,13 +7,13 @@ const { apiUpdateMemo, invalidateAll } = vi.hoisted(() => ({
 }));
 
 vi.mock("$app/navigation", () => ({ invalidateAll }));
-vi.mock("$lib/services/memos", async (importOriginal) => {
-  const original = await importOriginal<typeof import("$lib/services/memos")>();
+vi.mock("#lib/services/memos.ts", async (importOriginal) => {
+  const original = await importOriginal<typeof import("#lib/services/memos.ts")>();
   return { ...original, apiUpdateMemo };
 });
-vi.mock("$lib/state/toast.svelte", () => ({ showToast: vi.fn() }));
+vi.mock("#lib/state/toast.svelte.ts", () => ({ showToast: vi.fn() }));
 
-import { createEditActions } from "$lib/state/memo-actions.svelte";
+import { createEditActions } from "#lib/state/memo-actions.svelte.ts";
 
 const firstMemo = {
   id: "first",

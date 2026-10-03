@@ -1,12 +1,12 @@
-import { verifyApiKey } from "$lib/server/apikey";
+import { env } from "cloudflare:workers";
+import { verifyApiKey } from "#lib/server/apikey/index.ts";
 import {
   createMemo,
   isValidMemoCursor,
   listMemos,
   memoDateSchema,
   memoSearchSchema,
-} from "$lib/server/memos";
-import { json } from "@sveltejs/kit";
+} from "#lib/server/memos/index.ts";
 import { z } from "zod";
 import type { RequestHandler } from "./$types";
 
@@ -41,19 +41,18 @@ const createMemoSchema = z.object({
   favorite: z.boolean().default(false),
 });
 
-export const GET: RequestHandler = async ({ request, url, platform }) => {
-  if (!platform) return json({ error: "Platform bindings unavailable." }, { status: 500 });
-  if (!(await verifyApiKey(request, platform.env.API_KEY))) {
-    return json(
+export const GET: RequestHandler = async ({ request, url }) => {
+  if (!(await verifyApiKey(request, env.API_KEY))) {
+    return Response.json(
       { error: "Unauthorized." },
       { status: 401, headers: { "WWW-Authenticate": "Bearer" } },
     );
   }
 
   const query = listQuerySchema.safeParse(Object.fromEntries(url.searchParams.entries()));
-  if (!query.success) return json({ error: "Invalid query parameters." }, { status: 400 });
+  if (!query.success) return Response.json({ error: "Invalid query parameters." }, { status: 400 });
   if (query.data.cursor && !isValidMemoCursor(query.data.cursor)) {
-    return json({ error: "Invalid cursor." }, { status: 400 });
+    return Response.json({ error: "Invalid cursor." }, { status: 400 });
   }
 
   let tags: string[] = [];
@@ -64,8 +63,8 @@ export const GET: RequestHandler = async ({ request, url, platform }) => {
       .filter(Boolean);
   }
 
-  return json(
-    await listMemos(platform.env.DB, {
+  return Response.json(
+    await listMemos(env.DB, {
       cursor: query.data.cursor,
       limit: query.data.limit,
       search: query.data.search,
@@ -79,17 +78,16 @@ export const GET: RequestHandler = async ({ request, url, platform }) => {
   );
 };
 
-export const POST: RequestHandler = async ({ request, platform }) => {
-  if (!platform) return json({ error: "Platform bindings unavailable." }, { status: 500 });
-  if (!(await verifyApiKey(request, platform.env.API_KEY))) {
-    return json(
+export const POST: RequestHandler = async ({ request }) => {
+  if (!(await verifyApiKey(request, env.API_KEY))) {
+    return Response.json(
       { error: "Unauthorized." },
       { status: 401, headers: { "WWW-Authenticate": "Bearer" } },
     );
   }
 
   const input = createMemoSchema.safeParse(await request.json());
-  if (!input.success) return json({ error: "Invalid memo payload." }, { status: 400 });
-  const memo = await createMemo(platform.env.DB, platform.env.MEMOS_BUCKET, input.data);
-  return json({ memo }, { status: 201 });
+  if (!input.success) return Response.json({ error: "Invalid memo payload." }, { status: 400 });
+  const memo = await createMemo(env.DB, env.MEMOS_BUCKET, input.data);
+  return Response.json({ memo }, { status: 201 });
 };

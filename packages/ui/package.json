@@ -13,11 +13,12 @@
   },
   "scripts": {
     "dev": "vp dev",
-    "build": "vp build"
+    "build": "vp build",
+    "typecheck": "svelte-check --tsgo --tsconfig ./tsconfig.json"
   },
   "dependencies": {
-    "@lucide/svelte": "1.33.0",
+    "@lucide/svelte": "1.50.0",
     "clsx": "2.1.1",
-    "tailwind-merge": "3.6.0"
+    "tailwind-merge": "3.7.0"
   }
 }

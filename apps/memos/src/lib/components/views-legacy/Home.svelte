@@ -3,9 +3,9 @@
   import { invalidateAll } from "$app/navigation";
   import { page } from "$app/state";
   import { untrack, onMount, tick } from "svelte";
-  import { updateQuery } from "$lib/utils";
-  import { apiCreateMemo, apiListMemos } from "$lib/services/memos";
-  import { showToast } from "$lib/state/toast.svelte";
+  import { updateQuery } from "#lib/utils/index.ts";
+  import { apiCreateMemo, apiListMemos } from "#lib/services/memos.ts";
+  import { showToast } from "#lib/state/toast.svelte.ts";
   import {
     Button,
     Dialog,
@@ -40,20 +40,20 @@
     ChevronRight,
     Share2,
   } from "@lucide/svelte";
-  import type { Memo, MemoVisibility, TagCount } from "$lib/types";
+  import type { Memo, MemoVisibility, TagCount } from "#lib/types.ts";
   import {
     createDeleteActions,
     createEditActions,
     createPinActions,
     createFavoriteActions,
     createArchiveActions,
-  } from "$lib/state/memo-actions.svelte";
-  import MemoCard from "$lib/components/MemoCard.svelte";
-  import MarkdownContent from "$lib/components/MarkdownContent.svelte";
-  import MarkdownEditor from "$lib/components/MarkdownEditor.svelte";
-  import MemoFilterBar from "$lib/components/MemoFilterBar.svelte";
+  } from "#lib/state/memo-actions.svelte.ts";
+  import MemoCard from "#lib/components/MemoCard.svelte";
+  import MarkdownContent from "#lib/components/MarkdownContent.svelte";
+  import MarkdownEditor from "#lib/components/MarkdownEditor.svelte";
+  import MemoFilterBar from "#lib/components/MemoFilterBar.svelte";
 
-  import { createTagAutocomplete } from "$lib/state/tag-autocomplete.svelte";
+  import { createTagAutocomplete } from "#lib/state/tag-autocomplete.svelte.ts";
 
   interface MainContentProps {
     memos: Memo[];

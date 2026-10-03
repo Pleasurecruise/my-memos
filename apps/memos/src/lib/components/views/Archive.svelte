@@ -1,6 +1,6 @@
 <script lang="ts">
   import { isSameDay, format } from "date-fns";
-  import { updateQuery, groupBy } from "$lib/utils";
+  import { updateQuery, groupBy } from "#lib/utils/index.ts";
   import { untrack } from "svelte";
   import {
     Button,
@@ -12,13 +12,13 @@
     DialogTitle,
   } from "@my-memos/ui";
   import { RotateCcw, Trash2, Lock } from "@lucide/svelte";
-  import type { Memo } from "$lib/types";
-  import { createDeleteActions, createRestoreActions } from "$lib/state/memo-actions.svelte";
-  import { showToast } from "$lib/state/toast.svelte";
-  import { apiListMemos } from "$lib/services/memos";
-  import MarkdownContent from "$lib/components/MarkdownContent.svelte";
+  import type { Memo } from "#lib/types.ts";
+  import { createDeleteActions, createRestoreActions } from "#lib/state/memo-actions.svelte.ts";
+  import { showToast } from "#lib/state/toast.svelte.ts";
+  import { apiListMemos } from "#lib/services/memos.ts";
+  import MarkdownContent from "#lib/components/MarkdownContent.svelte";
 
-  import Masthead from "$lib/components/layout/Masthead.svelte";
+  import Masthead from "#lib/components/layout/Masthead.svelte";
 
   interface Props {
     memos: Memo[];

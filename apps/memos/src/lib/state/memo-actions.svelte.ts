@@ -1,7 +1,7 @@
 import { invalidateAll } from "$app/navigation";
-import { apiDeleteMemo, apiUpdateMemo, memoSchema } from "$lib/services/memos";
-import { showToast } from "$lib/state/toast.svelte";
-import type { Memo, MemoVisibility } from "$lib/types";
+import { apiDeleteMemo, apiUpdateMemo, memoSchema } from "#lib/services/memos.ts";
+import { showToast } from "#lib/state/toast.svelte.ts";
+import type { Memo, MemoVisibility } from "#lib/types.ts";
 
 export function createEditActions() {
   let editingId = $state<string | null>(null);

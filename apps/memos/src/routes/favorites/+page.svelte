@@ -1,8 +1,8 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import AppShell from "$lib/components/layout/AppShell.svelte";
-  import OldFavorites from "$lib/components/views-legacy/Favorites.svelte";
-  import NewFavorites from "$lib/components/views/Favorites.svelte";
+  import AppShell from "#lib/components/layout/AppShell.svelte";
+  import OldFavorites from "#lib/components/views-legacy/Favorites.svelte";
+  import NewFavorites from "#lib/components/views/Favorites.svelte";
   import type { PageData } from "./$types";
 
   let { data }: { data: PageData } = $props();

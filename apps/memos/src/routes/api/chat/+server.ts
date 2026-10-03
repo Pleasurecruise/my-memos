@@ -1,26 +1,25 @@
-import { json } from "@sveltejs/kit";
+import { env } from "cloudflare:workers";
 import { connectMcp, runAgent, type McpConnection, type McpFetch } from "@my-memos/ai-core";
-import { chatRequestSchema } from "$lib/chat/protocol";
-import type { ChatEvent } from "$lib/chat/types";
-import { createMemosMcpHandler } from "$lib/server/mcp";
-import { createChatProvider } from "$lib/server/chat/model";
-import { GENERATIVE_UI_PROMPT } from "$lib/server/chat/prompt";
-import { loadPromptMemory } from "$lib/server/chat/prompt-cache";
-import { AgentChatStreamBridge, uiMessagesToPi } from "$lib/server/chat/bridge";
-import { chatErrorText } from "$lib/server/chat/utils";
+import { chatRequestSchema } from "#lib/chat/protocol.ts";
+import type { ChatEvent } from "#lib/chat/types.ts";
+import { createMemosMcpHandler } from "#lib/server/mcp/index.ts";
+import { createChatProvider } from "#lib/server/chat/model.ts";
+import { GENERATIVE_UI_PROMPT } from "#lib/server/chat/prompt.ts";
+import { loadPromptMemory } from "#lib/server/chat/prompt-cache.ts";
+import { AgentChatStreamBridge, uiMessagesToPi } from "#lib/server/chat/bridge.ts";
+import { chatErrorText } from "#lib/server/chat/utils.ts";
 import type { RequestHandler } from "./$types";
 
-export const POST: RequestHandler = async ({ request, platform, locals }) => {
-  if (!locals.user) return json({ error: "Unauthorized." }, { status: 401 });
-  if (!platform) return json({ error: "Platform bindings unavailable." }, { status: 500 });
+export const POST: RequestHandler = async ({ request, locals }) => {
+  if (!locals.user) return Response.json({ error: "Unauthorized." }, { status: 401 });
 
   const body: unknown = await request.json().catch(() => null);
   const validation = chatRequestSchema.safeParse(body);
   if (!validation.success) {
-    return json({ error: "Invalid chat transcript." }, { status: 400 });
+    return Response.json({ error: "Invalid chat transcript." }, { status: 400 });
   }
   const requestMessages = validation.data.messages;
-  const { prompt, memory } = await loadPromptMemory(platform.env.MEMOS_BUCKET);
+  const { prompt, memory } = await loadPromptMemory(env.MEMOS_BUCKET);
   const today = new Date().toISOString().slice(0, 10);
   const system = [
     `Today's date (UTC): ${today}`,
@@ -32,7 +31,7 @@ export const POST: RequestHandler = async ({ request, platform, locals }) => {
     .filter(Boolean)
     .join("\n\n");
 
-  const provider = createChatProvider(platform.env);
+  const provider = createChatProvider(env);
 
   const encoder = new TextEncoder();
   const abort = new AbortController();
@@ -46,7 +45,7 @@ export const POST: RequestHandler = async ({ request, platform, locals }) => {
       void (async () => {
         let mcp: McpConnection | undefined;
         const bridge = new AgentChatStreamBridge(write);
-        const mcpServer = createMemosMcpHandler(platform.env, "user");
+        const mcpServer = createMemosMcpHandler(env, "user");
         try {
           const inProcessFetch: McpFetch = async (input, init) => {
             const mcpSignal = init?.signal ? AbortSignal.any([signal, init.signal]) : signal;

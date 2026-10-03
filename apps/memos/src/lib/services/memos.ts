@@ -1,4 +1,4 @@
-import type { Memo, MemoVisibility } from "$lib/types";
+import type { Memo, MemoVisibility } from "#lib/types.ts";
 import { z } from "zod";
 
 export const memoSchema = z.object({

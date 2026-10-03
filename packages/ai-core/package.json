@@ -7,11 +7,12 @@
     ".": "./src/index.ts"
   },
   "scripts": {
-    "test": "vp test --root ../.. packages/ai-core/src/__tests__"
+    "test": "vp test --root ../.. packages/ai-core/src/__tests__",
+    "typecheck": "svelte-check --tsgo --tsconfig ./tsconfig.json"
   },
   "dependencies": {
-    "@earendil-works/pi-agent-core": "0.84.2",
-    "@earendil-works/pi-ai": "0.84.2",
-    "@modelcontextprotocol/client": "2.0.0"
+    "@earendil-works/pi-agent-core": "1.0.0",
+    "@earendil-works/pi-ai": "1.0.0",
+    "@modelcontextprotocol/client": "2.2.0"
   }
 }

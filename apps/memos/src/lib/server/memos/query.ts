@@ -1,5 +1,5 @@
 import { and, gte, lt, sql, type SQL } from "drizzle-orm";
-import { memos } from "$lib/server/db/schema";
+import { memos } from "#lib/server/db/schema.ts";
 
 type MemoDateColumn = typeof memos.createdAt | typeof memos.updatedAt;
 type DateOperator = "<=" | ">=" | "=";

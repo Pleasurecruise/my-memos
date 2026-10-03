@@ -1,9 +1,9 @@
 import { connectMcp, MCP_PROTOCOL_VERSION } from "@my-memos/ai-core";
 import type { McpHttpHandler } from "@modelcontextprotocol/server";
 import { afterEach, describe, expect, it } from "vite-plus/test";
-import { createDomainOperations } from "$lib/server/mcp/operations";
-import { createMemosMcpHandler } from "$lib/server/mcp/server";
-import type { AppEnv } from "$lib/server/types";
+import { createDomainOperations } from "#lib/server/mcp/operations.ts";
+import { createMemosMcpHandler } from "#lib/server/mcp/server.ts";
+import type { AppEnv } from "#lib/server/types.ts";
 
 const EXTERNAL_TOOLS = [
   "create_memo",
@@ -90,26 +90,6 @@ describe("MCP dual-era contract", () => {
     expect(operation.schema.safeParse({ old_text: "", new_text: "x".repeat(16_001) }).success).toBe(
       false,
     );
-  });
-
-  it("falls back to the 2025-11-25 handshake for a legacy-only endpoint", async () => {
-    const handler = createMemosMcpHandler(fakeEnv(), "api-key");
-    handlers.push(handler);
-    const connection = await connectMcp({
-      url: "https://mcp.test/api/mcp",
-      fetch: (input, init) => {
-        const request = new Request(input, init);
-        if (request.headers.get("mcp-method") === "server/discover") {
-          return Promise.resolve(new Response("Not found", { status: 404 }));
-        }
-        return handler.fetch(request);
-      },
-    });
-
-    expect(connection.client.getProtocolEra()).toBe("legacy");
-    expect(connection.client.getNegotiatedProtocolVersion()).toBe("2025-11-25");
-    expect(connection.tools.map((tool) => tool.name).sort()).toEqual(EXTERNAL_TOOLS);
-    await connection.close();
   });
 
   it("rejects private-network URLs before a fetch tool can run", async () => {

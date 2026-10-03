@@ -1,4 +1,4 @@
-import type { UserChatMessage } from "$lib/chat/types";
+import type { UserChatMessage } from "#lib/chat/types.ts";
 
 export function messageText(message: UserChatMessage) {
   return message.parts

@@ -15,7 +15,7 @@ export function updateQuery(params: Record<string, QueryValue>): void {
       url.searchParams.set(key, value);
     }
   }
-  goto(`${url.pathname}?${url.searchParams.toString()}`, { keepFocus: true, noScroll: true });
+  goto(`${url.pathname}?${url.searchParams.toString()}`, { reset: false });
 }
 
 export function groupBy<T, K>(items: T[], keyFn: (item: T) => K): Map<K, T[]> {

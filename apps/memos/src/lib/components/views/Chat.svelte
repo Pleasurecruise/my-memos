@@ -9,11 +9,11 @@
     CollapsibleContent,
     CollapsibleTrigger,
   } from "@my-memos/ui";
-  import MarkdownContent from "$lib/components/MarkdownContent.svelte";
-  import MemoSearchResults from "$lib/components/chat/MemoSearchResults.svelte";
-  import { VisualCard } from "$lib/components/visual";
-  import Masthead from "$lib/components/layout/Masthead.svelte";
-  import { Chat } from "$lib/chat/chat.svelte";
+  import MarkdownContent from "#lib/components/MarkdownContent.svelte";
+  import MemoSearchResults from "#lib/components/chat/MemoSearchResults.svelte";
+  import { VisualCard } from "#lib/components/visual/index.ts";
+  import Masthead from "#lib/components/layout/Masthead.svelte";
+  import { Chat } from "#lib/chat/chat.svelte.ts";
 
   const VISUAL_TOOLS = new Set(["render_chart", "render_svg", "render_mermaid", "render_widget"]);
 

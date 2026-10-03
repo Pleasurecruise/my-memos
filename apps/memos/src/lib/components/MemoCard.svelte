@@ -3,7 +3,7 @@
   import { Badge } from "@my-memos/ui";
   import type { Snippet } from "svelte";
   import { Globe, Lock } from "@lucide/svelte";
-  import type { Memo } from "$lib/types";
+  import type { Memo } from "#lib/types.ts";
 
   interface MemoCardProps {
     memo: Memo;

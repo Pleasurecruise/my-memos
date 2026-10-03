@@ -2,9 +2,9 @@
   import { invalidateAll } from "$app/navigation";
   import { Button } from "@my-memos/ui";
   import { Globe, Lock } from "@lucide/svelte";
-  import { apiImportXPost } from "$lib/services/memos";
-  import { showToast } from "$lib/state/toast.svelte";
-  import type { MemoVisibility } from "$lib/types";
+  import { apiImportXPost } from "#lib/services/memos.ts";
+  import { showToast } from "#lib/state/toast.svelte.ts";
+  import type { MemoVisibility } from "#lib/types.ts";
 
   let url = $state("");
   let visibility = $state<MemoVisibility>("private");

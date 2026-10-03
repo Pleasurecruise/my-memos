@@ -1,3 +1,4 @@
+import { env } from "cloudflare:workers";
 import {
   countMemoStats,
   isMemoSearchWithinLimit,
@@ -5,8 +6,8 @@ import {
   listMemoActivity,
   listMemos,
   listTagCounts,
-} from "$lib/server/memos";
-import { parsePageFilters } from "$lib/server/filters";
+} from "#lib/server/memos/index.ts";
+import { parsePageFilters } from "#lib/server/filters.ts";
 import { error } from "@sveltejs/kit";
 import type { PageServerLoad } from "./$types";
 
@@ -21,11 +22,7 @@ function activitySince(): string {
   return start.toISOString();
 }
 
-export const load: PageServerLoad = async ({ platform, url, locals }) => {
-  if (!platform) {
-    error(500, "Cloudflare platform bindings are unavailable.");
-  }
-
+export const load: PageServerLoad = async ({ url, locals }) => {
   const filters = parsePageFilters(url);
   if (!isMemoSearchWithinLimit(filters.search)) {
     error(400, "Search query is too long.");
@@ -39,7 +36,7 @@ export const load: PageServerLoad = async ({ platform, url, locals }) => {
   const today = new Date().toISOString().slice(0, 10);
 
   const [{ memos, nextCursor }, tagCounts, memoStats, activityMemos] = await Promise.all([
-    listMemos(platform.env.DB, {
+    listMemos(env.DB, {
       search: filters.search || undefined,
       date: filters.date || undefined,
       tags: filters.tags.length > 0 ? filters.tags : undefined,
@@ -47,9 +44,9 @@ export const load: PageServerLoad = async ({ platform, url, locals }) => {
       sortByUpdated,
       limit: PAGE_LIMIT,
     }),
-    listTagCounts(platform.env.DB, publicOnly),
-    countMemoStats(platform.env.DB, today, publicOnly),
-    listMemoActivity(platform.env.DB, publicOnly, activitySince()),
+    listTagCounts(env.DB, publicOnly),
+    countMemoStats(env.DB, today, publicOnly),
+    listMemoActivity(env.DB, publicOnly, activitySince()),
   ]);
 
   return {

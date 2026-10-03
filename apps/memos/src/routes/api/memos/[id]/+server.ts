@@ -1,8 +1,8 @@
-import { deleteMemo, getMemo, MemoError, updateMemo } from "$lib/server/memos";
-import { json } from "@sveltejs/kit";
+import { env } from "cloudflare:workers";
+import { deleteMemo, getMemo, MemoError, updateMemo } from "#lib/server/memos/index.ts";
 import { z } from "zod";
 import type { RequestHandler } from "./$types";
-import type { UpdateMemoInput } from "$lib/server/memos/types";
+import type { UpdateMemoInput } from "#lib/server/memos/types.ts";
 
 const updateMemoSchema = z.object({
   content: z.string().trim().min(1).optional(),
@@ -13,26 +13,18 @@ const updateMemoSchema = z.object({
   archived: z.boolean().optional(),
 });
 
-export const GET: RequestHandler = async ({ params, platform, locals }) => {
+export const GET: RequestHandler = async ({ params, locals }) => {
   if (!locals.user) {
-    return json({ error: "Unauthorized." }, { status: 401 });
+    return Response.json({ error: "Unauthorized." }, { status: 401 });
   }
 
-  if (!platform) {
-    return json({ error: "Cloudflare platform bindings are unavailable." }, { status: 500 });
-  }
-
-  const memo = await getMemo(platform.env.DB, platform.env.MEMOS_BUCKET, params.id);
-  return memo ? json(memo) : json({ error: "Memo not found." }, { status: 404 });
+  const memo = await getMemo(env.DB, env.MEMOS_BUCKET, params.id);
+  return memo ? Response.json(memo) : Response.json({ error: "Memo not found." }, { status: 404 });
 };
 
-export const PATCH: RequestHandler = async ({ request, params, platform, locals }) => {
+export const PATCH: RequestHandler = async ({ request, params, locals }) => {
   if (!locals.user) {
-    return json({ error: "Unauthorized." }, { status: 401 });
-  }
-
-  if (!platform) {
-    return json({ error: "Cloudflare platform bindings are unavailable." }, { status: 500 });
+    return Response.json({ error: "Unauthorized." }, { status: 401 });
   }
 
   const { id } = params;
@@ -43,53 +35,43 @@ export const PATCH: RequestHandler = async ({ request, params, platform, locals 
     const fields = new Set(result.error.issues.map((issue) => issue.path[0]));
 
     if (fields.has("content")) {
-      return json({ error: "Memo content cannot be empty." }, { status: 400 });
+      return Response.json({ error: "Memo content cannot be empty." }, { status: 400 });
     }
 
     if (fields.has("visibility")) {
-      return json({ error: "Memo visibility is invalid." }, { status: 400 });
+      return Response.json({ error: "Memo visibility is invalid." }, { status: 400 });
     }
 
     if (fields.has("tags")) {
-      return json({ error: "Memo tags are invalid." }, { status: 400 });
+      return Response.json({ error: "Memo tags are invalid." }, { status: 400 });
     }
 
-    return json({ error: "Memo update payload is invalid." }, { status: 400 });
+    return Response.json({ error: "Memo update payload is invalid." }, { status: 400 });
   }
 
   const input: UpdateMemoInput = result.data;
 
   try {
-    const memo = await updateMemo(
-      platform.env.DB,
-      platform.env.MEMOS_BUCKET,
-      platform.env.MEMOS_CACHE,
-      id,
-      input,
-    );
-    return json({ memo });
+    const memo = await updateMemo(env.DB, env.MEMOS_BUCKET, env.MEMOS_CACHE, id, input);
+    return Response.json({ memo });
   } catch (error) {
     if (!(error instanceof MemoError)) throw error;
-    return json({ error: error.message }, { status: 404 });
+    return Response.json({ error: error.message }, { status: 404 });
   }
 };
 
-export const DELETE: RequestHandler = async ({ params, platform, locals }) => {
+export const DELETE: RequestHandler = async ({ params, locals }) => {
   if (!locals.user) {
-    return json({ error: "Unauthorized." }, { status: 401 });
-  }
-
-  if (!platform) {
-    return json({ error: "Cloudflare platform bindings are unavailable." }, { status: 500 });
+    return Response.json({ error: "Unauthorized." }, { status: 401 });
   }
 
   const { id } = params;
 
   try {
-    await deleteMemo(platform.env.DB, platform.env.MEMOS_BUCKET, platform.env.MEMOS_CACHE, id);
+    await deleteMemo(env.DB, env.MEMOS_BUCKET, env.MEMOS_CACHE, id);
     return new Response(null, { status: 204 });
   } catch (error) {
     if (!(error instanceof MemoError)) throw error;
-    return json({ error: error.message }, { status: 404 });
+    return Response.json({ error: error.message }, { status: 404 });
   }
 };

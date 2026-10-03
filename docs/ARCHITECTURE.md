@@ -85,14 +85,23 @@ The app uses a small local chat protocol under `apps/memos/src/lib/chat`: shared
 ### Public Pages
 
 - `/` loads memos and tag counts with optional filters.
-- `/memo/[id]` is the canonical share entry for a memo. It applies visibility checks and share
-  metadata before handing off to the matching card in the home feed.
+- `/memo/[id]` is the canonical share entry for a memo. It applies visibility checks, server-renders
+  the memo with canonical, Open Graph, and JSON-LD metadata for crawlers, then hands off to the
+  matching card in the home feed.
 - Unauthenticated users can browse public memos.
 - Authenticated users can browse all non-archived memos.
 - Authenticated users can toggle `view=public` to browse only public memos without private memo data in the page payload.
 - The new home search control accepts `sort=updated` to show card results ordered by `updated_at`; the default timeline remains grouped by `created_at`.
 
 The main page load lives in [apps/memos/src/routes/+page.server.ts](../apps/memos/src/routes/+page.server.ts).
+
+### Crawler Discovery
+
+`/robots.txt`, `/sitemap.xml`, `/rss.xml`, and `/llms.txt` are generated from public, non-archived
+memos by [apps/memos/src/lib/server/discovery](../apps/memos/src/lib/server/discovery/index.ts).
+`robots.txt` disallows `/api/` (except memo OG images), `/archive`, `/favorites`, and `/chat`.
+Memo markdown renders as escaped text during SSR so crawlers receive memo content without running
+JavaScript.
 
 ### Archive Page
 
@@ -293,7 +302,7 @@ parallel.
 
 ## Type Boundaries
 
-The runtime contract for Cloudflare bindings is declared in [apps/memos/src/app.d.ts](../apps/memos/src/app.d.ts). Keep this file in sync with:
+The runtime contract for Cloudflare bindings is `AppEnv` in [apps/memos/src/lib/server/types.ts](../apps/memos/src/lib/server/types.ts), merged into `Cloudflare.Env` by [apps/memos/src/app.d.ts](../apps/memos/src/app.d.ts) for `import { env } from "cloudflare:workers"`. Keep it in sync with:
 
 - `apps/memos/wrangler.json`
 - any new secrets or bindings

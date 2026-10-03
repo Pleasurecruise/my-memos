@@ -1,4 +1,4 @@
-import { SVG_CLASSES, SVG_DARK_VARS } from "$lib/visual/svg-styles";
+import { SVG_CLASSES, SVG_DARK_VARS } from "#lib/visual/svg-styles.ts";
 
 export const FRAME_SHELL = [
   "<!DOCTYPE html><html lang=en><head><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1.0'>",

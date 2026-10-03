@@ -1,14 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
-import { invalidateMemoOgCache } from "$lib/server/memos/cache";
-import { findMemoRow, listAgentMemoRecords, updateMemoRow } from "$lib/server/memos/repository";
-import { searchAgentMemos, updateMemo } from "$lib/server/memos/service";
-import { readMemoBody, writeMemoBody } from "$lib/server/memos/storage";
+import { invalidateMemoOgCache } from "#lib/server/memos/cache.ts";
+import { findMemoRow, listAgentMemoRecords, updateMemoRow } from "#lib/server/memos/repository.ts";
+import { searchAgentMemos, updateMemo } from "#lib/server/memos/service.ts";
+import { readMemoBody, writeMemoBody } from "#lib/server/memos/storage.ts";
 
-vi.mock("$lib/server/memos/cache", () => ({
+vi.mock("#lib/server/memos/cache.ts", () => ({
   invalidateMemoOgCache: vi.fn(),
 }));
 
-vi.mock("$lib/server/memos/repository", () => ({
+vi.mock("#lib/server/memos/repository.ts", () => ({
   deleteMemoRow: vi.fn(),
   findMemoRow: vi.fn(),
   insertMemoRow: vi.fn(),
@@ -28,7 +28,7 @@ vi.mock("$lib/server/memos/repository", () => ({
   updateMemoRow: vi.fn(),
 }));
 
-vi.mock("$lib/server/memos/storage", () => ({
+vi.mock("#lib/server/memos/storage.ts", () => ({
   deleteMemoBody: vi.fn(),
   readMemoBody: vi.fn(),
   writeMemoBody: vi.fn(),

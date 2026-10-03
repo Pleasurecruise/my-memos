@@ -12,6 +12,8 @@ export type {
 export type { AgentEvent, AgentMessage, AgentTool } from "@earendil-works/pi-agent-core";
 export type {
   AssistantMessage,
+  JsonObject,
+  JsonValue,
   Model,
   ProviderHeaders,
   ToolResultMessage,

@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vite-plus/test";
-import { readLimitedText } from "$lib/server/mcp/utils";
+import { readLimitedText } from "#lib/server/mcp/utils.ts";
 import {
   isMemoSearchWithinLimit,
   isValidMemoDate,
   MAX_MEMO_SEARCH_BYTES,
-} from "$lib/server/memos/validation";
+} from "#lib/server/memos/validation.ts";
 
 describe("memo filter validation", () => {
   it("measures search input in UTF-8 bytes", () => {

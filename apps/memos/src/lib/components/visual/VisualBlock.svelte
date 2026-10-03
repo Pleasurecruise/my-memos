@@ -2,7 +2,7 @@
   import MermaidRenderer from "./MermaidRenderer.svelte";
   import SvgRenderer from "./SvgRenderer.svelte";
   import VisualFrame from "./VisualFrame.svelte";
-  import type { VisualBlock } from "$lib/types";
+  import type { VisualBlock } from "#lib/types.ts";
 
   interface Props {
     block: VisualBlock;

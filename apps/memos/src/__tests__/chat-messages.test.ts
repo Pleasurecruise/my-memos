@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vite-plus/test";
-import { chatRequestSchema, parseChatEvent } from "$lib/chat/protocol";
-import type { ChatMessage } from "$lib/chat/types";
-import { uiMessagesToPi } from "$lib/server/chat/bridge";
-import { readMemoSearchResult } from "$lib/chat/memo-search";
+import { chatRequestSchema, parseChatEvent } from "#lib/chat/protocol.ts";
+import type { ChatMessage } from "#lib/chat/types.ts";
+import { uiMessagesToPi } from "#lib/server/chat/bridge.ts";
+import { readMemoSearchResult } from "#lib/chat/memo-search.ts";
 
 describe("stateless chat context conversion", () => {
   it("converts the complete page transcript in order, including tool results", () => {
-    const messages = [
+    const messages: ChatMessage[] = [
       { id: "u1", role: "user", parts: [{ type: "text", text: "first" }] },
       {
         id: "a1",
@@ -36,7 +36,7 @@ describe("stateless chat context conversion", () => {
         ],
       },
       { id: "u2", role: "user", parts: [{ type: "text", text: "second" }] },
-    ] satisfies ChatMessage[];
+    ];
 
     const converted = uiMessagesToPi(messages, "deepseek-ai/DeepSeek-V3.2");
 

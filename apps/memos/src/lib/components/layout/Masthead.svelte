@@ -33,11 +33,11 @@
     Shield,
     X,
   } from "@lucide/svelte";
-  import { signIn, signOut } from "$lib/services/auth";
-  import { showToast } from "$lib/state/toast.svelte";
-  import { updateQuery } from "$lib/utils";
-  import { apiGenerateApiKey, apiGetApiKeyStatus } from "$lib/services/api-key";
-  import type { MemoStats, TagCount } from "$lib/types";
+  import { signIn, signOut } from "#lib/services/auth.ts";
+  import { showToast } from "#lib/state/toast.svelte.ts";
+  import { updateQuery } from "#lib/utils/index.ts";
+  import { apiGenerateApiKey, apiGetApiKeyStatus } from "#lib/services/api-key.ts";
+  import type { MemoStats, TagCount } from "#lib/types.ts";
 
   interface Props {
     memoStats?: MemoStats;

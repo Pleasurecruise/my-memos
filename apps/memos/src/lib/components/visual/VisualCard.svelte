@@ -1,11 +1,11 @@
 <script lang="ts">
   import { Card, CardContent, CardHeader, CardTitle } from "@my-memos/ui";
-  import { MermaidRenderer, SvgRenderer, VisualFrame } from "$lib/components/visual";
-  import { renderChartSchema } from "$lib/visual/chart";
-  import { renderMermaidSchema } from "$lib/visual/mermaid";
-  import { renderSvgSchema } from "$lib/visual/svg";
-  import { renderWidgetSchema } from "$lib/visual/widget";
-  import type { ToolPart } from "$lib/chat/types";
+  import { MermaidRenderer, SvgRenderer, VisualFrame } from "#lib/components/visual/index.ts";
+  import { renderChartSchema } from "#lib/visual/chart.ts";
+  import { renderMermaidSchema } from "#lib/visual/mermaid.ts";
+  import { renderSvgSchema } from "#lib/visual/svg.ts";
+  import { renderWidgetSchema } from "#lib/visual/widget.ts";
+  import type { ToolPart } from "#lib/chat/types.ts";
 
   interface Props {
     part: ToolPart;

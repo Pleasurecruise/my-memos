@@ -1,19 +1,18 @@
-import { json } from "@sveltejs/kit";
-import { createMemosMcpHandler } from "$lib/server/mcp";
-import { verifyApiKey } from "$lib/server/apikey";
+import { env } from "cloudflare:workers";
+import { createMemosMcpHandler } from "#lib/server/mcp/index.ts";
+import { verifyApiKey } from "#lib/server/apikey/index.ts";
 import type { RequestHandler } from "./$types";
 
-export const POST: RequestHandler = async ({ request, platform }) => {
-  if (!platform) return json({ error: "Platform bindings unavailable." }, { status: 500 });
+export const POST: RequestHandler = async ({ request }) => {
   if (request.headers.has("mcp-session-id")) {
-    return json({ error: "MCP sessions are not supported." }, { status: 400 });
+    return Response.json({ error: "MCP sessions are not supported." }, { status: 400 });
   }
-  if (!(await verifyApiKey(request, platform.env.API_KEY))) {
-    return json(
+  if (!(await verifyApiKey(request, env.API_KEY))) {
+    return Response.json(
       { error: "Unauthorized." },
       { status: 401, headers: { "WWW-Authenticate": "Bearer" } },
     );
   }
 
-  return createMemosMcpHandler(platform.env, "api-key").fetch(request);
+  return createMemosMcpHandler(env, "api-key").fetch(request);
 };

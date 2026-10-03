@@ -1,7 +1,7 @@
 import { createMcpHandler, McpServer, type McpHttpHandler } from "@modelcontextprotocol/server";
 import { createDomainOperations } from "./operations";
 import { normalizeDomainError } from "./errors";
-import type { AppEnv } from "$lib/server/types";
+import type { AppEnv } from "#lib/server/types.ts";
 import type { McpPrincipal } from "./types";
 
 const EXTERNAL_OPERATION_NAMES = new Set([

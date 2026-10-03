@@ -7,7 +7,13 @@ export {
   searchAgentMemos,
   updateMemo,
 } from "./service";
-export { listMemos, listMemoActivity, countMemoStats, isValidMemoCursor } from "./repository";
+export {
+  listMemos,
+  listMemoActivity,
+  listPublicMemos,
+  countMemoStats,
+  isValidMemoCursor,
+} from "./repository";
 export { buildMemoDateCondition, buildMemoTagCondition, buildMemoTagConditions } from "./query";
 export {
   MAX_MEMO_SEARCH_BYTES,

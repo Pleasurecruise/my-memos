@@ -1,8 +1,9 @@
+import type { AppEnv } from "#lib/server/types.ts";
 import { betterAuth } from "better-auth";
 import { sveltekitCookies } from "better-auth/svelte-kit";
 import { getRequestEvent } from "$app/server";
 
-export function getAuth(env: NonNullable<App.Platform>["env"]) {
+export function getAuth(env: AppEnv) {
   return betterAuth({
     database: env.DB,
     secret: env.BETTER_AUTH_SECRET,

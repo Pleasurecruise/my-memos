@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { FRAME_SHELL } from "$lib/visual/shell";
+  import { FRAME_SHELL } from "#lib/visual/shell.ts";
 
   interface Props {
     title: string;

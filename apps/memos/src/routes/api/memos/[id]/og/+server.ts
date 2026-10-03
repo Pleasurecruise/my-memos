@@ -1,25 +1,14 @@
+import { env } from "cloudflare:workers";
 import { error } from "@sveltejs/kit";
-import { getMemo } from "$lib/server/memos";
-import { renderOgImage, renderOgPng, stripMarkdown } from "$lib/server/og";
-import { readOgImageKv, writeOgImageKv } from "$lib/server/og/cache";
+import { getMemo } from "#lib/server/memos/index.ts";
+import { renderOgImage, renderOgPng, stripMarkdown } from "#lib/server/og/index.ts";
+import { readOgImageKv, writeOgImageKv } from "#lib/server/og/cache.ts";
 
 const SVG_FORMAT = "svg";
 
-export const GET = async ({
-  params,
-  platform,
-  url,
-}: {
-  params: { id: string };
-  platform: App.Platform;
-  url: URL;
-}) => {
-  if (!platform) {
-    error(500, "Cloudflare platform bindings are unavailable.");
-  }
-
+export const GET = async ({ params, url }: { params: { id: string }; url: URL }) => {
   const { id } = params;
-  const memo = await getMemo(platform.env.DB, platform.env.MEMOS_BUCKET, id);
+  const memo = await getMemo(env.DB, env.MEMOS_BUCKET, id);
 
   if (!memo || memo.visibility !== "public") {
     error(404, "Memo not found.");
@@ -53,7 +42,7 @@ export const GET = async ({
   }
 
   const cacheKey = { id, updatedAt: memo.updatedAt, format: "png" as const };
-  const cached = await readOgImageKv(platform.env.MEMOS_CACHE, cacheKey);
+  const cached = await readOgImageKv(env.MEMOS_CACHE, cacheKey);
   if (cached) {
     return new Response(cached, {
       headers: {
@@ -63,8 +52,8 @@ export const GET = async ({
     });
   }
 
-  const png = await renderOgPng(await buildSvg(), platform.env.MEMOS_CACHE);
-  await writeOgImageKv(platform.env.MEMOS_CACHE, cacheKey, png);
+  const png = await renderOgPng(await buildSvg(), env.MEMOS_CACHE);
+  await writeOgImageKv(env.MEMOS_CACHE, cacheKey, png);
 
   return new Response(png, {
     headers: {

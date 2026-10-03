@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vite-plus/test";
-import { renderOgImage } from "$lib/server/og";
+import { renderOgImage } from "#lib/server/og/index.ts";
 
 describe("Open Graph image", () => {
   it("renders the branded memo card with escaped content", () => {

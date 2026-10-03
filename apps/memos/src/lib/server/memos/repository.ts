@@ -1,9 +1,9 @@
 import { and, desc, eq, gte, like, or, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
-import { memos, type MemoRow } from "$lib/server/db/schema";
+import { memos, type MemoRow } from "#lib/server/db/schema.ts";
 import { buildMemoDateCondition, buildMemoTagConditions } from "./query";
 import type { AgentMemoFilters, MemoContentRecord, MemoListFilters, MemoPage } from "./types";
-import type { Memo, MemoStats, TagCount } from "$lib/types";
+import type { Memo, MemoStats, TagCount } from "#lib/types.ts";
 
 const DEFAULT_LIMIT = 25;
 const CURSOR_VALUE_SEPARATOR = "|";
@@ -90,6 +90,16 @@ export async function listMemos(d1: D1Database, filters: MemoListFilters = {}): 
       : null;
 
   return { memos: pageMemos, nextCursor };
+}
+
+export async function listPublicMemos(d1: D1Database, limit: number): Promise<Memo[]> {
+  const rows = await drizzle(d1)
+    .select()
+    .from(memos)
+    .where(and(eq(memos.archived, false), eq(memos.visibility, "public")))
+    .orderBy(desc(memos.updatedAt), desc(memos.id))
+    .limit(limit);
+  return rows.map(memoFromRow);
 }
 
 export async function listMemoActivity(

@@ -37,22 +37,22 @@
     ChevronRight,
     Share2,
   } from "@lucide/svelte";
-  import type { Memo, MemoStats, MemoVisibility, TagCount } from "$lib/types";
+  import type { Memo, MemoStats, MemoVisibility, TagCount } from "#lib/types.ts";
   import {
     createDeleteActions,
     createEditActions,
     createPinActions,
     createFavoriteActions,
     createArchiveActions,
-  } from "$lib/state/memo-actions.svelte";
-  import { apiCreateMemo, apiListMemos } from "$lib/services/memos";
-  import { showToast } from "$lib/state/toast.svelte";
-  import { getCaretScreenPosition, updateQuery, groupBy } from "$lib/utils";
-  import { createTagAutocomplete } from "$lib/state/tag-autocomplete.svelte";
-  import MarkdownContent from "$lib/components/MarkdownContent.svelte";
-  import MarkdownEditor from "$lib/components/MarkdownEditor.svelte";
+  } from "#lib/state/memo-actions.svelte.ts";
+  import { apiCreateMemo, apiListMemos } from "#lib/services/memos.ts";
+  import { showToast } from "#lib/state/toast.svelte.ts";
+  import { getCaretScreenPosition, updateQuery, groupBy } from "#lib/utils/index.ts";
+  import { createTagAutocomplete } from "#lib/state/tag-autocomplete.svelte.ts";
+  import MarkdownContent from "#lib/components/MarkdownContent.svelte";
+  import MarkdownEditor from "#lib/components/MarkdownEditor.svelte";
 
-  import Masthead from "$lib/components/layout/Masthead.svelte";
+  import Masthead from "#lib/components/layout/Masthead.svelte";
 
   interface Props {
     memos: Memo[];

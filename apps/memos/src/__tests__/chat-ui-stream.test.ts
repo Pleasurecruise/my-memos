@@ -1,6 +1,6 @@
 import type { AgentEvent, AssistantMessage } from "@my-memos/ai-core";
 import { describe, expect, it, vi } from "vite-plus/test";
-import { AgentChatStreamBridge } from "$lib/server/chat/bridge";
+import { AgentChatStreamBridge } from "#lib/server/chat/bridge.ts";
 
 const ASSISTANT_MESSAGE = {
   role: "assistant",

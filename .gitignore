@@ -7,6 +7,7 @@ dist/
 coverage/
 .turbo/
 .svelte-kit/
+.svelte-check/
 .vite/
 
 # Tool caches
@@ -30,7 +31,6 @@ lerna-debug.log*
 # Local environment files
 .dev.vars*
 .env*
-!.env.example
 
 # Editors and OS files
 .idea/

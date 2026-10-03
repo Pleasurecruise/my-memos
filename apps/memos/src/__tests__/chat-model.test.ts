@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vite-plus/test";
-import { createChatProvider } from "$lib/server/chat/model";
-import type { AppEnv } from "$lib/server/types";
+import { createChatProvider } from "#lib/server/chat/model.ts";
+import type { AppEnv } from "#lib/server/types.ts";
 
 describe("Cloudflare AI Gateway custom-provider BYOK model", () => {
   it("uses the custom-opencode endpoint without an upstream authorization header", () => {

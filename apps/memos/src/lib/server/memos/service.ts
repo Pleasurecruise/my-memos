@@ -1,5 +1,5 @@
-import { stripHashtags } from "$lib/utils/tags";
-import type { Memo, TagCount } from "$lib/types";
+import { stripHashtags } from "#lib/utils/tags.ts";
+import type { Memo, TagCount } from "#lib/types.ts";
 import { invalidateMemoOgCache } from "./cache";
 import {
   deleteMemoRow,

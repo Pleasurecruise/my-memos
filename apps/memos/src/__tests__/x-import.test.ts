@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
-import { apiImportXPost } from "$lib/services/memos";
-import { parseXPostId, xPostResponseSchema } from "$lib/server/x-import";
+import { apiImportXPost } from "#lib/services/memos.ts";
+import { parseXPostId, xPostResponseSchema } from "#lib/server/x-import.ts";
 
 describe("X post import", () => {
   beforeEach(() => {

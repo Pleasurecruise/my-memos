@@ -1,7 +1,7 @@
 <script lang="ts">
   import { MoveUpRight } from "@lucide/svelte";
-  import { readMemoSearchResult } from "$lib/chat/memo-search";
-  import { stripHashtags } from "$lib/utils";
+  import { readMemoSearchResult } from "#lib/chat/memo-search.ts";
+  import { stripHashtags } from "#lib/utils/index.ts";
 
   let { output }: { output: unknown } = $props();
 

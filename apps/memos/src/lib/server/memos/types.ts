@@ -1,4 +1,4 @@
-import type { Memo, MemoStats, MemoVisibility, TagCount } from "$lib/types";
+import type { Memo, MemoStats, MemoVisibility, TagCount } from "#lib/types.ts";
 export type { Memo, MemoStats, MemoVisibility, TagCount };
 
 export interface MemoListFilters {
@@ -20,14 +20,14 @@ export interface MemoPage {
 
 export interface CreateMemoInput {
   content: string;
-  visibility: import("$lib/types").MemoVisibility;
+  visibility: import("#lib/types.ts").MemoVisibility;
   tags: string[];
   favorite: boolean;
 }
 
 export interface UpdateMemoInput {
   content?: string;
-  visibility?: import("$lib/types").MemoVisibility;
+  visibility?: import("#lib/types.ts").MemoVisibility;
   tags?: string[];
   pinned?: boolean;
   favorite?: boolean;

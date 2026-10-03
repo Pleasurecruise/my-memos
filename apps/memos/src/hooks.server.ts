@@ -1,25 +1,18 @@
-import { getAuth } from "$lib/server/auth";
+import { env } from "cloudflare:workers";
+import type { Handle } from "@sveltejs/kit/hooks";
+import { getAuth } from "#lib/server/auth.ts";
 import { svelteKitHandler } from "better-auth/svelte-kit";
-import { building } from "$app/environment";
-import type { Handle } from "@sveltejs/kit";
-
-const scannerNoisePaths = new Set(["/robots.txt", "/sitemap.xml"]);
+import { building } from "$app/env";
 
 let cachedAuth: ReturnType<typeof getAuth> | null = null;
 
 export const handle: Handle = async ({ event, resolve }) => {
-  if (scannerNoisePaths.has(event.url.pathname)) {
-    return new Response(null, { status: 204 });
-  }
-
   if (event.url.pathname === "/favicon.ico") {
     return Response.redirect(new URL("/favicon.png", event.url), 301);
   }
 
-  if (!event.platform) return resolve(event);
-
   if (!cachedAuth) {
-    cachedAuth = getAuth(event.platform.env);
+    cachedAuth = getAuth(env);
   }
   const auth = cachedAuth;
 
@@ -29,7 +22,7 @@ export const handle: Handle = async ({ event, resolve }) => {
 
   event.locals.session = null;
   event.locals.user = null;
-  if (session && session.user.email === event.platform.env.ALLOWED_EMAIL) {
+  if (session && session.user.email === env.ALLOWED_EMAIL) {
     event.locals.session = session.session;
     event.locals.user = session.user;
   }
