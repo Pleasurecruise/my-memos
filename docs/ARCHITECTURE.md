@@ -103,8 +103,14 @@ memos by [apps/memos/src/lib/server/discovery](../apps/memos/src/lib/server/disc
 `/favorites`, and `/chat`. `/.well-known/api-catalog` publishes an RFC 9727 linkset for the REST
 API, and the home page sends RFC 8288 `Link` headers for `api-catalog`, `service-desc`,
 `service-doc`, and `describedby` (`/llms.txt`).
-Memo markdown renders as escaped text during SSR so crawlers receive memo content without running
-JavaScript.
+Memo markdown renders to HTML during SSR through
+[apps/memos/src/lib/utils/markdown.ts](../apps/memos/src/lib/utils/markdown.ts), so crawlers and the
+first paint receive formatted content without running JavaScript. The browser reuses the same
+renderer for paginated pages and chat. Its rules match my-workspace's `render_memo`: CommonMark
+with GFM tables, footnotes, strikethrough and task lists; soft breaks become line breaks; an
+unindented line after a list item ends the list; raw HTML is shown as text; bare scheme URLs are
+linked outside code and links; destinations other than relative, HTTP(S) and `mailto:` are
+neutralized.
 
 ### Archive Page
 

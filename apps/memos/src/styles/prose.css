@@ -176,4 +176,30 @@
     border: 0;
     border-top: 1px solid var(--color-border);
   }
+
+  .md-content :where(sup) {
+    font-size: 0.75em;
+    line-height: 0;
+  }
+
+  .md-content :where(section[data-footnotes]) {
+    margin-top: 1rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--color-border);
+    color: var(--color-muted-foreground);
+    font-size: 0.8125rem;
+  }
+
+  .md-content :where(section[data-footnotes] > h2) {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .md-content :where([data-footnote-ref], [data-footnote-backref]) {
+    text-decoration: none;
+  }
 }
