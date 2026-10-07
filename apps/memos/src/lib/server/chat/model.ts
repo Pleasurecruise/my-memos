@@ -2,7 +2,7 @@ import { createOpenAICompatibleModel } from "@my-memos/ai-core";
 import type { AppEnv } from "#lib/server/types.ts";
 import type { ChatProvider } from "./types";
 
-export function createChatProvider(env: AppEnv): ChatProvider {
+export function createChatProvider(env: AppEnv, sessionId: string): ChatProvider {
   return {
     model: createOpenAICompatibleModel({
       id: "deepseek-v4-flash",
@@ -13,6 +13,7 @@ export function createChatProvider(env: AppEnv): ChatProvider {
       "cf-aig-authorization": `Bearer ${env.CF_AIG_TOKEN}`,
       Authorization: null,
       "x-api-key": null,
+      "x-opencode-session": sessionId,
     },
   };
 }

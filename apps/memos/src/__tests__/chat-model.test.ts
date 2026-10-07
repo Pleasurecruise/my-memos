@@ -3,11 +3,14 @@ import { createChatProvider } from "#lib/server/chat/model.ts";
 import type { AppEnv } from "#lib/server/types.ts";
 
 describe("Cloudflare AI Gateway custom-provider BYOK model", () => {
-  it("uses the custom-opencode endpoint without an upstream authorization header", () => {
-    const provider = createChatProvider({
-      CF_ACCOUNT_ID: "account/id",
-      CF_AIG_TOKEN: "gateway-token",
-    } as AppEnv);
+  it("uses the custom-opencode endpoint with a conversation session and no upstream authorization", () => {
+    const provider = createChatProvider(
+      {
+        CF_ACCOUNT_ID: "account/id",
+        CF_AIG_TOKEN: "gateway-token",
+      } as AppEnv,
+      "conversation-id",
+    );
 
     expect(provider.model).toEqual(
       expect.objectContaining({
@@ -20,6 +23,7 @@ describe("Cloudflare AI Gateway custom-provider BYOK model", () => {
       "cf-aig-authorization": "Bearer gateway-token",
       Authorization: null,
       "x-api-key": null,
+      "x-opencode-session": "conversation-id",
     });
   });
 });
