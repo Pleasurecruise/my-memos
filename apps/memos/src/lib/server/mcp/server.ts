@@ -7,8 +7,9 @@ import type { McpPrincipal } from "./types";
 const EXTERNAL_OPERATION_NAMES = new Set([
   "create_memo",
   "delete_memo",
-  "get_tags",
+  "get_memo",
   "list_memos",
+  "list_tags",
   "search_memos",
   "update_memo",
 ]);

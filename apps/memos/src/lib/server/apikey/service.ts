@@ -72,3 +72,12 @@ export async function verifyApiKey(request: Request, namespace: ApiKeyNamespace)
   }
   return difference === 0;
 }
+
+export async function isOwnerRequest(
+  request: Request,
+  user: App.Locals["user"],
+  namespace: ApiKeyNamespace,
+): Promise<boolean> {
+  if (request.headers.has("authorization")) return verifyApiKey(request, namespace);
+  return user !== null;
+}

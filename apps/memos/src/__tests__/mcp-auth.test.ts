@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vite-plus/test";
 import { z } from "zod";
-import { generateApiKey, getApiKeyStatus, verifyApiKey } from "#lib/server/apikey/index.ts";
+import {
+  generateApiKey,
+  getApiKeyStatus,
+  isOwnerRequest,
+  verifyApiKey,
+} from "#lib/server/apikey/index.ts";
 
 describe("generated API key", () => {
   it("stores one digest and immediately invalidates the previous key", async () => {
@@ -75,5 +80,27 @@ describe("generated API key", () => {
       createdAt: current.createdAt,
     });
     expect(state.reads).toBe(4);
+  });
+
+  it("judges a request that sends Authorization only by the key", async () => {
+    const namespace = {
+      getByName: () => ({ fetch: async () => new Response(null, { status: 404 }) }),
+    };
+    const user = {
+      id: "owner-id",
+      email: "owner@example.test",
+      emailVerified: true,
+      name: "Owner",
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    const anonymous = new Request("https://example.test/api/memos");
+    const wrongKey = new Request("https://example.test/api/memos", {
+      headers: { authorization: "Bearer sk-wrong" },
+    });
+
+    await expect(isOwnerRequest(anonymous, user, namespace)).resolves.toBe(true);
+    await expect(isOwnerRequest(anonymous, null, namespace)).resolves.toBe(false);
+    await expect(isOwnerRequest(wrongKey, user, namespace)).resolves.toBe(false);
   });
 });

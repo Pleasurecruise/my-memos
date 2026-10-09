@@ -1,4 +1,5 @@
 import { env } from "cloudflare:workers";
+import { isOwnerRequest } from "#lib/server/apikey/index.ts";
 import {
   createMemo,
   isValidMemoCursor,
@@ -11,8 +12,9 @@ import type { RequestHandler } from "./$types";
 
 const createMemoSchema = z.object({
   content: z.string().trim().min(1),
-  visibility: z.enum(["public", "private"]),
+  visibility: z.enum(["public", "private"]).default("private"),
   tags: z.array(z.string()).default([]),
+  favorite: z.boolean().default(false),
 });
 
 const listQuerySchema = z.object({
@@ -39,7 +41,7 @@ const listQuerySchema = z.object({
     .transform((v) => v === "true"),
 });
 
-export const GET: RequestHandler = async ({ url, locals }) => {
+export const GET: RequestHandler = async ({ request, url, locals }) => {
   const rawParams = Object.fromEntries(url.searchParams.entries());
   const queryParams = listQuerySchema.safeParse(rawParams);
   if (!queryParams.success) {
@@ -57,14 +59,18 @@ export const GET: RequestHandler = async ({ url, locals }) => {
     favoritesOnly,
     sortByUpdated,
   } = queryParams.data;
-  if ((archivedOnly || favoritesOnly) && !locals.user) {
-    return Response.json({ error: "Unauthorized." }, { status: 401 });
+  const owner = await isOwnerRequest(request, locals.user, env.API_KEY);
+  if (!owner && (request.headers.has("authorization") || archivedOnly || favoritesOnly)) {
+    return Response.json(
+      { error: "Unauthorized." },
+      { status: 401, headers: { "WWW-Authenticate": "Bearer" } },
+    );
   }
   if (cursor && !isValidMemoCursor(cursor)) {
     return Response.json({ error: "Invalid cursor." }, { status: 400 });
   }
 
-  const effectivePublic = publicOnly || !locals.user;
+  const effectivePublic = publicOnly || !owner;
   const tagList = tags
     ?.split(",")
     .map((t) => t.trim())
@@ -86,8 +92,11 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 };
 
 export const POST: RequestHandler = async ({ request, locals }) => {
-  if (!locals.user) {
-    return Response.json({ error: "Unauthorized." }, { status: 401 });
+  if (!(await isOwnerRequest(request, locals.user, env.API_KEY))) {
+    return Response.json(
+      { error: "Unauthorized." },
+      { status: 401, headers: { "WWW-Authenticate": "Bearer" } },
+    );
   }
 
   const result = createMemoSchema.safeParse(await request.json());
@@ -106,14 +115,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
     return Response.json({ error: "Memo tags are invalid." }, { status: 400 });
   }
 
-  const { content, visibility, tags } = result.data;
-
-  const memo = await createMemo(env.DB, env.MEMOS_BUCKET, {
-    content,
-    visibility,
-    tags,
-    favorite: false,
-  });
+  const memo = await createMemo(env.DB, env.MEMOS_BUCKET, result.data);
 
   return Response.json({ memo }, { status: 201 });
 };

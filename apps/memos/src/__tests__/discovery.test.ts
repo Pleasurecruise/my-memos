@@ -32,7 +32,7 @@ describe("crawler discovery", () => {
 
     expect(robots).toContain("User-agent: *\nAllow: /\n");
     expect(robots).toContain("Allow: /api/memos/*/og");
-    expect(robots).toContain("Allow: /api/v1/openapi.json");
+    expect(robots).toContain("Allow: /api/openapi.json");
     expect(robots).toContain("Disallow: /api/");
     expect(robots).toContain("Disallow: /chat");
     expect(robots).toContain("Sitemap: https://memos.example.com/sitemap.xml");
@@ -67,6 +67,8 @@ describe("crawler discovery", () => {
 
     expect(text.startsWith("# My Memos\n\n> ")).toBe(true);
     expect(text).toContain("## Memos");
+    expect(text).toContain("- [REST API](https://memos.example.com/api/openapi.json)");
+    expect(text.indexOf("## API")).toBeLessThan(text.indexOf("## Memos"));
     expect(text).toContain(
       "- [Notes on C:\\\\temp](https://memos.example.com/memo/20260801T120000Z-abcdef12): Notes on C:\\temp (#design)",
     );

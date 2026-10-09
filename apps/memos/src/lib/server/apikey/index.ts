@@ -1,1 +1,1 @@
-export { generateApiKey, getApiKeyStatus, verifyApiKey } from "./service";
+export { generateApiKey, getApiKeyStatus, isOwnerRequest, verifyApiKey } from "./service";

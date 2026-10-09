@@ -7,9 +7,9 @@ export const GET: RequestHandler = ({ url }) => {
     {
       linkset: [
         {
-          anchor: `${origin}/api/v1`,
+          anchor: `${origin}/api`,
           "service-desc": [
-            { href: `${origin}/api/v1/openapi.json`, type: "application/vnd.oai.openapi+json" },
+            { href: `${origin}/api/openapi.json`, type: "application/vnd.oai.openapi+json" },
           ],
           "service-doc": [
             {

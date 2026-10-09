@@ -8,8 +8,9 @@ import type { AppEnv } from "#lib/server/types.ts";
 const EXTERNAL_TOOLS = [
   "create_memo",
   "delete_memo",
-  "get_tags",
+  "get_memo",
   "list_memos",
+  "list_tags",
   "search_memos",
   "update_memo",
 ];

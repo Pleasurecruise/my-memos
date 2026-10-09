@@ -2,6 +2,7 @@ import { invalidateAll } from "$app/navigation";
 import { apiDeleteMemo, apiUpdateMemo, memoSchema } from "#lib/services/memos.ts";
 import { showToast } from "#lib/state/toast.svelte.ts";
 import type { Memo, MemoVisibility } from "#lib/types.ts";
+import { z } from "zod";
 
 export function createEditActions() {
   let editingId = $state<string | null>(null);
@@ -21,7 +22,7 @@ export function createEditActions() {
       showToast("error", `Failed to load memo (${response.status})`);
       return;
     }
-    const latest = memoSchema.parse(await response.json());
+    const latest = z.object({ memo: memoSchema }).parse(await response.json()).memo;
     editingId = latest.id;
     editContent = latest.content;
     editVisibility = latest.visibility;

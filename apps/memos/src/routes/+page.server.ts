@@ -26,7 +26,7 @@ export const load: PageServerLoad = async ({ url, locals, setHeaders }) => {
   setHeaders({
     Link: [
       '</.well-known/api-catalog>; rel="api-catalog"',
-      '</api/v1/openapi.json>; rel="service-desc"; type="application/vnd.oai.openapi+json"',
+      '</api/openapi.json>; rel="service-desc"; type="application/vnd.oai.openapi+json"',
       '<https://github.com/Pleasurecruise/my-memos/blob/main/docs/ARCHITECTURE.md#external-memo-integrations>; rel="service-doc"; type="text/html"',
       '</llms.txt>; rel="describedby"; type="text/plain"',
     ].join(", "),

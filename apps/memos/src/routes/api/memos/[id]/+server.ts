@@ -1,4 +1,5 @@
 import { env } from "cloudflare:workers";
+import { isOwnerRequest } from "#lib/server/apikey/index.ts";
 import { deleteMemo, getMemo, MemoError, updateMemo } from "#lib/server/memos/index.ts";
 import { z } from "zod";
 import type { RequestHandler } from "./$types";
@@ -13,18 +14,26 @@ const updateMemoSchema = z.object({
   archived: z.boolean().optional(),
 });
 
-export const GET: RequestHandler = async ({ params, locals }) => {
-  if (!locals.user) {
-    return Response.json({ error: "Unauthorized." }, { status: 401 });
+export const GET: RequestHandler = async ({ request, params, locals }) => {
+  if (!(await isOwnerRequest(request, locals.user, env.API_KEY))) {
+    return Response.json(
+      { error: "Unauthorized." },
+      { status: 401, headers: { "WWW-Authenticate": "Bearer" } },
+    );
   }
 
   const memo = await getMemo(env.DB, env.MEMOS_BUCKET, params.id);
-  return memo ? Response.json(memo) : Response.json({ error: "Memo not found." }, { status: 404 });
+  return memo
+    ? Response.json({ memo })
+    : Response.json({ error: "Memo not found." }, { status: 404 });
 };
 
 export const PATCH: RequestHandler = async ({ request, params, locals }) => {
-  if (!locals.user) {
-    return Response.json({ error: "Unauthorized." }, { status: 401 });
+  if (!(await isOwnerRequest(request, locals.user, env.API_KEY))) {
+    return Response.json(
+      { error: "Unauthorized." },
+      { status: 401, headers: { "WWW-Authenticate": "Bearer" } },
+    );
   }
 
   const { id } = params;
@@ -60,9 +69,12 @@ export const PATCH: RequestHandler = async ({ request, params, locals }) => {
   }
 };
 
-export const DELETE: RequestHandler = async ({ params, locals }) => {
-  if (!locals.user) {
-    return Response.json({ error: "Unauthorized." }, { status: 401 });
+export const DELETE: RequestHandler = async ({ request, params, locals }) => {
+  if (!(await isOwnerRequest(request, locals.user, env.API_KEY))) {
+    return Response.json(
+      { error: "Unauthorized." },
+      { status: 401, headers: { "WWW-Authenticate": "Bearer" } },
+    );
   }
 
   const { id } = params;

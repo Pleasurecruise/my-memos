@@ -9,13 +9,15 @@
       "url": "https://github.com/Pleasurecruise/my-memos/blob/main/LICENSE"
     }
   },
-  "servers": [{ "url": "https://memos.you-find.me/api/v1" }],
+  "servers": [{ "url": "https://memos.you-find.me/api" }],
   "security": [{ "bearerAuth": [] }],
   "paths": {
     "/memos": {
       "get": {
         "operationId": "listMemos",
         "summary": "List memos",
+        "description": "Anonymous requests return public memos only; archivedOnly and favoritesOnly require the API key or the owner session.",
+        "security": [{ "bearerAuth": [] }, {}],
         "parameters": [
           {
             "name": "cursor",

@@ -43,8 +43,8 @@ describe("memo edit actions", () => {
 
   it("saves the current draft before opening another memo", async () => {
     vi.mocked(fetch)
-      .mockResolvedValueOnce(Response.json(firstMemo))
-      .mockResolvedValueOnce(Response.json(secondMemo));
+      .mockResolvedValueOnce(Response.json({ memo: firstMemo }))
+      .mockResolvedValueOnce(Response.json({ memo: secondMemo }));
     apiUpdateMemo.mockResolvedValue(undefined);
 
     const edit = createEditActions();
@@ -62,7 +62,7 @@ describe("memo edit actions", () => {
   });
 
   it("keeps the current draft when autosave fails", async () => {
-    vi.mocked(fetch).mockResolvedValueOnce(Response.json(firstMemo));
+    vi.mocked(fetch).mockResolvedValueOnce(Response.json({ memo: firstMemo }));
     apiUpdateMemo.mockRejectedValue(new Error("offline"));
 
     const edit = createEditActions();

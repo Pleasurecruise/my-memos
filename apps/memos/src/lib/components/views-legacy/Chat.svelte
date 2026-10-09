@@ -14,8 +14,9 @@
 
   const VISUAL_TOOLS = new Set(["render_chart", "render_svg", "render_mermaid", "render_widget"]);
   const TOOL_LABELS: Record<string, string> = {
-    get_tags: "Fetching tags…",
+    list_tags: "Fetching tags…",
     list_memos: "Browsing memos…",
+    get_memo: "Reading memo…",
     search_memos: "Searching memos…",
     create_memo: "Creating memo…",
     update_memo: "Updating memo…",

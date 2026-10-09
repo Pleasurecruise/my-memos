@@ -4,6 +4,7 @@ import { z } from "zod";
 import {
   createMemo,
   deleteMemo,
+  getMemo,
   listAgentMemos,
   listTagCounts,
   memoDateSchema,
@@ -22,7 +23,6 @@ import type { DomainOperation } from "./types";
 import {
   cleanMarkdown,
   defineOperation,
-  formatMemo,
   githubRead,
   publicHttpUrl,
   readLimitedText,
@@ -35,32 +35,38 @@ export function createDomainOperations(env: AppEnv): DomainOperation[] {
 
   return [
     defineOperation({
-      name: "get_tags",
+      name: "list_tags",
       description:
         "List all memo tags with counts. Call this before filtering by a user-provided tag.",
       schema: z.object({}),
-      execute: async () => listTagCounts(env.DB),
+      execute: async () => ({ tags: await listTagCounts(env.DB) }),
     }),
     defineOperation({
       name: "list_memos",
       description: "Browse memos by date range and tags without requiring keywords.",
       schema: z.object({
-        from_date: memoDateSchema.optional(),
-        to_date: memoDateSchema.optional(),
+        fromDate: memoDateSchema.optional(),
+        toDate: memoDateSchema.optional(),
         tags: z.array(z.string()).optional(),
         limit: z.number().int().min(1).max(20).default(10),
       }),
-      execute: async ({ from_date, to_date, tags, limit }) => {
-        const memoResults = await listAgentMemos(env.DB, {
-          fromDate: from_date,
-          toDate: to_date,
+      execute: async ({ fromDate, toDate, tags, limit }) => ({
+        memos: await listAgentMemos(env.DB, {
+          fromDate,
+          toDate,
           tags,
           limit,
-        });
-        return (
-          memoResults.map((memo) => formatMemo(memo, memo.content)).join("\n\n---\n\n") ||
-          "No memos found."
-        );
+        }),
+      }),
+    }),
+    defineOperation({
+      name: "get_memo",
+      description: "Read one memo with its full content by ID.",
+      schema: z.object({ id: z.string() }),
+      execute: async ({ id }) => {
+        const memo = await getMemo(env.DB, env.MEMOS_BUCKET, id);
+        if (!memo) throw new DomainError("not_found", "Memo not found.");
+        return { memo };
       },
     }),
     defineOperation({
@@ -68,15 +74,15 @@ export function createDomainOperations(env: AppEnv): DomainOperation[] {
       description: "Search memo contents by keyword, optionally constrained by dates and tags.",
       schema: z.object({
         query: memoSearchSchema.refine((value) => value.length > 0, "Search cannot be empty."),
-        from_date: memoDateSchema.optional(),
-        to_date: memoDateSchema.optional(),
+        fromDate: memoDateSchema.optional(),
+        toDate: memoDateSchema.optional(),
         tags: z.array(z.string()).optional(),
       }),
-      execute: async ({ query, from_date, to_date, tags }) => {
+      execute: async ({ query, fromDate, toDate, tags }) => {
         const memoResults = await searchAgentMemos(env.DB, env.MEMOS_BUCKET, {
           query,
-          fromDate: from_date,
-          toDate: to_date,
+          fromDate,
+          toDate,
           tags,
           limit: 10,
         });
@@ -97,7 +103,7 @@ export function createDomainOperations(env: AppEnv): DomainOperation[] {
         visibility: z.enum(["private", "public"]).default("private"),
         favorite: z.boolean().default(false),
       }),
-      execute: async (input) => createMemo(env.DB, env.MEMOS_BUCKET, input),
+      execute: async (input) => ({ memo: await createMemo(env.DB, env.MEMOS_BUCKET, input) }),
     }),
     defineOperation({
       name: "update_memo",
@@ -115,7 +121,7 @@ export function createDomainOperations(env: AppEnv): DomainOperation[] {
       execute: async ({ id, ...input }) => {
         if (Object.values(input).every((value) => value === undefined))
           throw new DomainError("invalid_input", "No changes specified.");
-        return updateMemo(env.DB, env.MEMOS_BUCKET, env.MEMOS_CACHE, id, input);
+        return { memo: await updateMemo(env.DB, env.MEMOS_BUCKET, env.MEMOS_CACHE, id, input) };
       },
     }),
     defineOperation({

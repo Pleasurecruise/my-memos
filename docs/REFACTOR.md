@@ -43,7 +43,7 @@ reading, documentation lookup, memory updates, and visual rendering.
 
 External MCP clients receive a narrower allowlist:
 
-- `get_tags`, `list_memos`, `search_memos`
+- `list_tags`, `list_memos`, `search_memos`, `get_memo`
 - `create_memo`, `update_memo`, `delete_memo`
 
 They authenticate with a user-generated Bearer API key. The plaintext is returned once; the
@@ -54,7 +54,7 @@ automatic expiry, scopes, or token tables. Initial creation refuses to replace a
 replacement is exposed only through the confirmed regeneration request.
 
 MCP operations parse tool inputs and adapt memo domain results for Agent consumption. The external
-REST routes under `/api/v1/memos` and `/api/v1/tags` call the memo domain directly and return
+REST routes under `/api/memos` and `/api/tags` call the memo domain directly and return
 structured JSON; they do not invoke MCP operations. The MCP layer owns principal-based exposure,
 structured results, and structured error mapping. Mutation tools are sequential; read and
 in-product render tools may run in parallel. URL-reading tools reject non-public targets before

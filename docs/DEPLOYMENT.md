@@ -163,11 +163,12 @@ Verify these paths after deployment:
   Stateless pi Agent NDJSON stream backed by Cloudflare AI Gateway, MCP, D1, and R2.
 - `/api/mcp`
   Send either a modern `server/discover` request with MCP `2026-07-28` or a legacy `2025-11-25` `initialize` request, then list and call memo tools with the generated Bearer key. External discovery must contain only the six memo-domain operations. The legacy path is stateless: it does not issue `Mcp-Session-Id`, and supplied session IDs are rejected.
-- `/api/v1/memos`
-  Requires the generated Bearer key and returns a structured, cursor-paginated memo list. Verify
-  that each memo includes `r2Key` and that the response is not MCP-formatted text.
-- `/api/v1/tags`
-  Requires the generated Bearer key and returns structured tag counts.
+- `/api/memos`
+  With the generated Bearer key, returns a structured, cursor-paginated list of all memos; without
+  it, only public memos. Verify that each memo includes `r2Key` and that the response is not
+  MCP-formatted text.
+- `/api/tags`
+  Requires the generated Bearer key or the owner session and returns structured tag counts.
 
 ### Remote MCP client
 

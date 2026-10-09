@@ -102,7 +102,9 @@ memos by [apps/memos/src/lib/server/discovery](../apps/memos/src/lib/server/disc
 `robots.txt` disallows `/api/` (except memo OG images and the OpenAPI document), `/archive`,
 `/favorites`, and `/chat`. `/.well-known/api-catalog` publishes an RFC 9727 linkset for the REST
 API, and the home page sends RFC 8288 `Link` headers for `api-catalog`, `service-desc`,
-`service-doc`, and `describedby` (`/llms.txt`).
+`service-doc`, and `describedby` (`/llms.txt`). `llms.txt` names `/rss.xml` in its introduction and
+lists `/api/openapi.json` and `/api/mcp` in an `## API` section before the memo index; the same `/api/*` shape,
+key rule, and MCP tool naming are shared with my-moment and my-knowledge.
 Memo markdown renders to HTML during SSR through
 [apps/memos/src/lib/utils/markdown.ts](../apps/memos/src/lib/utils/markdown.ts), so crawlers and the
 first paint receive formatted content without running JavaScript. The browser reuses the same
@@ -279,8 +281,9 @@ Behavior:
 
 External REST and MCP clients share one API key but have independent transport adapters. REST
 routes call memo domain services directly and return structured JSON. MCP maps the same domain
-capabilities to `get_tags`, `list_memos`, `search_memos`, `create_memo`, `update_memo`, and
-`delete_memo`. Web search, URL reading, documentation lookup, memory updates, and visual rendering
+capabilities to `list_tags`, `list_memos`, `search_memos`, `get_memo`, `create_memo`,
+`update_memo`, and `delete_memo`, the same `verb_noun` naming used by my-moment and my-knowledge.
+Tools return structured objects: `{ tags }`, `{ memos }`, search `{ type: "memo-search-results", query, memos }`, single memos as `{ memo }`, and deletion `{ id, deleted: true }`; arguments reuse the REST field names (`fromDate`, `toDate`, `tags`, `limit`). Web search, URL reading, documentation lookup, memory updates, and visual rendering
 belong to the authenticated in-product Agent and cannot be invoked with the external API key.
 
 An authenticated user manages the key through `/api/settings/api-key`. `GET` reports its
@@ -292,16 +295,20 @@ instance is separate from the `my-knowledge-api-key` and `my-moment-api-key` ins
 replaces one record, so the previous my-memos key is immediately invalid. Authentication never falls
 back to R2 or KV. Generated keys use the `sk-` prefix.
 
-The REST surface uses `Authorization: Bearer <key>`:
+The web app and external clients share one REST surface. Each route accepts the owner session or
+`Authorization: Bearer <key>`. A request that sends `Authorization` is checked only against the key
+and an invalid key returns `401`, even on the list route; anonymous list reads return public memos
+only:
 
-- `GET /api/v1/memos` returns `{ memos, nextCursor }` and supports cursor, limit, search, date,
+- `GET /api/memos` returns `{ memos, nextCursor }` and supports cursor, limit, search, date,
   tags, public, archive, favorite, and updated-time filters.
-- `POST /api/v1/memos` creates a memo.
-- `GET`, `PATCH`, and `DELETE /api/v1/memos/[id]` read, update, and delete one memo.
-- `GET /api/v1/tags` returns tag counts.
+- `POST /api/memos` creates a memo.
+- `GET`, `PATCH`, and `DELETE /api/memos/[id]` read, update, and delete one memo; reads return
+  `{ memo }`.
+- `GET /api/tags` returns tag counts.
 
 The OpenAPI 3.1 description is a static asset at
-[apps/memos/static/api/v1/openapi.json](../apps/memos/static/api/v1/openapi.json); update it with
+[apps/memos/static/api/openapi.json](../apps/memos/static/api/openapi.json); update it with
 any REST route change.
 
 `POST /api/mcp` exposes the same allowlist through a stateless MCP handler. It serves the modern

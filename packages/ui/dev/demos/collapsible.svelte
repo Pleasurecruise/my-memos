@@ -43,8 +43,8 @@
 
   const toolInput = `{
   "query": "recent memos about agent loops",
-  "from_date": "2026-05-01",
-  "to_date": "2026-05-20",
+  "fromDate": "2026-05-01",
+  "toDate": "2026-05-20",
   "tags": ["agent", "notes"]
 }`;
 
