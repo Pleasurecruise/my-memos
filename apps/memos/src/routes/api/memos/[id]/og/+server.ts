@@ -14,9 +14,7 @@ export const GET = async ({ params, url }: { params: { id: string }; url: URL })
     error(404, "Memo not found.");
   }
 
-  const plain = stripMarkdown(memo.content);
-  const title =
-    plain.length > 0 ? plain.slice(0, 100) + (plain.length > 100 ? "…" : "") : "Untitled memo";
+  const [line = "Untitled memo"] = memo.content.split("\n").map(stripMarkdown).filter(Boolean);
   const date = new Date(memo.createdAt).toLocaleDateString("zh-CN", {
     year: "numeric",
     month: "long",
@@ -24,13 +22,7 @@ export const GET = async ({ params, url }: { params: { id: string }; url: URL })
   });
 
   const buildSvg = async () =>
-    renderOgImage({
-      title,
-      tags: memo.tags,
-      date,
-      domain: url.hostname,
-      siteName: "My Memos",
-    });
+    renderOgImage({ line, meta: [date, ...memo.tags.slice(0, 1)].join(" · ") });
 
   if (url.searchParams.get("format") === SVG_FORMAT) {
     return new Response(await buildSvg(), {
