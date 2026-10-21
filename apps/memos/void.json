@@ -1,7 +1,0 @@
-{
-  "$schema": "./node_modules/void/schema.json",
-  "target": "cloudflare",
-  "inference": {
-    "appType": "framework"
-  }
-}

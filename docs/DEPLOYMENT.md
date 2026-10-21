@@ -2,7 +2,7 @@
 
 This repository is deployed as a Cloudflare Worker backed by D1, KV, R2, and Durable Objects.
 
-The deploy target is defined in [apps/memos/wrangler.json](../apps/memos/wrangler.json). Void's framework integration is configured beside it in [apps/memos/void.json](../apps/memos/void.json). The runnable app is the SvelteKit project in [apps/memos](../apps/memos), built to Cloudflare output and served by the generated SvelteKit Worker entry.
+The runnable app is the SvelteKit project in [apps/memos](../apps/memos), built to Cloudflare output and served by the generated SvelteKit Worker entry. Cloudflare settings live in [apps/memos/void.config.ts](../apps/memos/void.config.ts). Void materializes `apps/memos/.void-wrangler.jsonc` from it whenever `voidPlugin()` loads or a `void` command needs Cloudflare config; the SvelteKit adapter reads that file. That generated file is gitignored. [apps/memos/void.lock.json](../apps/memos/void.lock.json) records the resolved resource IDs.
 
 ## Runtime Shape
 
@@ -30,7 +30,7 @@ The current Worker expects these bindings to exist:
 | `API_KEY`      | Durable Object | API key digest and creation time     |
 | `ASSETS`       | Assets         | Built SvelteKit client assets        |
 
-Current binding names and IDs live in [apps/memos/wrangler.json](../apps/memos/wrangler.json). Runtime TypeScript declarations live in [apps/memos/src/lib/server/types.ts](../apps/memos/src/lib/server/types.ts) (`AppEnv`), which [apps/memos/src/app.d.ts](../apps/memos/src/app.d.ts) merges into `Cloudflare.Env`. Server code reads bindings with `import { env } from "cloudflare:workers"`; SvelteKit 3 and `@sveltejs/adapter-cloudflare` 8 no longer provide `platform`. Void is used for framework build and deployment integration, while Wrangler remains the source of truth for the existing D1, KV, and R2 bindings.
+Current binding names and IDs live in the `cloudflare` field of [apps/memos/void.config.ts](../apps/memos/void.config.ts). Runtime TypeScript declarations live in [apps/memos/src/lib/server/types.ts](../apps/memos/src/lib/server/types.ts) (`AppEnv`), which [apps/memos/src/app.d.ts](../apps/memos/src/app.d.ts) merges into `Cloudflare.Env`. Server code reads bindings with `import { env } from "cloudflare:workers"`; SvelteKit 3 and `@sveltejs/adapter-cloudflare` 8 no longer provide `platform`. The adapter reads `./.void-wrangler.jsonc`. D1 migrations are hand-written SQL in `apps/memos/db/migrations`, applied by `void db migrate` and `void deploy`; the app does not use Void's Drizzle schema generation (`void db generate`).
 
 ## Required Environment Variables
 
@@ -47,7 +47,7 @@ Current binding names and IDs live in [apps/memos/wrangler.json](../apps/memos/w
 | `CF_AIG_TOKEN`         | yes for chat          | Authenticates the Gateway; it is not a provider key |
 | `TAVILY_API_KEY`       | yes for chat          | Tavily API key for web search                       |
 
-Local development reads the variables above from `apps/memos/.env`, the only local env file Void supports; Void refuses to start when `.env.example` or `.env.local` exist. Production builds switch Vite's `envDir` to `.void/build-env`, so local secrets are not copied into Worker vars. Production secrets should be managed with Wrangler secrets and environment vars, not committed files.
+Local development reads the variables above from `apps/memos/.env`, the only local env file Void supports; Void refuses to start when `.env.example` or `.env.local` exist. Production builds switch Vite's `envDir` to `.void/build-env`, so local secrets are not copied into Worker vars. Production secrets are managed with `void secret`, not committed files.
 
 ## External API Key
 
@@ -78,11 +78,15 @@ What each step does:
 - `pnpm build`
   Builds `@my-memos/app` and writes Cloudflare output to `apps/memos/.svelte-kit/cloudflare`.
 - `pnpm deploy`
-  Runs `void deploy` from the `@my-memos/app` workspace, builds the SvelteKit framework target, and uploads its Worker and assets using the app-local configuration.
+  Runs `void deploy --platform cloudflare` from the `@my-memos/app` workspace, builds the SvelteKit framework target, applies pending `db/migrations` to the remote D1 database, and uploads its Worker and assets using the app-local configuration.
 
-`pnpm d1:migrate:remote` is not a routine code-deployment step. Run it before deployment only for the first installation or when the change actually includes a new numbered SQL migration. Query-only changes do not require a migration.
+Pushes to `main` also deploy through Cloudflare Workers Builds. Its trigger runs `pnpm run build` and then `pnpm exec void deploy --platform cloudflare` from `/apps/memos`, authenticated by the build token that Workers Builds injects as `CLOUDFLARE_API_TOKEN`. `void deploy` builds with `inference.build` (`pnpm run build`, which runs `vp build`) because the workspace has no standalone `vite` binary for Void's default `vite build`. The deploy command is stored in the Cloudflare build trigger, not in this repository; plain `wrangler deploy` no longer works because the repository has no `wrangler.json`.
 
-Secret changes are a separate operation, not part of every code deployment. `wrangler secret put <NAME>` creates and immediately deploys a new Worker version. To prepare a secret without changing live traffic, use `wrangler versions secret put <NAME>` and deploy that version later with the code/configuration version you intend to release. `apps/memos/wrangler.json` is the source of truth for non-secret bindings and required secret names.
+`pnpm d1:migrate:remote` (`void db migrate --remote`) applies pending migrations without deploying code. Remote D1 records applied files in the `d1_migrations` table, so files already applied by Wrangler are not re-run. Before `void deploy` applies pending migrations, it saves a D1 Time Travel restore point and prints the matching `void db restore --platform cloudflare` command; deploy stops before migrating if it cannot save one.
+
+Secret changes are a separate operation, not part of every code deployment. Run `pnpm --filter @my-memos/app exec void secret put <NAME>`; on a direct Cloudflare target it stores an encrypted Worker secret. `void secret list` shows the names. `apps/memos/void.config.ts` is the source of truth for non-secret bindings and required secret names.
+
+`void db migrate --remote` and `void secret` read the deploy platform from the gitignored `apps/memos/.void/project.json`. On a new machine, run `pnpm --filter @my-memos/app exec void connect --platform cloudflare` once before using them.
 
 Chat uses the custom-provider `gateway.ai.cloudflare.com/v1/{account}/default/custom-opencode/v1` endpoint with `deepseek-v4-flash`. Configure the `custom-opencode` provider with an upstream base URL that resolves `/v1/chat/completions`, then store its API key under the `default` Gateway's Provider Keys with the `default` alias. The Worker sends `cf-aig-authorization` and no upstream credentials; Cloudflare injects the stored provider key, so these calls use provider BYOK rather than Unified Billing. OpenCode requires `x-opencode-session` to route requests; the Worker sets it to the conversation's first user message ID, which stays stable across turns. The deprecated `/compat/chat/completions` endpoint and the Unified Billing REST endpoint are not used.
 
@@ -102,7 +106,7 @@ pnpm check
 - `pnpm dev`
   Starts the app workspace with `vp dev`; `voidPlugin()` proxies D1, KV, and R2 calls to the configured remote Cloudflare resources because each binding has `remote: true`. Local development can therefore read and mutate production data.
 - `pnpm d1:migrate:local`
-  Applies D1 migrations to app-local state under `apps/memos/.wrangler/state`. This explicit local command does not migrate the remote D1 database used by `pnpm dev`.
+  Runs `void db migrate` against app-local D1 state under `apps/memos/.wrangler/state`, tracked in its `_void_migrations` table. It does not migrate the remote D1 database used by `pnpm dev`.
 - `pnpm lint`
   Runs oxlint across the workspace.
 - `pnpm format`
@@ -114,29 +118,31 @@ pnpm check
 
 The app relies on these migration groups:
 
-- [apps/memos/migrations/0001_create_memos.sql](../apps/memos/migrations/0001_create_memos.sql)
+- [apps/memos/db/migrations/0001_create_memos.sql](../apps/memos/db/migrations/0001_create_memos.sql)
   Creates the `memos` table and indexes.
-- [apps/memos/migrations/0002_auth_tables.sql](../apps/memos/migrations/0002_auth_tables.sql)
+- [apps/memos/db/migrations/0002_auth_tables.sql](../apps/memos/db/migrations/0002_auth_tables.sql)
   Creates Better Auth tables: `user`, `session`, `account`, `verification`.
-- `apps/memos/migrations/0003_add_memo_favorite.sql`
+- `apps/memos/db/migrations/0003_add_memo_favorite.sql`
   Adds the memo favorite flag and its filtered-list index.
 
 Run migrations before the first deployment and whenever schema changes are introduced.
 
 ### Adding a New Schema Change
 
-Wrangler D1 SQL migrations are the source of truth. The workflow is:
+The numbered SQL files in `apps/memos/db/migrations` are the source of truth. The workflow is:
 
 ```bash
-# create a numbered SQL file in apps/memos/migrations/
+# create a numbered SQL file in apps/memos/db/migrations/
 pnpm d1:migrate:local    # verify locally
-pnpm d1:migrate:remote   # apply to production
+pnpm d1:migrate:remote   # apply to production, or let pnpm deploy apply it
 ```
 
+Void rejects destructive statements (`DROP`, column renames, unbounded `UPDATE`/`DELETE`, and similar) unless the file contains a standalone `-- void:allow-destructive` line.
+
 When a migration changes the memo schema, update the Drizzle schema mirror in
-`apps/memos/src/lib/server/db/schema.ts` in the same change. Do not commit
-Drizzle-generated initial snapshots beside Wrangler migrations; they are a separate
-migration system and can attempt to recreate existing tables.
+`apps/memos/src/lib/server/db/schema.ts` in the same change. Do not run
+`void db generate` or commit Drizzle snapshots or `meta/_journal.json` beside these files;
+that switches Void to journal-checked Drizzle migrations and can attempt to recreate existing tables.
 
 ## Post-Deployment Checks
 
@@ -197,9 +203,9 @@ Some clients name the transport `http` instead of `streamable-http`; the URL and
 - The chat route reads `agent/PROMPT.md` and `agent/MEMORY.md` from `MEMOS_BUCKET`. Missing files degrade gracefully, but chat behavior will change.
 - Chat runs as a streaming HTTP invocation, not a Queue consumer. This deployment intentionally leaves `limits.cpu_ms` unset because it targets Workers Free, whose CPU ceiling is 10 ms per invocation; the 30-second default and configurable 5-minute maximum belong to Workers Paid. Model, R2, D1, and MCP I/O wait time does not consume CPU time, and the response stream keeps the HTTP invocation alive while the client remains connected.
 - Successful chats schedule memory maintenance with `waitUntil`; failures and R2 ETag conflicts never fail the already completed chat response.
-- Local development uses remote bindings for D1, KV, and R2 and can mutate the configured Cloudflare resources. The explicit `pnpm d1:migrate:local` command still targets app-local state under `apps/memos/.wrangler/state`.
+- Local development uses remote bindings for D1, KV, and R2 and can mutate the configured Cloudflare resources. The explicit `pnpm d1:migrate:local` command still targets app-local state under `apps/memos/.wrangler/state`. That state still holds Wrangler's `d1_migrations` records rather than `_void_migrations`; if `pnpm d1:migrate:local` fails on an already-applied file, run `void db reset` in `apps/memos` to rebuild the local database.
 - Deploy my-knowledge, which exports `ApiKeyDurableObject`, before this Worker. The first rollout
   requires generating a fresh API key. After confirming the new key works, remove the legacy R2
   object `system/my-memos-api-key.json` and KV key `system:my-memos-api-key:digest`; neither is read
   by the current application.
-- `apps/memos/wrangler.json` currently includes concrete IDs and a production URL. Keep it aligned with `apps/memos/void.json` and `apps/memos/src/app.d.ts`, and avoid mixing environments in one config unless you add explicit environment sections.
+- `apps/memos/void.config.ts` currently includes concrete IDs and a production URL. Keep its `cloudflare` bindings aligned with `apps/memos/src/app.d.ts`, and avoid mixing environments in one config unless you add explicit environment sections.

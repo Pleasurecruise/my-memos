@@ -13,7 +13,13 @@ export default defineConfig({
   },
   fmt: {
     indent: "tab",
-    ignorePatterns: ["CLAUDE.md", "dist/**", "apps/memos/.svelte-kit/**", "**/.svelte-check/**"],
+    ignorePatterns: [
+      "CLAUDE.md",
+      "dist/**",
+      "apps/memos/.svelte-kit/**",
+      "**/.svelte-check/**",
+      "apps/memos/void.lock.json",
+    ],
     svelte: true,
   },
 });

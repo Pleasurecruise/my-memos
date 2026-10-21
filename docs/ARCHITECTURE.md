@@ -4,13 +4,13 @@ This repository is a `pnpm` workspace with one deployable app and two reusable p
 
 ## Repository Layout
 
-| Path                                                    | Role                                                          |
-| ------------------------------------------------------- | ------------------------------------------------------------- |
-| [apps/memos](../apps/memos)                             | Main SvelteKit application deployed to Cloudflare Workers     |
-| [packages/ui](../packages/ui)                           | Shared Svelte UI components, theme tokens, and local demo app |
-| `packages/ai-core`                                      | Platform-neutral pi Agent runtime and MCP client adapter      |
-| [docs](../docs)                                         | Maintainer-facing documentation                               |
-| [apps/memos/wrangler.json](../apps/memos/wrangler.json) | Cloudflare Worker entrypoint and bindings                     |
+| Path                                                      | Role                                                          |
+| --------------------------------------------------------- | ------------------------------------------------------------- |
+| [apps/memos](../apps/memos)                               | Main SvelteKit application deployed to Cloudflare Workers     |
+| [packages/ui](../packages/ui)                             | Shared Svelte UI components, theme tokens, and local demo app |
+| `packages/ai-core`                                        | Platform-neutral pi Agent runtime and MCP client adapter      |
+| [docs](../docs)                                           | Maintainer-facing documentation                               |
+| [apps/memos/void.config.ts](../apps/memos/void.config.ts) | Cloudflare Worker settings, bindings, and Void framework mode |
 
 ## High-Level System
 
@@ -34,7 +34,7 @@ Browser (in-memory Svelte Chat store)
 
 The deployable application is the `@my-memos/app` workspace package defined in [apps/memos/package.json](../apps/memos/package.json).
 
-Void is configured at [apps/memos/void.json](../apps/memos/void.json), beside the SvelteKit package it prepares and deploys. The repository-root scripts delegate Void commands to this workspace package. D1 remains owned by the existing Wrangler migrations and `App.Platform` contract; the app does not opt into Void's `void/db` schema or migration layer.
+Void is configured at [apps/memos/void.config.ts](../apps/memos/void.config.ts), beside the SvelteKit package it prepares and deploys. `inference.appType` stays `framework`, so SvelteKit keeps routing and rendering. The SvelteKit Cloudflare adapter reads the generated `.void-wrangler.jsonc`. The repository-root scripts delegate Void commands to this workspace package. D1 schema changes are hand-written SQL in `apps/memos/db/migrations`, applied by `void db migrate` and `void deploy`; the app does not use Void's Drizzle schema generation.
 
 Key areas:
 
@@ -56,10 +56,8 @@ Key areas:
   Contains two layout generations:
   - `views/` — default `Home`, `Chat`, and `Archive` views using the masthead-based layout and timeline feed.
   - `views-legacy/` — classic views kept for comparison via the in-page toggle; these use `AppShell` + `Sidebar` where applicable.
-- [apps/memos/migrations](../apps/memos/migrations)
-  D1 schema migrations applied by wrangler. These numbered SQL files are the source of truth; the Drizzle schema mirrors the runtime table shape for query building.
-- [apps/memos/worker.ts](../apps/memos/worker.ts)
-  Thin wrapper around the generated SvelteKit handler. The current Wrangler `main` points directly to `.svelte-kit/cloudflare/_sveltekit.js`.
+- [apps/memos/db/migrations](../apps/memos/db/migrations)
+  D1 schema migrations applied by Void. These numbered SQL files are the source of truth; the Drizzle schema mirrors the runtime table shape for query building.
 
 ### Package: `packages/ui`
 
@@ -109,7 +107,8 @@ Memo markdown renders to HTML during SSR through
 [apps/memos/src/lib/utils/markdown.ts](../apps/memos/src/lib/utils/markdown.ts), so crawlers and the
 first paint receive formatted content without running JavaScript. The browser reuses the same
 renderer for paginated pages and chat. Its rules match my-workspace's `render_memo`: CommonMark
-with GFM tables, footnotes, strikethrough and task lists; soft breaks become line breaks; an
+with GFM tables, footnotes, strikethrough and task lists; soft breaks become line breaks; setext
+headings are disabled, so `---` under text is a thematic break; an
 unindented line after a list item ends the list; raw HTML is shown as text; bare scheme URLs are
 linked outside code and links; destinations other than relative, HTTP(S) and `mailto:` are
 neutralized.
@@ -150,7 +149,7 @@ Current auth characteristics:
 - database-backed sessions in D1
 - Google OAuth configured as the social provider
 - secure cookies enabled automatically when `BETTER_AUTH_URL` is `https`
-- optional single-user gating in application code through `ALLOWED_EMAIL`; the current production Wrangler configuration requires the secret
+- optional single-user gating in application code through `ALLOWED_EMAIL`; the current production Void configuration requires the secret
 
 Request bootstrapping happens in [apps/memos/src/hooks.server.ts](../apps/memos/src/hooks.server.ts), which:
 
@@ -165,7 +164,7 @@ Memo persistence is split deliberately across D1 and R2.
 
 ### D1
 
-Table defined in [apps/memos/migrations/0001_create_memos.sql](../apps/memos/migrations/0001_create_memos.sql). The Drizzle schema mirror lives in [apps/memos/src/lib/server/db/schema.ts](../apps/memos/src/lib/server/db/schema.ts).
+Table defined in [apps/memos/db/migrations/0001_create_memos.sql](../apps/memos/db/migrations/0001_create_memos.sql). The Drizzle schema mirror lives in [apps/memos/src/lib/server/db/schema.ts](../apps/memos/src/lib/server/db/schema.ts).
 
 - `id`
 - `r2_key`
@@ -228,7 +227,7 @@ separate Markdown image blocks, author attribution, and canonical source URL pas
 normal memo creation service and D1/R2 write path.
 X imports set the new memo's `favorite` flag during that same creation path.
 
-The Wrangler SQL migrations are authoritative for the deployed schema. The Drizzle mirror (`apps/memos/src/lib/server/db/schema.ts`) describes that table to application code and exports `MemoRow` via `typeof memos.$inferSelect`, eliminating hand-written row types.
+The SQL migrations in `apps/memos/db/migrations` are authoritative for the deployed schema. The Drizzle mirror (`apps/memos/src/lib/server/db/schema.ts`) describes that table to application code and exports `MemoRow` via `typeof memos.$inferSelect`, eliminating hand-written row types.
 
 Agent tools are defined once as MCP tools in `apps/memos/src/lib/server/mcp`. The in-product Agent discovers them over an in-process modern MCP transport; it never imports implementations directly.
 
@@ -324,7 +323,7 @@ parallel.
 
 The runtime contract for Cloudflare bindings is `AppEnv` in [apps/memos/src/lib/server/types.ts](../apps/memos/src/lib/server/types.ts), merged into `Cloudflare.Env` by [apps/memos/src/app.d.ts](../apps/memos/src/app.d.ts) for `import { env } from "cloudflare:workers"`. Keep it in sync with:
 
-- `apps/memos/wrangler.json`
+- `apps/memos/void.config.ts`
 - any new secrets or bindings
 - any platform-dependent server code
 
@@ -332,8 +331,8 @@ If these drift, the app may still compile but fail at runtime.
 
 ## Known Inconsistencies To Watch
 
-- `apps/memos/wrangler.json` is production-shaped rather than environment-sliced.
+- `apps/memos/void.config.ts` is production-shaped rather than environment-sliced.
 - D1's `excerpt` column currently mirrors the full memo body; the name understates its role and duplicates canonical R2 data.
-- Schema changes should be made as Wrangler SQL migrations first, then mirrored in the Drizzle schema. Do not mix Void- or Drizzle-generated migrations with Wrangler-applied SQL files.
+- Schema changes should be made as hand-written SQL in `apps/memos/db/migrations` first, then mirrored in the Drizzle schema. Do not run `void db generate` or add Drizzle journal/snapshot files there.
 
 These do not block the current runtime, but they matter when changing deployment or storage behavior.

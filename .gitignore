@@ -13,6 +13,7 @@ coverage/
 # Tool caches
 .wrangler/
 .void/
+.void-wrangler.jsonc
 apps/memos/drizzle/
 .parcel-cache/
 .cache/

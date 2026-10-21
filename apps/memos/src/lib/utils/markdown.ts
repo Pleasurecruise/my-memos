@@ -12,7 +12,13 @@ import { gfmTable } from "micromark-extension-gfm-table";
 import { gfmTaskListItem } from "micromark-extension-gfm-task-list-item";
 
 const PARSE_OPTIONS: Options = {
-  extensions: [gfmTable(), gfmFootnote(), gfmStrikethrough(), gfmTaskListItem()],
+  extensions: [
+    gfmTable(),
+    gfmFootnote(),
+    gfmStrikethrough(),
+    gfmTaskListItem(),
+    { disable: { null: ["setextUnderline"] } },
+  ],
   mdastExtensions: [
     gfmTableFromMarkdown(),
     gfmFootnoteFromMarkdown(),

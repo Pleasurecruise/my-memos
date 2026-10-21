@@ -30,8 +30,11 @@ export default defineConfig(({ command, mode }) => ({
     sveltekit({
       preprocess: vitePreprocess(),
       adapter: adapter({
-        config: "./wrangler.json",
-        platformProxy: { remoteBindings: mode !== "test" },
+        config: "./.void-wrangler.jsonc",
+        platformProxy: {
+          configPath: "./.void-wrangler.jsonc",
+          remoteBindings: mode !== "test",
+        },
       }),
     }),
     tailwindcss(),

@@ -14,15 +14,15 @@
     "typecheck": "svelte-check --tsconfig ./tsconfig.check.json"
   },
   "dependencies": {
-    "@lucide/svelte": "1.54.0",
+    "@lucide/svelte": "1.60.0",
     "@modelcontextprotocol/server": "2.3.1",
     "@my-memos/ai-core": "workspace:*",
     "@my-memos/ui": "workspace:*",
     "@resvg/resvg-wasm": "2.6.2",
-    "better-auth": "1.7.7",
+    "better-auth": "1.7.12",
     "date-fns": "4.4.0",
-    "defuddle": "0.19.4",
-    "dompurify": "3.4.16",
+    "defuddle": "0.19.5",
+    "dompurify": "3.4.17",
     "drizzle-orm": "1.0.0-rc.2",
     "entities": "8.1.0",
     "hast-util-to-html": "9.0.5",
@@ -32,20 +32,20 @@
     "mdast-util-gfm-table": "2.0.0",
     "mdast-util-gfm-task-list-item": "2.0.0",
     "mdast-util-to-hast": "13.2.1",
-    "mermaid": "12.1.0",
+    "mermaid": "12.2.0",
     "micromark-extension-gfm-footnote": "2.1.0",
     "micromark-extension-gfm-strikethrough": "2.1.0",
     "micromark-extension-gfm-table": "2.1.2",
     "micromark-extension-gfm-task-list-item": "2.1.0",
     "turndown": "7.2.4",
-    "zod": "4.6.5"
+    "zod": "4.6.7"
   },
   "devDependencies": {
-    "@sveltejs/adapter-cloudflare": "8.0.0",
-    "@sveltejs/kit": "3.0.1",
+    "@sveltejs/adapter-cloudflare": "8.0.1",
+    "@sveltejs/kit": "3.1.0",
     "@types/hast": "3.0.5",
     "@types/mdast": "4.0.4",
     "@types/turndown": "5.0.6",
-    "void": "0.26.1"
+    "void": "1.1.12"
   }
 }

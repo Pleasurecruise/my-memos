@@ -1,8 +1,8 @@
 {
-  "extends": "$app/tsconfig",
+  "extends": ["$app/tsconfig", "./.void/tsconfig.json"],
   "compilerOptions": {
     "skipLibCheck": true,
-    "types": ["void/env", "$app/types"]
+    "types": ["$app/types", "void/env"]
   },
-  "include": ["src"]
+  "include": ["src", "db", "crons", "queues", "*.ts"]
 }

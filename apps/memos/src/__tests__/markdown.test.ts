@@ -22,6 +22,14 @@ describe("memo markdown", () => {
     expect(html).toContain("注释");
   });
 
+  it("renders --- under text as a thematic break", () => {
+    expect(renderMarkdown("第一段\n---\n第二段")).toBe("<p>第一段</p>\n<hr>\n<p>第二段</p>");
+    expect(renderMarkdown("- 第一项\n接着写\n---")).toBe(
+      "<ul>\n<li>第一项</li>\n</ul>\n<p>接着写</p>\n<hr>",
+    );
+    expect(renderMarkdown("标题\n===")).toBe("<p>标题<br>\n===</p>");
+  });
+
   it("escapes raw HTML and neutralizes unsafe destinations", () => {
     expect(renderMarkdown("hello <b>bold</b>")).toBe("<p>hello &#x3C;b>bold&#x3C;/b></p>");
     expect(renderMarkdown("[x](javascript:alert(1))")).toBe('<p><a href="#">x</a></p>');
