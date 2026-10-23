@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="icon" type="image/png" href="/favicon.png" />
     <script>
+      document.documentElement.classList.add("js");
       (function () {
         var t = localStorage.getItem("my-memos:theme");
         var dark = t ? t === "dark" : window.matchMedia("(prefers-color-scheme: dark)").matches;

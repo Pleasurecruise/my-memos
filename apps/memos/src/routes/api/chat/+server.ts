@@ -22,11 +22,11 @@ export const POST: RequestHandler = async ({ request, locals }) => {
   const { prompt, memory } = await loadPromptMemory(env.MEMOS_BUCKET);
   const today = new Date().toISOString().slice(0, 10);
   const system = [
-    `Today's date (UTC): ${today}`,
+    GENERATIVE_UI_PROMPT,
+    "Use update_memory only for durable, user-confirmed facts, preferences, corrections, or explicit remember/forget requests. Make one small exact edit and preserve unrelated memory.",
     prompt || "You are a helpful personal assistant.",
     memory ? `<memory>\n${memory}\n</memory>` : "",
-    "Use update_memory only for durable, user-confirmed facts, preferences, corrections, or explicit remember/forget requests. Make one small exact edit and preserve unrelated memory.",
-    GENERATIVE_UI_PROMPT,
+    `Today's date (UTC): ${today}`,
   ]
     .filter(Boolean)
     .join("\n\n");

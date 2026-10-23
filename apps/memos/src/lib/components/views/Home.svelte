@@ -264,7 +264,7 @@
     }
     if (cancelled()) return true;
 
-    centerMemo(el, "smooth");
+    centerMemo(el, "auto");
     const settle = () => centerMemo(el, "auto");
     if ("onscrollend" in window) {
       window.addEventListener("scrollend", settle, { once: true });

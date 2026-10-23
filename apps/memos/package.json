@@ -14,7 +14,7 @@
     "typecheck": "svelte-check --tsconfig ./tsconfig.check.json"
   },
   "dependencies": {
-    "@lucide/svelte": "1.60.0",
+    "@lucide/svelte": "1.61.0",
     "@modelcontextprotocol/server": "2.3.1",
     "@my-memos/ai-core": "workspace:*",
     "@my-memos/ui": "workspace:*",
@@ -46,6 +46,6 @@
     "@types/hast": "3.0.5",
     "@types/mdast": "4.0.4",
     "@types/turndown": "5.0.6",
-    "void": "1.1.12"
+    "void": "1.2.1"
   }
 }

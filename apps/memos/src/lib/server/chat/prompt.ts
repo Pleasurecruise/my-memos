@@ -46,7 +46,7 @@ Use for anything where the user interacts: sliders, filters, calculators, dashbo
 - CSS custom properties are pre-defined: --color-text-primary (#e6e3dc), --color-text-secondary (#9a948d), --color-background-primary (#1a1917), --color-background-secondary (#242220), --color-border-tertiary (rgba(230,227,220,0.15)), --color-accent (#d8a0b2), --font-sans, --font-mono, --border-radius-md (5px), --border-radius-lg (7px).
 - SVG color ramp classes (c-blue, c-teal, etc.) are also available.
 - Load libraries from CDN: cdnjs.cloudflare.com, esm.sh, cdn.jsdelivr.net, unpkg.com.
-- Stream useful structure early — put visible content before <script> tags.
+- Put visible content before <script> tags.
 - Keep <style> short unless interaction genuinely needs more rules.
 
 ## General rules

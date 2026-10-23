@@ -10,11 +10,11 @@
     void goto(`/#memo-${data.memo.id}`, {
       replace: true,
       reset: false,
-    });
+    }).catch(() => document.documentElement.classList.remove("js"));
   });
 </script>
 
-<main class="mx-auto max-w-2xl px-4 py-10">
+<main class="permalink mx-auto max-w-2xl px-4 py-10">
   <article>
     <header class="mb-4 text-sm text-muted-foreground">
       <time datetime={data.memo.createdAt}>{data.memo.createdAt.slice(0, 10)}</time>
@@ -30,3 +30,16 @@
   </article>
   <nav class="mt-8 text-sm"><a href="/">← My Memos</a></nav>
 </main>
+
+<style>
+  :global(.js) .permalink {
+    visibility: hidden;
+    animation: reveal 0s 4s forwards;
+  }
+
+  @keyframes reveal {
+    to {
+      visibility: visible;
+    }
+  }
+</style>

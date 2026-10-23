@@ -64,9 +64,9 @@ fetching.
 
 `agent/PROMPT.md` and `agent/MEMORY.md` remain in R2. Reads use a 30-second cache with ETag revalidation instead of a never-invalidated process cache.
 
-After a successful chat, the server passes only the newest user message and newly generated assistant text to `platform.ctx.waitUntil()`. A no-tool model call returns `{ changed, memory }`. It may keep explicit durable identity, preferences, work habits, long-running projects, corrections, and remember/forget instructions. It must exclude transient tasks, ordinary chat, raw tool output, unconfirmed assistant inferences, credentials, secrets, and sensitive data.
+The agent updates memory through the `update_memory` tool, which replaces one exact, unique span or appends a new entry. It may keep explicit durable identity, preferences, work habits, long-running projects, corrections, and remember/forget instructions. It must exclude transient tasks, ordinary chat, raw tool output, unconfirmed assistant inferences, credentials, secrets, and sensitive data.
 
-Unchanged memory is not written. Changed memory uses an R2 `onlyIf` ETag condition. On conflict the updater reads current memory and recomputes once; a second conflict or any background failure is logged without affecting chat. The only durable chat-derived content is the consolidated `MEMORY.md`.
+Unchanged memory is not written. Changed memory uses an R2 `onlyIf` ETag condition; a conflict fails the tool call so the agent can retry with current memory. The only durable chat-derived content is `MEMORY.md`.
 
 ## Historical lightweight adapter
 

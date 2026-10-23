@@ -22,17 +22,3 @@ export interface MemoStats {
   total: number;
   today: number;
 }
-
-export interface TocEntry {
-  depth: number;
-  text: string;
-  id: string;
-}
-
-export type VisualBlockType = "svg" | "mermaid" | "chart" | "widget";
-
-export interface VisualBlock {
-  type: VisualBlockType;
-  code: string;
-  index: number;
-}

@@ -2,7 +2,7 @@ import { goto } from "$app/navigation";
 
 type QueryValue = string | string[] | null;
 
-export { extractTags, stripHashtags } from "./tags";
+export { stripHashtags } from "./tags";
 
 export function updateQuery(params: Record<string, QueryValue>): void {
   const url = new URL(window.location.href);

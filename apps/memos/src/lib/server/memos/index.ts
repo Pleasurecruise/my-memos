@@ -14,7 +14,6 @@ export {
   countMemoStats,
   isValidMemoCursor,
 } from "./repository";
-export { buildMemoDateCondition, buildMemoTagCondition, buildMemoTagConditions } from "./query";
 export {
   MAX_MEMO_SEARCH_BYTES,
   isMemoSearchWithinLimit,

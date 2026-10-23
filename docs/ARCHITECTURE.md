@@ -268,13 +268,13 @@ File: [apps/memos/src/routes/api/chat/+server.ts](../apps/memos/src/routes/api/c
 Behavior:
 
 - requires authentication
-- loads prompt and memory from R2 to build the system context
-- model: `deepseek-chat` through Cloudflare AI Gateway's provider-native DeepSeek endpoint; the Gateway injects the configured BYOK provider key
+- loads prompt and memory from R2 to build the system context; static instructions come first and the date last so the model's prefix cache survives memory edits and date changes
+- model: `deepseek-v4-flash` through Cloudflare AI Gateway's `custom-opencode` custom-provider endpoint; the Gateway injects the configured BYOK provider key
 - pi `Agent` is the sole server-side loop owner and runs until natural completion, cancellation, upstream failure, or platform termination
 - streams newline-delimited, typed JSON events for assistant text and tool parts
 - forwards one complete tool input when execution starts; cumulative argument deltas stay server-side to avoid quadratic serialization and repeated visual renders
 - request cancellation propagates to pi, the model request, and MCP tool calls
-- after success, `platform.ctx.waitUntil()` updates memory from only the latest user turn and newly generated assistant reply
+- long-term memory changes only through the agent's `update_memory` tool, which applies one exact edit to `agent/MEMORY.md` with an R2 ETag condition
 
 ### External Memo Integrations
 
