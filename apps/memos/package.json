@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "imports": {
+    "#env": "./env.ts",
     "#lib/*": "./src/lib/*"
   },
   "scripts": {

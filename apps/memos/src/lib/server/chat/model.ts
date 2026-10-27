@@ -1,5 +1,5 @@
 import { createOpenAICompatibleModel } from "@my-memos/ai-core";
-import { env } from "void/env";
+import env from "#env";
 import type { ChatProvider } from "./types";
 
 export function createChatProvider(sessionId: string): ChatProvider {

@@ -1,7 +1,7 @@
 import { waitUntil } from "cloudflare:workers";
 import { Defuddle } from "defuddle/node";
 import TurndownService from "turndown";
-import { env as config } from "void/env";
+import config from "#env";
 import { z } from "zod";
 import {
   createMemo,

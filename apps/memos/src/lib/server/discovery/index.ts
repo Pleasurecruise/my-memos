@@ -1,4 +1,4 @@
-import { env } from "void/env";
+import env from "#env";
 import { stripMarkdown } from "#lib/server/og/index.ts";
 import { SITE_DESCRIPTION, SITE_NAME } from "#lib/site.ts";
 import type { Memo } from "#lib/types.ts";

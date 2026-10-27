@@ -1,4 +1,4 @@
-import { env } from "void/env";
+import env from "#env";
 import { z } from "zod";
 import { memoTitle } from "#lib/server/discovery/index.ts";
 import type { Memo } from "#lib/types.ts";

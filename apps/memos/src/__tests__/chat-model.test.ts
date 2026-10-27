@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from "vite-plus/test";
 import { createChatProvider } from "#lib/server/chat/model.ts";
 
-vi.mock("void/env", () => ({
-  env: { CF_ACCOUNT_ID: "account/id", CF_AIG_TOKEN: "gateway-token" },
+vi.mock("#env", () => ({
+  default: { CF_ACCOUNT_ID: "account/id", CF_AIG_TOKEN: "gateway-token" },
 }));
 
 describe("Cloudflare AI Gateway custom-provider BYOK model", () => {

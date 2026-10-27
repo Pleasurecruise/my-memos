@@ -1,5 +1,5 @@
 import { env } from "cloudflare:workers";
-import { env as config } from "void/env";
+import config from "#env";
 import type { Handle } from "@sveltejs/kit/hooks";
 import { getAuth } from "#lib/server/auth.ts";
 import { svelteKitHandler } from "better-auth/svelte-kit";

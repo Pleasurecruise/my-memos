@@ -1,4 +1,4 @@
-import { env } from "void/env";
+import env from "#env";
 import type { RequestHandler } from "./$types";
 
 export const GET: RequestHandler = () => {

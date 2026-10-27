@@ -1,7 +1,7 @@
 import { betterAuth } from "better-auth";
 import { sveltekitCookies } from "better-auth/svelte-kit";
 import { getRequestEvent } from "$app/server";
-import { env } from "void/env";
+import env from "#env";
 
 export function getAuth(db: D1Database) {
   return betterAuth({
