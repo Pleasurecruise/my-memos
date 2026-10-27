@@ -50,8 +50,6 @@ Key areas:
     and a service that coordinates operations spanning those boundaries.
   - `apps/memos/src/lib/server/tags`
     D1 tag definitions and Jev classification; `createMemo` uses it to tag untagged memos.
-  - `apps/memos/src/lib/server/nmem`
-    Nowledge Mem client that imports a memo as a conversation; called by the create routes.
   - `apps/memos/src/lib/server/x-import.ts`
     Validates X/Twitter status URLs and the FxTwitter response fields used by the import route.
   - `apps/memos/src/lib/server/mcp`
@@ -308,9 +306,7 @@ only:
 - `GET /api/memos` returns `{ memos, nextCursor }` and supports cursor, limit, search, date,
   tags, public, archive, favorite, and updated-time filters.
 - `POST /api/memos` creates a memo. `createMemo` asks Jev for tags when a memo has none, before it
-  is saved. This route and the `create_memo` MCP tool then pass the memo to `importMemoThread`
-  with `waitUntil`, which imports it into Nowledge Mem as a conversation. The X import route is
-  tagged but not imported (see [DEPLOYMENT.md](./DEPLOYMENT.md#build-and-deployment-flow)).
+  is saved (see [DEPLOYMENT.md](./DEPLOYMENT.md#build-and-deployment-flow)).
 - `GET`, `PATCH`, and `DELETE /api/memos/[id]` read, update, and delete one memo; reads return
   `{ memo }`.
 - `GET /api/tags` returns tag counts.

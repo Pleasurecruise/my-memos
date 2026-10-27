@@ -1,6 +1,5 @@
-import { env, waitUntil } from "cloudflare:workers";
+import { env } from "cloudflare:workers";
 import { isOwnerRequest } from "#lib/server/apikey/index.ts";
-import { importMemoThread } from "#lib/server/nmem/index.ts";
 import {
   createMemo,
   isValidMemoCursor,
@@ -117,7 +116,6 @@ export const POST: RequestHandler = async ({ request, locals }) => {
   }
 
   const memo = await createMemo(env.DB, env.MEMOS_BUCKET, result.data);
-  waitUntil(importMemoThread(memo));
 
   return Response.json({ memo }, { status: 201 });
 };
