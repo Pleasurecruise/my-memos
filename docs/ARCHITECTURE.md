@@ -273,7 +273,7 @@ Behavior:
 
 - requires authentication
 - loads prompt and memory from R2 to build the system context; static instructions come first and the date last so the model's prefix cache survives memory edits and date changes
-- model: `deepseek-v4-flash` through Cloudflare AI Gateway's `custom-opencode` custom-provider endpoint; the Gateway injects the configured BYOK provider key
+- model: `deepseek-v4.1-flash` through Cloudflare AI Gateway's `custom-opencode` custom-provider endpoint; the Gateway injects the configured BYOK provider key
 - pi `Agent` is the sole server-side loop owner and runs until natural completion, cancellation, upstream failure, or platform termination
 - streams newline-delimited, typed JSON events for assistant text and tool parts
 - forwards one complete tool input when execution starts; cumulative argument deltas stay server-side to avoid quadratic serialization and repeated visual renders
