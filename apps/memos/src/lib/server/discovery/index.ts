@@ -1,4 +1,4 @@
-import type { AppEnv } from "#lib/server/types.ts";
+import { env } from "void/env";
 import { stripMarkdown } from "#lib/server/og/index.ts";
 import { SITE_DESCRIPTION, SITE_NAME } from "#lib/site.ts";
 import type { Memo } from "#lib/types.ts";
@@ -10,8 +10,8 @@ const TITLE_LENGTH = 60;
 
 const DISALLOWED_PATHS = ["/api/", "/archive", "/favorites", "/chat"];
 
-export function siteOrigin(env: Pick<AppEnv, "BETTER_AUTH_URL">, fallback: URL): URL {
-  return new URL(env.BETTER_AUTH_URL || fallback.origin);
+export function siteOrigin(): URL {
+  return new URL(env.BETTER_AUTH_URL);
 }
 
 export function memoUrl(origin: URL, id: string): string {

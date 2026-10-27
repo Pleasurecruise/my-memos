@@ -12,14 +12,11 @@ allowBuilds:
   workerd: true
 
 overrides:
-  vite: npm:@voidzero-dev/vite-plus-core@1.3.0
+  vite: npm:@voidzero-dev/vite-plus-core@1.4.0
   vitest: 5.0.5
 
 update:
   ignoreDeps:
     - typescript
 
-minimumReleaseAge: 1440
-
-patchedDependencies:
-  void@1.2.1: patches/void@1.2.1.patch
+minimumReleaseAge: 0

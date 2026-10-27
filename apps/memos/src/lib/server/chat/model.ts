@@ -1,8 +1,8 @@
 import { createOpenAICompatibleModel } from "@my-memos/ai-core";
-import type { AppEnv } from "#lib/server/types.ts";
+import { env } from "void/env";
 import type { ChatProvider } from "./types";
 
-export function createChatProvider(env: AppEnv, sessionId: string): ChatProvider {
+export function createChatProvider(sessionId: string): ChatProvider {
   return {
     model: createOpenAICompatibleModel({
       id: "deepseek-v4-flash",

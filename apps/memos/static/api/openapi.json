@@ -9,60 +9,103 @@
       "url": "https://github.com/Pleasurecruise/my-memos/blob/main/LICENSE"
     }
   },
-  "servers": [{ "url": "https://memos.you-find.me/api" }],
-  "security": [{ "bearerAuth": [] }],
+  "servers": [
+    {
+      "url": "https://memos.you-find.me/api"
+    }
+  ],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
   "paths": {
     "/memos": {
       "get": {
         "operationId": "listMemos",
         "summary": "List memos",
         "description": "Anonymous requests return public memos only; archivedOnly and favoritesOnly require the API key or the owner session.",
-        "security": [{ "bearerAuth": [] }, {}],
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {}
+        ],
         "parameters": [
           {
             "name": "cursor",
             "in": "query",
             "description": "Opaque cursor from a previous response's nextCursor.",
-            "schema": { "type": "string" }
+            "schema": {
+              "type": "string"
+            }
           },
           {
             "name": "limit",
             "in": "query",
-            "schema": { "type": "integer", "minimum": 1, "maximum": 100, "default": 25 }
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 25
+            }
           },
           {
             "name": "search",
             "in": "query",
             "description": "Substring match on memo text, at most 48 UTF-8 bytes.",
-            "schema": { "type": "string" }
+            "schema": {
+              "type": "string"
+            }
           },
           {
             "name": "date",
             "in": "query",
             "description": "Only memos updated on this UTC day.",
-            "schema": { "type": "string", "format": "date" }
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
           },
           {
             "name": "tags",
             "in": "query",
             "description": "Comma-separated tags; matches memos with any of them.",
-            "schema": { "type": "string" }
+            "schema": {
+              "type": "string"
+            }
           },
-          { "name": "publicOnly", "in": "query", "schema": { "type": "string", "enum": ["true"] } },
+          {
+            "name": "publicOnly",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["true"]
+            }
+          },
           {
             "name": "archivedOnly",
             "in": "query",
-            "schema": { "type": "string", "enum": ["true"] }
+            "schema": {
+              "type": "string",
+              "enum": ["true"]
+            }
           },
           {
             "name": "favoritesOnly",
             "in": "query",
-            "schema": { "type": "string", "enum": ["true"] }
+            "schema": {
+              "type": "string",
+              "enum": ["true"]
+            }
           },
           {
             "name": "sortByUpdated",
             "in": "query",
-            "schema": { "type": "string", "enum": ["true"] }
+            "schema": {
+              "type": "string",
+              "enum": ["true"]
+            }
           }
         ],
         "responses": {
@@ -74,15 +117,26 @@
                   "type": "object",
                   "required": ["memos", "nextCursor"],
                   "properties": {
-                    "memos": { "type": "array", "items": { "$ref": "#/components/schemas/Memo" } },
-                    "nextCursor": { "type": ["string", "null"] }
+                    "memos": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Memo"
+                      }
+                    },
+                    "nextCursor": {
+                      "type": ["string", "null"]
+                    }
                   }
                 }
               }
             }
           },
-          "400": { "$ref": "#/components/responses/BadRequest" },
-          "401": { "$ref": "#/components/responses/Unauthorized" }
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
         }
       },
       "post": {
@@ -96,23 +150,41 @@
                 "type": "object",
                 "required": ["content"],
                 "properties": {
-                  "content": { "type": "string", "minLength": 1 },
+                  "content": {
+                    "type": "string",
+                    "minLength": 1
+                  },
                   "visibility": {
                     "type": "string",
                     "enum": ["public", "private"],
                     "default": "private"
                   },
-                  "tags": { "type": "array", "items": { "type": "string" }, "default": [] },
-                  "favorite": { "type": "boolean", "default": false }
+                  "tags": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "default": []
+                  },
+                  "favorite": {
+                    "type": "boolean",
+                    "default": false
+                  }
                 }
               }
             }
           }
         },
         "responses": {
-          "201": { "$ref": "#/components/responses/MemoResult" },
-          "400": { "$ref": "#/components/responses/BadRequest" },
-          "401": { "$ref": "#/components/responses/Unauthorized" }
+          "201": {
+            "$ref": "#/components/responses/MemoResult"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
         }
       }
     },
@@ -122,16 +194,25 @@
           "name": "id",
           "in": "path",
           "required": true,
-          "schema": { "type": "string", "pattern": "^\\d{8}T\\d{6}Z-[0-9a-f]{8}$" }
+          "schema": {
+            "type": "string",
+            "pattern": "^\\d{8}T\\d{6}Z-[0-9a-f]{8}$"
+          }
         }
       ],
       "get": {
         "operationId": "getMemo",
         "summary": "Get a memo",
         "responses": {
-          "200": { "$ref": "#/components/responses/MemoResult" },
-          "401": { "$ref": "#/components/responses/Unauthorized" },
-          "404": { "$ref": "#/components/responses/NotFound" }
+          "200": {
+            "$ref": "#/components/responses/MemoResult"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
         }
       },
       "patch": {
@@ -145,31 +226,62 @@
                 "type": "object",
                 "minProperties": 1,
                 "properties": {
-                  "content": { "type": "string", "minLength": 1 },
-                  "visibility": { "type": "string", "enum": ["public", "private"] },
-                  "tags": { "type": "array", "items": { "type": "string" } },
-                  "pinned": { "type": "boolean" },
-                  "favorite": { "type": "boolean" },
-                  "archived": { "type": "boolean" }
+                  "content": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "visibility": {
+                    "type": "string",
+                    "enum": ["public", "private"]
+                  },
+                  "tags": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "pinned": {
+                    "type": "boolean"
+                  },
+                  "favorite": {
+                    "type": "boolean"
+                  },
+                  "archived": {
+                    "type": "boolean"
+                  }
                 }
               }
             }
           }
         },
         "responses": {
-          "200": { "$ref": "#/components/responses/MemoResult" },
-          "400": { "$ref": "#/components/responses/BadRequest" },
-          "401": { "$ref": "#/components/responses/Unauthorized" },
-          "404": { "$ref": "#/components/responses/NotFound" }
+          "200": {
+            "$ref": "#/components/responses/MemoResult"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
         }
       },
       "delete": {
         "operationId": "deleteMemo",
         "summary": "Delete a memo",
         "responses": {
-          "204": { "description": "The memo was deleted." },
-          "401": { "$ref": "#/components/responses/Unauthorized" },
-          "404": { "$ref": "#/components/responses/NotFound" }
+          "204": {
+            "description": "The memo was deleted."
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
         }
       }
     },
@@ -192,8 +304,12 @@
                         "type": "object",
                         "required": ["name", "count"],
                         "properties": {
-                          "name": { "type": "string" },
-                          "count": { "type": "integer" }
+                          "name": {
+                            "type": "string"
+                          },
+                          "count": {
+                            "type": "integer"
+                          }
                         }
                       }
                     }
@@ -202,7 +318,118 @@
               }
             }
           },
-          "401": { "$ref": "#/components/responses/Unauthorized" }
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      }
+    },
+    "/tags/definitions": {
+      "get": {
+        "operationId": "listTagDefinitions",
+        "summary": "List tag definitions used for automatic tagging",
+        "responses": {
+          "200": {
+            "description": "Every tag definition.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["definitions"],
+                  "properties": {
+                    "definitions": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/TagDefinition"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      }
+    },
+    "/tags/definitions/{name}": {
+      "parameters": [
+        {
+          "name": "name",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "put": {
+        "operationId": "defineTag",
+        "summary": "Create or update a tag definition",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["kind", "description"],
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "enum": ["type", "topic", "channel"]
+                  },
+                  "description": {
+                    "type": "string",
+                    "maxLength": 200
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The saved definition.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["definition"],
+                  "properties": {
+                    "definition": {
+                      "$ref": "#/components/schemas/TagDefinition"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The tag name or definition is invalid."
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      },
+      "delete": {
+        "operationId": "deleteTagDefinition",
+        "summary": "Delete a tag definition",
+        "responses": {
+          "204": {
+            "description": "The definition was deleted."
+          },
+          "400": {
+            "description": "The tag name or definition is invalid."
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
         }
       }
     }
@@ -231,25 +458,69 @@
           "archived"
         ],
         "properties": {
-          "id": { "type": "string" },
-          "r2Key": { "type": "string" },
+          "id": {
+            "type": "string"
+          },
+          "r2Key": {
+            "type": "string"
+          },
           "content": {
             "type": "string",
             "description": "Full Markdown body for single memos; an excerpt in lists."
           },
-          "tags": { "type": "array", "items": { "type": "string" } },
-          "createdAt": { "type": "string", "format": "date-time" },
-          "updatedAt": { "type": "string", "format": "date-time" },
-          "visibility": { "type": "string", "enum": ["public", "private"] },
-          "pinned": { "type": "boolean" },
-          "favorite": { "type": "boolean" },
-          "archived": { "type": "boolean" }
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "visibility": {
+            "type": "string",
+            "enum": ["public", "private"]
+          },
+          "pinned": {
+            "type": "boolean"
+          },
+          "favorite": {
+            "type": "boolean"
+          },
+          "archived": {
+            "type": "boolean"
+          }
         }
       },
       "Error": {
         "type": "object",
         "required": ["error"],
-        "properties": { "error": { "type": "string" } }
+        "properties": {
+          "error": {
+            "type": "string"
+          }
+        }
+      },
+      "TagDefinition": {
+        "type": "object",
+        "required": ["name", "kind", "description"],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "enum": ["type", "topic", "channel"]
+          },
+          "description": {
+            "type": "string"
+          }
+        }
       }
     },
     "responses": {
@@ -260,22 +531,44 @@
             "schema": {
               "type": "object",
               "required": ["memo"],
-              "properties": { "memo": { "$ref": "#/components/schemas/Memo" } }
+              "properties": {
+                "memo": {
+                  "$ref": "#/components/schemas/Memo"
+                }
+              }
             }
           }
         }
       },
       "BadRequest": {
         "description": "Invalid input.",
-        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } }
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
       },
       "Unauthorized": {
         "description": "Missing or invalid API key.",
-        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } }
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
       },
       "NotFound": {
         "description": "Memo not found.",
-        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } }
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
       }
     }
   }

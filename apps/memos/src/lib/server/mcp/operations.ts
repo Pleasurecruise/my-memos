@@ -1,5 +1,7 @@
+import { waitUntil } from "cloudflare:workers";
 import { Defuddle } from "defuddle/node";
 import TurndownService from "turndown";
+import { env as config } from "void/env";
 import { z } from "zod";
 import {
   createMemo,
@@ -18,6 +20,7 @@ import { renderSvgSchema } from "#lib/visual/svg.ts";
 import { renderWidgetSchema } from "#lib/visual/widget.ts";
 import { DomainError } from "./errors";
 import { updateMemory } from "#lib/server/chat/memory.ts";
+import { importMemoThread } from "#lib/server/nmem/index.ts";
 import type { AppEnv } from "#lib/server/types.ts";
 import type { DomainOperation } from "./types";
 import {
@@ -103,7 +106,11 @@ export function createDomainOperations(env: AppEnv): DomainOperation[] {
         visibility: z.enum(["private", "public"]).default("private"),
         favorite: z.boolean().default(false),
       }),
-      execute: async (input) => ({ memo: await createMemo(env.DB, env.MEMOS_BUCKET, input) }),
+      execute: async (input) => {
+        const memo = await createMemo(env.DB, env.MEMOS_BUCKET, input);
+        waitUntil(importMemoThread(memo));
+        return { memo };
+      },
     }),
     defineOperation({
       name: "update_memo",
@@ -162,7 +169,7 @@ export function createDomainOperations(env: AppEnv): DomainOperation[] {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            api_key: env.TAVILY_API_KEY,
+            api_key: config.TAVILY_API_KEY,
             query,
             max_results,
             include_answer: true,

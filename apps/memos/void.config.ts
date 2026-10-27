@@ -21,20 +21,6 @@ export default defineConfig({
         custom_domain: true,
       },
     ],
-    vars: {
-      BETTER_AUTH_URL: "https://memos.you-find.me",
-      CF_ACCOUNT_ID: "fb71c4eceaf623ae1b19b8b37d7a38cf",
-    },
-    secrets: {
-      required: [
-        "ALLOWED_EMAIL",
-        "BETTER_AUTH_SECRET",
-        "CF_AIG_TOKEN",
-        "GOOGLE_CLIENT_ID",
-        "GOOGLE_CLIENT_SECRET",
-        "TAVILY_API_KEY",
-      ],
-    },
     assets: {
       directory: ".svelte-kit/cloudflare",
       binding: "ASSETS",

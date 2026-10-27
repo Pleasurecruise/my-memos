@@ -1,4 +1,5 @@
-import { stripHashtags } from "#lib/utils/tags.ts";
+import { classifyMemo, listTagDefinitions } from "#lib/server/tags/index.ts";
+import { replaceTrailingHashtags } from "#lib/utils/tags.ts";
 import type { Memo, TagCount } from "#lib/types.ts";
 import { invalidateMemoOgCache } from "./cache";
 import {
@@ -66,9 +67,14 @@ export async function createMemo(
 ): Promise<Memo> {
   const now = new Date();
   const id = createMemoId(now);
-  const tags = input.tags.length ? input.tags : normalizeTags(input.content);
+  const writtenTags = input.tags.length ? input.tags : normalizeTags(input.content);
+  const tags = writtenTags.length
+    ? writtenTags
+    : await classifyMemo(input.content, await listTagDefinitions(d1));
   const r2Key = buildMemoR2Key(id, now);
-  const content = input.content.trim();
+  const content = writtenTags.length
+    ? input.content.trim()
+    : replaceTrailingHashtags(input.content.trim(), tags);
   const nowIso = now.toISOString();
 
   await writeMemoBody(bucket, r2Key, content);
@@ -121,10 +127,7 @@ export async function updateMemo(
     values.tagsJson = input.tags;
     const storedBody = await readMemoBody(bucket, existing.r2Key);
     if (storedBody !== null) {
-      let body = stripHashtags(storedBody).trimEnd();
-      if (input.tags.length > 0) {
-        body += `\n\n${input.tags.map((tag) => `#${tag}`).join(" ")}`;
-      }
+      const body = replaceTrailingHashtags(storedBody, input.tags);
       await writeMemoBody(bucket, existing.r2Key, body);
       values.excerpt = body;
     }

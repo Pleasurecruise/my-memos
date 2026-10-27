@@ -1,8 +1,8 @@
-import { env } from "cloudflare:workers";
+import { env } from "void/env";
 import type { RequestHandler } from "./$types";
 
-export const GET: RequestHandler = ({ url }) => {
-  const origin = env.BETTER_AUTH_URL || url.origin;
+export const GET: RequestHandler = () => {
+  const origin = env.BETTER_AUTH_URL;
   return Response.json(
     {
       linkset: [

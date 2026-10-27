@@ -17,37 +17,41 @@ The runnable app is the SvelteKit project in [apps/memos](../apps/memos), built 
 - Cache: `KV` via binding `MEMOS_CACHE`
 - Object storage: `R2` via binding `MEMOS_BUCKET`
 - API key storage: Durable Object via binding `API_KEY`
+- Workers AI: binding `AI`, inferred by Void from `void/ai` imports
 
 ## Required Cloudflare Resources
 
 The current Worker expects these bindings to exist:
 
-| Binding        | Type           | Purpose                              |
-| -------------- | -------------- | ------------------------------------ |
-| `DB`           | D1             | Memo metadata and Better Auth tables |
-| `MEMOS_CACHE`  | KV             | Generated assets                     |
-| `MEMOS_BUCKET` | R2             | Memo bodies and Agent files          |
-| `API_KEY`      | Durable Object | API key digest and creation time     |
-| `ASSETS`       | Assets         | Built SvelteKit client assets        |
+| Binding        | Type           | Purpose                                               |
+| -------------- | -------------- | ----------------------------------------------------- |
+| `DB`           | D1             | Memo metadata, tag definitions and Better Auth tables |
+| `MEMOS_CACHE`  | KV             | Generated assets                                      |
+| `MEMOS_BUCKET` | R2             | Memo bodies and Agent files                           |
+| `API_KEY`      | Durable Object | API key digest and creation time                      |
+| `ASSETS`       | Assets         | Built SvelteKit client assets                         |
+| `AI`           | Workers AI     | Jev memo classification                               |
 
 Current binding names and IDs live in the `cloudflare` field of [apps/memos/void.config.ts](../apps/memos/void.config.ts). Runtime TypeScript declarations live in [apps/memos/src/lib/server/types.ts](../apps/memos/src/lib/server/types.ts) (`AppEnv`), which [apps/memos/src/app.d.ts](../apps/memos/src/app.d.ts) merges into `Cloudflare.Env`. Server code reads bindings with `import { env } from "cloudflare:workers"`; SvelteKit 3 and `@sveltejs/adapter-cloudflare` 8 no longer provide `platform`. The adapter reads `./.void-wrangler.jsonc`. D1 migrations are hand-written SQL in `apps/memos/db/migrations`, applied by `void db migrate` and `void deploy`; the app does not use Void's Drizzle schema generation (`void db generate`).
 
 ## Required Environment Variables
 
-`AppEnv` is declared in [apps/memos/src/lib/server/types.ts](../apps/memos/src/lib/server/types.ts). In practice, this app needs:
+Configuration values are declared and validated in [apps/memos/env.ts](../apps/memos/env.ts) with `defineEnv` and read with `import { env } from "void/env"`. Bindings stay on `cloudflare:workers`. `void deploy` refuses to deploy while a required key is missing remotely, and the Worker validates every key at startup.
 
-| Variable               | Required              | Purpose                                             |
-| ---------------------- | --------------------- | --------------------------------------------------- |
-| `BETTER_AUTH_URL`      | yes                   | Public base URL used by Better Auth                 |
-| `BETTER_AUTH_SECRET`   | yes                   | Better Auth signing secret                          |
-| `GOOGLE_CLIENT_ID`     | yes                   | Google OAuth client ID                              |
-| `GOOGLE_CLIENT_SECRET` | yes                   | Google OAuth client secret                          |
-| `ALLOWED_EMAIL`        | yes in current config | Limits account creation to one allowed email        |
-| `CF_ACCOUNT_ID`        | yes for chat          | Cloudflare account containing the AI Gateway        |
-| `CF_AIG_TOKEN`         | yes for chat          | Authenticates the Gateway; it is not a provider key |
-| `TAVILY_API_KEY`       | yes for chat          | Tavily API key for web search                       |
+| Variable               | Required            | Purpose                                             |
+| ---------------------- | ------------------- | --------------------------------------------------- |
+| `BETTER_AUTH_URL`      | default in `env.ts` | Public base URL used by Better Auth                 |
+| `BETTER_AUTH_SECRET`   | yes                 | Better Auth signing secret                          |
+| `GOOGLE_CLIENT_ID`     | yes                 | Google OAuth client ID                              |
+| `GOOGLE_CLIENT_SECRET` | yes                 | Google OAuth client secret                          |
+| `ALLOWED_EMAIL`        | yes                 | Limits sign-in to one allowed email                 |
+| `CF_ACCOUNT_ID`        | default in `env.ts` | Cloudflare account containing the AI Gateway        |
+| `CF_AIG_TOKEN`         | yes                 | Authenticates the Gateway; it is not a provider key |
+| `TAVILY_API_KEY`       | yes                 | Tavily API key for web search                       |
+| `NMEM_API_URL`         | yes                 | Nowledge Mem remote base URL, no trailing slash     |
+| `NMEM_API_KEY`         | yes                 | Nowledge Mem API key, sent as a Bearer token        |
 
-Local development reads the variables above from `apps/memos/.env`, the only local env file Void supports; Void refuses to start when `.env.example` or `.env.local` exist. Production builds switch Vite's `envDir` to `.void/build-env`, so local secrets are not copied into Worker vars. Production secrets are managed with `void secret`, not committed files.
+Local development reads the variables above from `apps/memos/.env`, the only local env file Void supports; Void refuses to start when `.env.example` or `.env.local` exist. Production builds switch Vite's `envDir` to `.void/build-env`, so local secrets are not copied into Worker vars. Production values are Worker secrets managed with `void secret`, not committed files or plaintext `vars`; keys with a default in `env.ts` need no secret. Run `pnpm --filter @my-memos/app exec void env check` to validate `.env`.
 
 ## External API Key
 
@@ -84,11 +88,15 @@ Pushes to `main` also deploy through Cloudflare Workers Builds. Its trigger runs
 
 `pnpm d1:migrate:remote` (`void db migrate --remote`) applies pending migrations without deploying code. Remote D1 records applied files in the `d1_migrations` table, so files already applied by Wrangler are not re-run. Before `void deploy` applies pending migrations, it saves a D1 Time Travel restore point and prints the matching `void db restore --platform cloudflare` command; deploy stops before migrating if it cannot save one.
 
-Secret changes are a separate operation, not part of every code deployment. Run `pnpm --filter @my-memos/app exec void secret put <NAME>`; on a direct Cloudflare target it stores an encrypted Worker secret. `void secret list` shows the names. `apps/memos/void.config.ts` is the source of truth for non-secret bindings and required secret names.
+Secret changes are a separate operation, not part of every code deployment. Run `pnpm --filter @my-memos/app exec void secret put <NAME>`; on a direct Cloudflare target it stores an encrypted Worker secret. `void secret list` shows the names. `apps/memos/void.config.ts` is the source of truth for bindings; `apps/memos/env.ts` is the source of truth for configuration and secret names.
 
 `void db migrate --remote` and `void secret` read the deploy platform from the gitignored `apps/memos/.void/project.json`. On a new machine, run `pnpm --filter @my-memos/app exec void connect --platform cloudflare` once before using them.
 
 Chat uses the custom-provider `gateway.ai.cloudflare.com/v1/{account}/default/custom-opencode/v1` endpoint with `deepseek-v4-flash`. Configure the `custom-opencode` provider with an upstream base URL that resolves `/v1/chat/completions`, then store its API key under the `default` Gateway's Provider Keys with the `default` alias. The Worker sends `cf-aig-authorization` and no upstream credentials; Cloudflare injects the stored provider key, so these calls use provider BYOK rather than Unified Billing. OpenCode requires `x-opencode-session` to route requests; the Worker sets it to the conversation's first user message ID, which stays stable across turns. The deprecated `/compat/chat/completions` endpoint and the Unified Billing REST endpoint are not used.
+
+A memo created without tags, either explicit or as hashtags in its body, is classified by Jev before it is saved, so Save returns the memo with its tags; a Jev failure fails the create. Jev runs as `typesafe/jev` on Workers AI through the `AI` binding and the `default` Gateway. The kinds come from the D1 `tag_definitions` table: all `type` tags form one `choice` question, each `topic` tag is one `noul` question built from its description, and `channel` tags such as `twitter` are never assigned. Only defined tags are candidates. At most two topics above 0.5 are kept, and the tags are appended to the body as hashtags. Jev only chooses among defined tags; add or change one with `PUT /api/tags/definitions/{name}`.
+
+After the response, `waitUntil` imports each memo created through `POST /api/memos` or the `create_memo` MCP tool into Nowledge Mem as a one-message conversation: `POST {NMEM_API_URL}/threads` with thread ID `my-memos-{memo id}` and source `my-memos`, then `POST /memories/distill/triage`, and `POST /memories/distill/schedule` only when triage says the thread is worth distilling. Nowledge Mem decides which memories, if any, to extract; memos are never inserted as memories directly. X imports are tagged but not imported, because their text is another author's. Edits are not re-imported. Import failures are logged by the Worker and do not affect the created memo.
 
 `apps/memos/vite.config.ts` targets `webworker` for SSR and resolves `workerd` before the `node` fallback. This selects the MCP client's Worker-specific validator shim while preserving Node-only export fallbacks used by transitive dependencies. Removing `workerd` makes Rolldown select the MCP Node validator and emit a top-level `createRequire`, which Cloudflare rejects during version validation; adding `browser` selects browser code that reads `window` when the Worker loads.
 
@@ -124,6 +132,8 @@ The app relies on these migration groups:
   Creates Better Auth tables: `user`, `session`, `account`, `verification`.
 - `apps/memos/db/migrations/0003_add_memo_favorite.sql`
   Adds the memo favorite flag and its filtered-list index.
+- `apps/memos/db/migrations/0004_create_tag_definitions.sql`
+  Creates `tag_definitions` and seeds the type, topic and channel tags used by Jev.
 
 Run migrations before the first deployment and whenever schema changes are introduced.
 

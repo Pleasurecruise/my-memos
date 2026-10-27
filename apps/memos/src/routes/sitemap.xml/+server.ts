@@ -8,10 +8,7 @@ import {
 } from "#lib/server/discovery/index.ts";
 import type { RequestHandler } from "./$types";
 
-export const GET: RequestHandler = async ({ url }) => {
+export const GET: RequestHandler = async () => {
   const memos = await listPublicMemos(env.DB, DISCOVERY_MEMO_LIMIT);
-  return discoveryResponse(
-    createSitemap(memos, siteOrigin(env, url)),
-    "application/xml; charset=utf-8",
-  );
+  return discoveryResponse(createSitemap(memos, siteOrigin()), "application/xml; charset=utf-8");
 };

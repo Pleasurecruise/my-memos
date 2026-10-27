@@ -8,10 +8,10 @@ import {
 } from "#lib/server/discovery/index.ts";
 import type { RequestHandler } from "./$types";
 
-export const GET: RequestHandler = async ({ url }) => {
+export const GET: RequestHandler = async () => {
   const memos = await listPublicMemos(env.DB, DISCOVERY_MEMO_LIMIT);
   return discoveryResponse(
-    createRssFeed(memos, siteOrigin(env, url)),
+    createRssFeed(memos, siteOrigin()),
     "application/rss+xml; charset=utf-8",
   );
 };

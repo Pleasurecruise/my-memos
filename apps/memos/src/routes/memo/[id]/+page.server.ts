@@ -4,15 +4,7 @@ import { getMemo } from "#lib/server/memos/index.ts";
 import { memoSummary, memoTitle, memoUrl, siteOrigin } from "#lib/server/discovery/index.ts";
 import { SITE_NAME } from "#lib/site.ts";
 
-export const load = async ({
-  params,
-  url,
-  locals,
-}: {
-  params: { id: string };
-  url: URL;
-  locals: App.Locals;
-}) => {
+export const load = async ({ params, locals }: { params: { id: string }; locals: App.Locals }) => {
   const { id } = params;
   const memo = await getMemo(env.DB, env.MEMOS_BUCKET, id);
 
@@ -24,7 +16,7 @@ export const load = async ({
     return { memo, meta: { robots: "noindex, nofollow" } };
   }
 
-  const origin = siteOrigin(env, url);
+  const origin = siteOrigin();
   const canonical = memoUrl(origin, id);
   const description = memoSummary(memo.content);
   const title = memoTitle(memo.content);

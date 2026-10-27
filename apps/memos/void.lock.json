@@ -18,20 +18,6 @@
         "custom_domain": true
       }
     ],
-    "vars": {
-      "BETTER_AUTH_URL": "https://memos.you-find.me",
-      "CF_ACCOUNT_ID": "fb71c4eceaf623ae1b19b8b37d7a38cf"
-    },
-    "secrets": {
-      "required": [
-        "ALLOWED_EMAIL",
-        "BETTER_AUTH_SECRET",
-        "CF_AIG_TOKEN",
-        "GOOGLE_CLIENT_ID",
-        "GOOGLE_CLIENT_SECRET",
-        "TAVILY_API_KEY"
-      ]
-    },
     "assets": {
       "directory": ".svelte-kit/cloudflare",
       "binding": "ASSETS"
@@ -89,26 +75,13 @@
     ],
     "upload_source_maps": true,
     "workers_dev": false,
+    "preview_urls": false,
     "routes": [
       {
         "pattern": "memos.you-find.me",
         "custom_domain": true
       }
     ],
-    "vars": {
-      "BETTER_AUTH_URL": "https://memos.you-find.me",
-      "CF_ACCOUNT_ID": "fb71c4eceaf623ae1b19b8b37d7a38cf"
-    },
-    "secrets": {
-      "required": [
-        "ALLOWED_EMAIL",
-        "BETTER_AUTH_SECRET",
-        "CF_AIG_TOKEN",
-        "GOOGLE_CLIENT_ID",
-        "GOOGLE_CLIENT_SECRET",
-        "TAVILY_API_KEY"
-      ]
-    },
     "assets": {
       "directory": ".svelte-kit/cloudflare",
       "binding": "ASSETS"
@@ -155,7 +128,10 @@
       }
     },
     "account_id": "fb71c4eceaf623ae1b19b8b37d7a38cf",
-    "preview_urls": false
+    "ai": {
+      "binding": "AI",
+      "remote": true
+    }
   },
-  "text": "{\n  \"name\": \"my-memos\",\n  \"main\": \".svelte-kit/cloudflare/_worker.js\",\n  \"compatibility_date\": \"2026-08-01\",\n  \"compatibility_flags\": [\n    \"nodejs_compat\",\n    \"nodejs_als\",\n    \"global_fetch_strictly_public\"\n  ],\n  \"upload_source_maps\": true,\n  \"workers_dev\": false,\n  \"routes\": [\n    {\n      \"pattern\": \"memos.you-find.me\",\n      \"custom_domain\": true\n    }\n  ],\n  \"vars\": {\n    \"BETTER_AUTH_URL\": \"https://memos.you-find.me\",\n    \"CF_ACCOUNT_ID\": \"fb71c4eceaf623ae1b19b8b37d7a38cf\"\n  },\n  \"secrets\": {\n    \"required\": [\n      \"ALLOWED_EMAIL\",\n      \"BETTER_AUTH_SECRET\",\n      \"CF_AIG_TOKEN\",\n      \"GOOGLE_CLIENT_ID\",\n      \"GOOGLE_CLIENT_SECRET\",\n      \"TAVILY_API_KEY\"\n    ]\n  },\n  \"assets\": {\n    \"directory\": \".svelte-kit/cloudflare\",\n    \"binding\": \"ASSETS\"\n  },\n  \"d1_databases\": [\n    {\n      \"binding\": \"DB\",\n      \"database_name\": \"my-memos\",\n      \"database_id\": \"02a94452-aeeb-4c5e-8846-6750347f6cad\",\n      \"migrations_dir\": \"./db/migrations\",\n      \"remote\": true\n    }\n  ],\n  \"kv_namespaces\": [\n    {\n      \"binding\": \"MEMOS_CACHE\",\n      \"id\": \"5f04d490f46b4459b32d8e735f95dfd5\",\n      \"remote\": true\n    }\n  ],\n  \"r2_buckets\": [\n    {\n      \"binding\": \"MEMOS_BUCKET\",\n      \"bucket_name\": \"cherry-studio\",\n      \"remote\": true\n    }\n  ],\n  \"durable_objects\": {\n    \"bindings\": [\n      {\n        \"name\": \"API_KEY\",\n        \"class_name\": \"ApiKeyDurableObject\",\n        \"script_name\": \"my-knowledge\"\n      }\n    ]\n  },\n  \"observability\": {\n    \"logs\": {\n      \"enabled\": true,\n      \"invocation_logs\": true\n    },\n    \"traces\": {\n      \"enabled\": true\n    }\n  },\n  \"account_id\": \"fb71c4eceaf623ae1b19b8b37d7a38cf\",\n  \"preview_urls\": false\n}\n"
+  "text": "{\n  \"name\": \"my-memos\",\n  \"main\": \".svelte-kit/cloudflare/_worker.js\",\n  \"compatibility_date\": \"2026-08-01\",\n  \"compatibility_flags\": [\n    \"nodejs_compat\",\n    \"nodejs_als\",\n    \"global_fetch_strictly_public\"\n  ],\n  \"upload_source_maps\": true,\n  \"workers_dev\": false,\n  \"preview_urls\": false,\n  \"routes\": [\n    {\n      \"pattern\": \"memos.you-find.me\",\n      \"custom_domain\": true\n    }\n  ],\n  \"assets\": {\n    \"directory\": \".svelte-kit/cloudflare\",\n    \"binding\": \"ASSETS\"\n  },\n  \"d1_databases\": [\n    {\n      \"binding\": \"DB\",\n      \"database_name\": \"my-memos\",\n      \"database_id\": \"02a94452-aeeb-4c5e-8846-6750347f6cad\",\n      \"migrations_dir\": \"./db/migrations\",\n      \"remote\": true\n    }\n  ],\n  \"kv_namespaces\": [\n    {\n      \"binding\": \"MEMOS_CACHE\",\n      \"id\": \"5f04d490f46b4459b32d8e735f95dfd5\",\n      \"remote\": true\n    }\n  ],\n  \"r2_buckets\": [\n    {\n      \"binding\": \"MEMOS_BUCKET\",\n      \"bucket_name\": \"cherry-studio\",\n      \"remote\": true\n    }\n  ],\n  \"durable_objects\": {\n    \"bindings\": [\n      {\n        \"name\": \"API_KEY\",\n        \"class_name\": \"ApiKeyDurableObject\",\n        \"script_name\": \"my-knowledge\"\n      }\n    ]\n  },\n  \"observability\": {\n    \"logs\": {\n      \"enabled\": true,\n      \"invocation_logs\": true\n    },\n    \"traces\": {\n      \"enabled\": true\n    }\n  },\n  \"account_id\": \"fb71c4eceaf623ae1b19b8b37d7a38cf\",\n  \"ai\": {\n    \"binding\": \"AI\",\n    \"remote\": true\n  }\n}\n"
 }

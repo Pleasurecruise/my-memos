@@ -35,14 +35,6 @@ function fakeEnv(): AppEnv {
     MEMOS_BUCKET: {} as R2Bucket,
     MEMOS_CACHE: {} as KVNamespace,
     API_KEY: { getByName: () => ({ fetch: async () => new Response() }) },
-    BETTER_AUTH_SECRET: "",
-    BETTER_AUTH_URL: "",
-    GOOGLE_CLIENT_ID: "",
-    GOOGLE_CLIENT_SECRET: "",
-    ALLOWED_EMAIL: "",
-    CF_ACCOUNT_ID: "",
-    CF_AIG_TOKEN: "",
-    TAVILY_API_KEY: "",
   };
 }
 

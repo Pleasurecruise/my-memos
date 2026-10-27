@@ -1,11 +1,11 @@
-import type { AppEnv } from "#lib/server/types.ts";
 import { betterAuth } from "better-auth";
 import { sveltekitCookies } from "better-auth/svelte-kit";
 import { getRequestEvent } from "$app/server";
+import { env } from "void/env";
 
-export function getAuth(env: AppEnv) {
+export function getAuth(db: D1Database) {
   return betterAuth({
-    database: env.DB,
+    database: db,
     secret: env.BETTER_AUTH_SECRET,
     baseURL: env.BETTER_AUTH_URL,
     trustedOrigins: [env.BETTER_AUTH_URL],
@@ -22,7 +22,7 @@ export function getAuth(env: AppEnv) {
       user: {
         create: {
           before: async (user) => {
-            if (env.ALLOWED_EMAIL && user.email !== env.ALLOWED_EMAIL) {
+            if (user.email !== env.ALLOWED_EMAIL) {
               return false;
             }
           },

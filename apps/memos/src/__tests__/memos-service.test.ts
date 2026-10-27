@@ -74,6 +74,20 @@ describe("memo service", () => {
     expect(memo.tags).toEqual(["new"]);
   });
 
+  it("replaces only the closing hashtags of a tag-only update and keeps indentation", async () => {
+    vi.mocked(readMemoBody).mockResolvedValue("```\n│   indented  box\n```\n\n#old");
+
+    await updateMemo({} as D1Database, {} as R2Bucket, {} as KVNamespace, memoRow.id, {
+      tags: ["备忘", "ai"],
+    });
+
+    expect(writeMemoBody).toHaveBeenCalledWith(
+      expect.anything(),
+      memoRow.r2Key,
+      "```\n│   indented  box\n```\n\n#备忘 #ai",
+    );
+  });
+
   it("loads canonical R2 bodies for agent search and falls back to the D1 mirror", async () => {
     vi.mocked(listAgentMemoRecords).mockResolvedValue([
       {

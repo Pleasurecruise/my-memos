@@ -31,7 +31,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
     .filter(Boolean)
     .join("\n\n");
 
-  const provider = createChatProvider(env, requestMessages[0].id);
+  const provider = createChatProvider(requestMessages[0].id);
 
   const encoder = new TextEncoder();
   const abort = new AbortController();

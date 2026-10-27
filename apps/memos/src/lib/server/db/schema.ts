@@ -23,3 +23,11 @@ export const memos = sqliteTable(
 );
 
 export type MemoRow = typeof memos.$inferSelect;
+
+export const tagDefinitions = sqliteTable("tag_definitions", {
+  name: text("name").primaryKey(),
+  kind: text("kind", { enum: ["type", "topic", "channel"] }).notNull(),
+  description: text("description").notNull(),
+});
+
+export type TagDefinition = typeof tagDefinitions.$inferSelect;

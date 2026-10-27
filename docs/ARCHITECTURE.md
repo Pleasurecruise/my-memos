@@ -11,6 +11,7 @@ This repository is a `pnpm` workspace with one deployable app and two reusable p
 | `packages/ai-core`                                        | Platform-neutral pi Agent runtime and MCP client adapter      |
 | [docs](../docs)                                           | Maintainer-facing documentation                               |
 | [apps/memos/void.config.ts](../apps/memos/void.config.ts) | Cloudflare Worker settings, bindings, and Void framework mode |
+| [apps/memos/env.ts](../apps/memos/env.ts)                 | Typed configuration and secret schema read through `void/env` |
 
 ## High-Level System
 
@@ -43,10 +44,14 @@ Key areas:
 - [apps/memos/src/lib/server](../apps/memos/src/lib/server)
   Server-only auth, filters, domain services, and persistence adapters.
   - [apps/memos/src/lib/server/db/schema.ts](../apps/memos/src/lib/server/db/schema.ts)
-    Drizzle ORM schema for the `memos` table; exports `MemoRow` inferred type.
+    Drizzle ORM schema for the `memos` and `tag_definitions` tables; exports `MemoRow` and `TagDefinition`.
   - `apps/memos/src/lib/server/memos`
     Memo domain split into D1 repository queries, R2 body storage, KV-derived cache handling,
     and a service that coordinates operations spanning those boundaries.
+  - `apps/memos/src/lib/server/tags`
+    D1 tag definitions and Jev classification; `createMemo` uses it to tag untagged memos.
+  - `apps/memos/src/lib/server/nmem`
+    Nowledge Mem client that imports a memo as a conversation; called by the create routes.
   - `apps/memos/src/lib/server/x-import.ts`
     Validates X/Twitter status URLs and the FxTwitter response fields used by the import route.
   - `apps/memos/src/lib/server/mcp`
@@ -149,11 +154,11 @@ Current auth characteristics:
 - database-backed sessions in D1
 - Google OAuth configured as the social provider
 - secure cookies enabled automatically when `BETTER_AUTH_URL` is `https`
-- optional single-user gating in application code through `ALLOWED_EMAIL`; the current production Void configuration requires the secret
+- single-user gating in application code through `ALLOWED_EMAIL`, a required key in `env.ts`
 
 Request bootstrapping happens in [apps/memos/src/hooks.server.ts](../apps/memos/src/hooks.server.ts), which:
 
-- constructs a Better Auth instance from Cloudflare bindings
+- constructs a Better Auth instance from the `DB` binding and `void/env` configuration
 - loads the current session
 - attaches `locals.user` and `locals.session`
 - delegates to `svelteKitHandler`
@@ -181,6 +186,7 @@ Use D1 for:
 
 - list queries
 - filtering by date, tag, archive state, and visibility
+- tag definitions (`name`, `kind` of `type`, `topic` or `channel`, `description`) that drive Jev tagging
 
 Despite its name, `excerpt` currently mirrors the complete trimmed memo body so list rendering and `LIKE` search do not read R2. R2 remains canonical when loading an individual memo.
 
@@ -301,10 +307,15 @@ only:
 
 - `GET /api/memos` returns `{ memos, nextCursor }` and supports cursor, limit, search, date,
   tags, public, archive, favorite, and updated-time filters.
-- `POST /api/memos` creates a memo.
+- `POST /api/memos` creates a memo. `createMemo` asks Jev for tags when a memo has none, before it
+  is saved. This route and the `create_memo` MCP tool then pass the memo to `importMemoThread`
+  with `waitUntil`, which imports it into Nowledge Mem as a conversation. The X import route is
+  tagged but not imported (see [DEPLOYMENT.md](./DEPLOYMENT.md#build-and-deployment-flow)).
 - `GET`, `PATCH`, and `DELETE /api/memos/[id]` read, update, and delete one memo; reads return
   `{ memo }`.
 - `GET /api/tags` returns tag counts.
+- `GET /api/tags/definitions` lists tag definitions; `PUT` and `DELETE
+  /api/tags/definitions/[name]` upsert and delete one.
 
 The OpenAPI 3.1 description is a static asset at
 [apps/memos/static/api/openapi.json](../apps/memos/static/api/openapi.json); update it with
@@ -321,10 +332,10 @@ parallel.
 
 ## Type Boundaries
 
-The runtime contract for Cloudflare bindings is `AppEnv` in [apps/memos/src/lib/server/types.ts](../apps/memos/src/lib/server/types.ts), merged into `Cloudflare.Env` by [apps/memos/src/app.d.ts](../apps/memos/src/app.d.ts) for `import { env } from "cloudflare:workers"`. Keep it in sync with:
+The runtime contract for Cloudflare bindings is `AppEnv` in [apps/memos/src/lib/server/types.ts](../apps/memos/src/lib/server/types.ts), merged into `Cloudflare.Env` by [apps/memos/src/app.d.ts](../apps/memos/src/app.d.ts) for `import { env } from "cloudflare:workers"`. The `AI` binding is typed by `void/env` and inferred from `void/ai` imports. Configuration and secrets are typed from [apps/memos/env.ts](../apps/memos/env.ts) through the generated `.void/env.d.ts` and read with `import { env } from "void/env"`. Keep them in sync with:
 
-- `apps/memos/void.config.ts`
-- any new secrets or bindings
+- `apps/memos/void.config.ts` for bindings
+- `apps/memos/env.ts` for configuration and secrets
 - any platform-dependent server code
 
 If these drift, the app may still compile but fail at runtime.
