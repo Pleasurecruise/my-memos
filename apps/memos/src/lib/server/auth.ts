@@ -14,18 +14,7 @@ export function getAuth(db: D1Database) {
       useSecureCookies: env.BETTER_AUTH_URL.startsWith("https"),
     },
     account: {
-      accountLinking: { trustedProviders: ["you-find-me"] },
-    },
-    databaseHooks: {
-      user: {
-        create: {
-          before: async (user) => {
-            if (user.email !== env.ALLOWED_EMAIL) {
-              return false;
-            }
-          },
-        },
-      },
+      accountLinking: { enabled: false },
     },
     session: {
       expiresIn: 60 * 60 * 24 * 30,
@@ -44,6 +33,7 @@ export function getAuth(db: D1Database) {
             scopes: ["openid", "profile", "email"],
             tokenEndpointAuth: { method: "client_secret_basic" },
             pkce: true,
+            disableSignUp: true,
           },
         ],
       }),

@@ -83,6 +83,6 @@ export async function isOwnerRequest(
   const authorization = request.headers.get("authorization");
   if (authorization === null) return user !== null;
   return authorization.split(".").length === 3
-    ? verifyOwnerToken(request, env.ALLOWED_EMAIL)
+    ? verifyOwnerToken(request)
     : verifyApiKey(request, namespace);
 }

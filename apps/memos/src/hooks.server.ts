@@ -1,5 +1,4 @@
 import { env } from "cloudflare:workers";
-import config from "#env";
 import type { Handle } from "@sveltejs/kit/hooks";
 import { getAuth } from "#lib/server/auth.ts";
 import { svelteKitHandler } from "better-auth/svelte-kit";
@@ -21,12 +20,8 @@ export const handle: Handle = async ({ event, resolve }) => {
     headers: event.request.headers,
   });
 
-  event.locals.session = null;
-  event.locals.user = null;
-  if (session && session.user.email === config.ALLOWED_EMAIL) {
-    event.locals.session = session.session;
-    event.locals.user = session.user;
-  }
+  event.locals.session = session ? session.session : null;
+  event.locals.user = session ? session.user : null;
 
   return svelteKitHandler({ event, resolve, auth, building });
 };
