@@ -23,4 +23,4 @@ export type DomainOperationDefinition<TSchema extends z.ZodType> = Omit<
   execute(input: z.output<TSchema>, signal: AbortSignal): Promise<unknown>;
 };
 
-export type McpPrincipal = "user" | "api-key";
+export type McpPrincipal = "user" | "external";

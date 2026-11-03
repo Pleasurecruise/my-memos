@@ -46,12 +46,8 @@ External MCP clients receive a narrower allowlist:
 - `list_tags`, `list_memos`, `search_memos`, `get_memo`
 - `create_memo`, `update_memo`, `delete_memo`
 
-They authenticate with a user-generated Bearer API key. The plaintext is returned once; the
-`my-memos-api-key` Durable Object instance stores its SHA-256 digest and creation time. Generation
-and regeneration replace that single strongly consistent record, immediately invalidating the
-previous key. Authentication has no R2 or KV fallback. Keys use the `sk-` prefix and have no
-automatic expiry, scopes, or token tables. Initial creation refuses to replace an existing key;
-replacement is exposed only through the confirmed regeneration request.
+They authenticate with access tokens issued by the you-find.me gateway, bound to the
+`https://memos.you-find.me` audience and the `memos:write` scope.
 
 MCP operations parse tool inputs and adapt memo domain results for Agent consumption. The external
 REST routes under `/api/memos` and `/api/tags` call the memo domain directly and return

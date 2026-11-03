@@ -132,7 +132,7 @@ export function createLlmsText(memos: readonly Memo[], origin: URL): string {
     "",
     "## API",
     "",
-    `- [REST API](${new URL("/api/openapi.json", origin).href}): ${new URL("/api", origin).href} for memos (list, search, read, write) and tags. Anonymous list reads return public memos; everything else requires \`Authorization: Bearer <API key>\` or the owner session.`,
+    `- [REST API](${new URL("/api/openapi.json", origin).href}): ${new URL("/api", origin).href} for memos (list, search, read, write) and tags. Anonymous list reads return public memos; everything else requires \`Authorization: Bearer <access token>\` issued by you-find.me or the owner session.`,
     `- [MCP](${new URL("/api/mcp", origin).href}): Stateless MCP endpoint with the same Bearer key.`,
     "",
     "## Memos",

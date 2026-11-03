@@ -26,7 +26,6 @@ Browser (in-memory Svelte Chat store)
      - D1: structured memo indexes, searchable body mirrors, and auth tables
      - R2: full memo markdown and agent memory files
      - KV: derived caches
-     - Durable Object: this project's single generated API key
 ```
 
 ## Workspace Structure
@@ -150,9 +149,9 @@ Authentication is implemented with Better Auth and initialized in [apps/memos/sr
 Current auth characteristics:
 
 - database-backed sessions in D1
-- Google OAuth configured as the social provider
+- sign-in through the you-find.me gateway (`genericOAuth`), with sign-up and email-based account
+  linking disabled so only the account bound to the gateway owner (`sub` `owner`) can sign in
 - secure cookies enabled automatically when `BETTER_AUTH_URL` is `https`
-- single-user gating in application code through `ALLOWED_EMAIL`, a required key in `env.ts`
 
 Request bootstrapping happens in [apps/memos/src/hooks.server.ts](../apps/memos/src/hooks.server.ts), which:
 
@@ -282,25 +281,22 @@ Behavior:
 
 ### External Memo Integrations
 
-External REST and MCP clients share one API key but have independent transport adapters. REST
+External REST and MCP clients share one OAuth resource server but have independent transport adapters. REST
 routes call memo domain services directly and return structured JSON. MCP maps the same domain
 capabilities to `list_tags`, `list_memos`, `search_memos`, `get_memo`, `create_memo`,
 `update_memo`, and `delete_memo`, the same `verb_noun` naming used by my-moment and my-knowledge.
 Tools return structured objects: `{ tags }`, `{ memos }`, search `{ type: "memo-search-results", query, memos }`, single memos as `{ memo }`, and deletion `{ id, deleted: true }`; arguments reuse the REST field names (`fromDate`, `toDate`, `tags`, `limit`). Web search, URL reading, documentation lookup, memory updates, and visual rendering
-belong to the authenticated in-product Agent and cannot be invoked with the external API key.
+belong to the authenticated in-product Agent and cannot be invoked by external clients.
 
-An authenticated user manages the key through `/api/settings/api-key`. `GET` reports its
-status and creation time. `POST` generates a key and `PUT` confirms regeneration. Successful writes
-replace the authoritative record and return the new plaintext once. The server stores
-its SHA-256 digest and creation time in the
-`my-memos-api-key` Durable Object instance. The class is exported by the my-knowledge Worker; the
-instance is separate from the `my-knowledge-api-key` and `my-moment-api-key` instances. Generation
-replaces one record, so the previous my-memos key is immediately invalid. Authentication never falls
-back to R2 or KV. Generated keys use the `sk-` prefix.
+External clients authenticate with access tokens issued by the you-find.me gateway
+(`https://you-find.me/api/auth`). Tokens must carry the `https://memos.you-find.me` audience and the
+`memos:write` scope; the gateway issues memos scopes only to its owner. The resource server publishes
+`/.well-known/oauth-protected-resource`, and `/api/mcp` answers unauthenticated requests with an RFC
+9728 `WWW-Authenticate` challenge so MCP clients can discover the gateway and register themselves.
 
 The web app and external clients share one REST surface. Each route accepts the owner session or
-`Authorization: Bearer <key>`. A request that sends `Authorization` is checked only against the key
-and an invalid key returns `401`, even on the list route; anonymous list reads return public memos
+`Authorization: Bearer <access token>`. A request that sends `Authorization` is checked only against the token
+and an invalid token returns `401`, even on the list route; anonymous list reads return public memos
 only:
 
 - `GET /api/memos` returns `{ memos, nextCursor }` and supports cursor, limit, search, date,

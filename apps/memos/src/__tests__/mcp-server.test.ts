@@ -34,7 +34,6 @@ function fakeEnv(): AppEnv {
     DB: {} as D1Database,
     MEMOS_BUCKET: {} as R2Bucket,
     MEMOS_CACHE: {} as KVNamespace,
-    API_KEY: { getByName: () => ({ fetch: async () => new Response() }) },
   };
 }
 
@@ -57,8 +56,8 @@ describe("MCP dual-era contract", () => {
     await connection.close();
   });
 
-  it("does not expose internal-only tools to API-key clients", async () => {
-    const handler = createMemosMcpHandler(fakeEnv(), "api-key");
+  it("does not expose internal-only tools to external clients", async () => {
+    const handler = createMemosMcpHandler(fakeEnv(), "external");
     handlers.push(handler);
     const connection = await connectMcp({
       url: "https://mcp.test/api/mcp",

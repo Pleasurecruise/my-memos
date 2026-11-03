@@ -2,8 +2,8 @@
 
 A personal memo app built with SvelteKit, deployed as a Cloudflare Worker.
 
-- **Storage** — D1 for memo indexes and searchable body mirrors, R2 for canonical markdown, KV for disposable caches, and a Durable Object for the generated API key
-- **Auth** — sign-in through the you-find.me OAuth gateway (Better Auth `genericOAuth`); single-user gating with `ALLOWED_EMAIL`
+- **Storage** — D1 for memo indexes and searchable body mirrors, R2 for canonical markdown, and KV for disposable caches
+- **Auth** — sign-in through the you-find.me OAuth gateway (Better Auth `genericOAuth`); only the account bound to the gateway owner (`sub` `owner`) can sign in
 - **AI chat** — Cloudflare AI Gateway with memo-aware tools (list, search, create, update, delete)
 - **Stack** — SvelteKit · Drizzle ORM · pnpm workspace · adapter-cloudflare
 
@@ -11,25 +11,22 @@ See [`docs/`](docs/) for architecture, deployment, and design system details.
 
 ## MCP client
 
-Generate an API key from the authenticated application masthead, then connect a Streamable HTTP
-MCP client to the public endpoint:
+Connect a Streamable HTTP MCP client to the public endpoint. The client discovers the you-find.me
+authorization server from `/.well-known/oauth-protected-resource`, registers itself, and signs the
+owner in through OAuth:
 
 ```json
 {
   "mcpServers": {
     "my-memos": {
       "type": "streamable-http",
-      "url": "https://memos.you-find.me/api/mcp",
-      "headers": {
-        "Authorization": "Bearer ${MY_MEMOS_API_KEY}"
-      }
+      "url": "https://memos.you-find.me/api/mcp"
     }
   }
 }
 ```
 
-The plaintext key is shown only when generated or regenerated. Replace
-`${MY_MEMOS_API_KEY}` with that value, or use the client's environment-variable expansion. The
+Access tokens must carry the `https://memos.you-find.me` audience and the `memos:write` scope. The
 endpoint supports MCP `2026-07-28` and stateless `2025-11-25` clients. It does not issue an
 `Mcp-Session-Id`.
 

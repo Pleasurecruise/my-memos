@@ -1,5 +1,5 @@
 import { env } from "cloudflare:workers";
-import { isOwnerRequest } from "#lib/server/apikey/index.ts";
+import { isOwnerRequest } from "#lib/server/oauth.ts";
 import {
   deleteTagDefinition,
   tagDefinitionInputSchema,
@@ -9,7 +9,7 @@ import {
 import type { RequestHandler } from "./$types";
 
 export const PUT: RequestHandler = async ({ request, locals, params }) => {
-  if (!(await isOwnerRequest(request, locals.user, env.API_KEY))) {
+  if (!(await isOwnerRequest(request, locals.user))) {
     return Response.json(
       { error: "Unauthorized." },
       { status: 401, headers: { "WWW-Authenticate": "Bearer" } },
@@ -29,7 +29,7 @@ export const PUT: RequestHandler = async ({ request, locals, params }) => {
 };
 
 export const DELETE: RequestHandler = async ({ request, locals, params }) => {
-  if (!(await isOwnerRequest(request, locals.user, env.API_KEY))) {
+  if (!(await isOwnerRequest(request, locals.user))) {
     return Response.json(
       { error: "Unauthorized." },
       { status: 401, headers: { "WWW-Authenticate": "Bearer" } },

@@ -1,5 +1,5 @@
 import { env } from "cloudflare:workers";
-import { isOwnerRequest } from "#lib/server/apikey/index.ts";
+import { isOwnerRequest } from "#lib/server/oauth.ts";
 import {
   createMemo,
   isValidMemoCursor,
@@ -59,7 +59,7 @@ export const GET: RequestHandler = async ({ request, url, locals }) => {
     favoritesOnly,
     sortByUpdated,
   } = queryParams.data;
-  const owner = await isOwnerRequest(request, locals.user, env.API_KEY);
+  const owner = await isOwnerRequest(request, locals.user);
   if (!owner && (request.headers.has("authorization") || archivedOnly || favoritesOnly)) {
     return Response.json(
       { error: "Unauthorized." },
@@ -92,7 +92,7 @@ export const GET: RequestHandler = async ({ request, url, locals }) => {
 };
 
 export const POST: RequestHandler = async ({ request, locals }) => {
-  if (!(await isOwnerRequest(request, locals.user, env.API_KEY))) {
+  if (!(await isOwnerRequest(request, locals.user))) {
     return Response.json(
       { error: "Unauthorized." },
       { status: 401, headers: { "WWW-Authenticate": "Bearer" } },
