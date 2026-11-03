@@ -38,16 +38,15 @@ Current binding names and IDs live in the `cloudflare` field of [apps/memos/void
 
 Configuration values are declared and validated in [apps/memos/env.ts](../apps/memos/env.ts) with `defineEnv` and read with `import { env } from "void/env"`. Bindings stay on `cloudflare:workers`. `void deploy` refuses to deploy while a required key is missing remotely, and the Worker validates every key at startup.
 
-| Variable               | Required            | Purpose                                             |
-| ---------------------- | ------------------- | --------------------------------------------------- |
-| `BETTER_AUTH_URL`      | default in `env.ts` | Public base URL used by Better Auth                 |
-| `BETTER_AUTH_SECRET`   | yes                 | Better Auth signing secret                          |
-| `GOOGLE_CLIENT_ID`     | yes                 | Google OAuth client ID                              |
-| `GOOGLE_CLIENT_SECRET` | yes                 | Google OAuth client secret                          |
-| `ALLOWED_EMAIL`        | yes                 | Limits sign-in to one allowed email                 |
-| `CF_ACCOUNT_ID`        | default in `env.ts` | Cloudflare account containing the AI Gateway        |
-| `CF_AIG_TOKEN`         | yes                 | Authenticates the Gateway; it is not a provider key |
-| `TAVILY_API_KEY`       | yes                 | Tavily API key for web search                       |
+| Variable                    | Required            | Purpose                                                       |
+| --------------------------- | ------------------- | ------------------------------------------------------------- |
+| `BETTER_AUTH_URL`           | default in `env.ts` | Public base URL used by Better Auth                           |
+| `BETTER_AUTH_SECRET`        | yes                 | Better Auth signing secret                                    |
+| `YOU_FIND_ME_CLIENT_SECRET` | yes                 | Secret of the `memos` client on the you-find.me OAuth gateway |
+| `ALLOWED_EMAIL`             | yes                 | Limits sign-in to one allowed email                           |
+| `CF_ACCOUNT_ID`             | default in `env.ts` | Cloudflare account containing the AI Gateway                  |
+| `CF_AIG_TOKEN`              | yes                 | Authenticates the Gateway; it is not a provider key           |
+| `TAVILY_API_KEY`            | yes                 | Tavily API key for web search                                 |
 
 Local development reads the variables above from `apps/memos/.env`, the only local env file Void supports; Void refuses to start when `.env.example` or `.env.local` exist. Production builds switch Vite's `envDir` to `.void/build-env`, so local secrets are not copied into Worker vars. Production values are Worker secrets managed with `void secret`, not committed files or plaintext `vars`; keys with a default in `env.ts` need no secret. Run `pnpm --filter @my-memos/app exec void env check` to validate `.env`.
 

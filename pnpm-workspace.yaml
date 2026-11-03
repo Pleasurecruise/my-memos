@@ -19,4 +19,4 @@ update:
   ignoreDeps:
     - typescript
 
-minimumReleaseAge: 0
+minimumReleaseAge: 1440

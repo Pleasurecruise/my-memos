@@ -1,4 +1,5 @@
 import { betterAuth } from "better-auth";
+import { genericOAuth } from "better-auth/plugins";
 import { sveltekitCookies } from "better-auth/svelte-kit";
 import { getRequestEvent } from "$app/server";
 import env from "#env";
@@ -12,11 +13,8 @@ export function getAuth(db: D1Database) {
     advanced: {
       useSecureCookies: env.BETTER_AUTH_URL.startsWith("https"),
     },
-    socialProviders: {
-      google: {
-        clientId: env.GOOGLE_CLIENT_ID,
-        clientSecret: env.GOOGLE_CLIENT_SECRET,
-      },
+    account: {
+      accountLinking: { trustedProviders: ["you-find-me"] },
     },
     databaseHooks: {
       user: {
@@ -34,7 +32,23 @@ export function getAuth(db: D1Database) {
       updateAge: 60 * 60 * 24,
       cookieCache: { enabled: true, maxAge: 5 * 60 },
     },
-    plugins: [sveltekitCookies(getRequestEvent)],
+    plugins: [
+      genericOAuth({
+        config: [
+          {
+            providerId: "you-find-me",
+            name: "you-find.me",
+            discoveryUrl: "https://you-find.me/api/auth/.well-known/openid-configuration",
+            clientId: "memos",
+            clientSecret: env.YOU_FIND_ME_CLIENT_SECRET,
+            scopes: ["openid", "profile", "email"],
+            tokenEndpointAuth: { method: "client_secret_basic" },
+            pkce: true,
+          },
+        ],
+      }),
+      sveltekitCookies(getRequestEvent),
+    ],
   });
 }
 

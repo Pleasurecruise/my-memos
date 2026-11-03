@@ -1,4 +1,6 @@
 import { z } from "zod";
+import env from "#env";
+import { verifyOwnerToken } from "../oauth";
 
 const API_KEY_INSTANCE = "my-memos-api-key";
 const API_KEY_URL = "https://api-key.internal/key";
@@ -78,6 +80,9 @@ export async function isOwnerRequest(
   user: App.Locals["user"],
   namespace: ApiKeyNamespace,
 ): Promise<boolean> {
-  if (request.headers.has("authorization")) return verifyApiKey(request, namespace);
-  return user !== null;
+  const authorization = request.headers.get("authorization");
+  if (authorization === null) return user !== null;
+  return authorization.split(".").length === 3
+    ? verifyOwnerToken(request, env.ALLOWED_EMAIL)
+    : verifyApiKey(request, namespace);
 }
