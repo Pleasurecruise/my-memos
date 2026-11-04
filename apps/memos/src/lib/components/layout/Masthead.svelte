@@ -191,10 +191,7 @@
                 variant="outline"
                 size="sm"
                 class="w-full gap-2 text-muted-foreground"
-                onclick={async () => {
-                  await signOut();
-                  await goto("/");
-                }}
+                onclick={() => signOut()}
               >
                 <LogOut size={13} />Sign out
               </Button>
